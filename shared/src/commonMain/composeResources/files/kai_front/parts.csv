@@ -20,3 +20,9 @@ brow_near,head,477,222,43,21,1
 brow_far,head,588,222,35,20,1
 mouth_smile,head,523,325,60,16,1
 hair,hair,355,86,316,209,1
+eye_far_half,head,579,248,46,50,0
+eye_far_happy,head,579,248,46,50,0
+eye_far_wide,head,576,244,53,58,0
+eye_near_half,head,476,249,56,50,0
+eye_near_happy,head,476,249,56,50,0
+eye_near_wide,head,472,245,64,58,0

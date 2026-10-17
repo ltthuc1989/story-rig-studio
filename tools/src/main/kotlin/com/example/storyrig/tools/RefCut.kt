@@ -429,6 +429,14 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
     }
     // Default sprites are ref.png's own features; the sheets only add the other expressions.
     for ((k, f) in found) parts[k] = Part(k, "head", f.second)
+    // Eye expressions no sheet gave: made from the open eye itself.
+    if (found.isNotEmpty()) {
+        val skinPx = head.img.px.filter { a(it) > 200 && col.skin(it) }
+        if (skinPx.isNotEmpty()) {
+            fun med(f: (Int) -> Int) = skinPx.map(f).sorted()[skinPx.size / 2]
+            synthEyes(parts, argb(255, med(::r), med(::g), med(::b)))
+        }
+    }
 
     writeOut(outDir, bones, parts, if (S.view == "3q") drawOrder else drawOrderFrontBack)
     // Character facts for the app (height), kept next to the character's prompts.

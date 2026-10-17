@@ -19,3 +19,9 @@ hair,hair,382,160,88,144,1
 arm_upper_near,shoulder_near,275,410,157,124,1
 arm_fore_near,elbow_near,215,459,135,109,1
 hand_near,wrist_near,158,520,105,91,1
+eye_far_half,head,609,217,23,28,0
+eye_far_happy,head,609,217,23,28,0
+eye_far_wide,head,607,215,26,32,0
+eye_near_half,head,530,217,24,28,0
+eye_near_happy,head,530,217,24,28,0
+eye_near_wide,head,528,215,28,32,0
