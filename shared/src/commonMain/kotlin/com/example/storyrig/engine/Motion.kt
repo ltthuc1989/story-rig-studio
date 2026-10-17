@@ -2,6 +2,7 @@ package com.example.storyrig.engine
 
 import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.atan2
 import kotlin.math.hypot
 import kotlin.math.sin
 
@@ -10,6 +11,7 @@ import kotlin.math.sin
  *   base pose (clip or scene code sets local angles)
  *   -> [SecondaryMotion] (springs: joints lag, overshoot and swing with their parent's motion)
  *   -> [AutoLayers] (squash/stretch from the root's vertical acceleration, breathing)
+ *   -> [FootLock] (feet stay where they touched the ground)
  *   -> Rig.pose()
  * All state is in FloatArrays sized at construction; nothing allocates per frame.
  */
@@ -116,6 +118,79 @@ class AutoLayers(
         sk.local[o + 4] *= 1f - squash
         val breath = 1f + breathAmp * sin(2f * PI.toFloat() * t / breathPeriodSec)
         sk.local[torso * 5 + 4] *= breath
+    }
+}
+
+/**
+ * Keeps one foot on the ground. When the pose so far puts the ankle on (or below) the ground, the foot is pinned
+ * where it touched down: two-bone IK turns hip and knee so the ankle stays there, and the ankle turns so the foot
+ * stays flat. Lifting the ankle more than [liftPx] (character pixels) above the ground releases it; pinning and
+ * releasing fade over [fadeSec] so nothing pops. Runs last, after [AutoLayers], whose squash changes leg length.
+ *
+ * Call [captureGround] right after resetting to the standing pose each frame (it records where the ankle is when
+ * standing), then let clips and the other layers move the bones, then [apply].
+ * [bend] = 1 bends the knee towards +x (character facing right), -1 towards -x.
+ */
+class FootLock(
+    private val sk: Skeleton,
+    private val hip: Int,
+    private val knee: Int,
+    private val ankle: Int,
+    private val bend: Int = 1,
+    private val liftPx: Float = 4f,
+    private val fadeSec: Float = .08f,
+) {
+    private var groundY = 0f
+    private var footRot = 0f
+    private var planted = false
+    private var lockX = 0f
+    private var w = -1f
+    private val out = FloatArray(4)
+
+    fun captureGround() {
+        sk.updateWorld()
+        val a = ankle * 6
+        groundY = sk.world[a + 5]
+        footRot = atan2(sk.world[a + 1], sk.world[a])
+    }
+
+    fun apply(dtSec: Float, enabled: Boolean = true) {
+        sk.updateWorld()
+        val wd = sk.world
+        val h = hip * 6; val k = knee * 6; val a = ankle * 6
+        val ax = wd[a + 4]; val ay = wd[a + 5]
+        // Character pixels to world: the root's scale.
+        val scale = hypot(wd[0], wd[1])
+        val lift = groundY - ay
+        if (!planted && lift <= liftPx * scale) { planted = true; lockX = ax }
+        else if (planted && lift > 2f * liftPx * scale) planted = false
+        val target = if (planted && enabled) 1f else 0f
+        w = if (w < 0f) target else {
+            val step = dtSec.coerceIn(0f, 1f / 30f) / fadeSec
+            if (w < target) minOf(target, w + step) else maxOf(target, w - step)
+        }
+        if (w <= 0f) return
+        val tx = lerp(ax, lockX, w)
+        val ty = lerp(ay, groundY, w)
+        val hx = wd[h + 4]; val hy = wd[h + 5]
+        val l1 = hypot(wd[k + 4] - hx, wd[k + 5] - hy)
+        val l2 = hypot(ax - wd[k + 4], ay - wd[k + 5])
+        ik2(hx, hy, tx, ty, l1, l2, bend, out)
+        sk.local[hip * 5 + 2] += angleTo(wd[k + 4] - hx, wd[k + 5] - hy, out[0] - hx, out[1] - hy)
+        sk.updateWorld()
+        sk.local[knee * 5 + 2] += angleTo(wd[a + 4] - wd[k + 4], wd[a + 5] - wd[k + 5], out[2] - wd[k + 4], out[3] - wd[k + 5])
+        sk.updateWorld()
+        sk.local[ankle * 5 + 2] += w * wrap(footRot - atan2(wd[a + 1], wd[a]))
+    }
+
+    /** Rotation from direction (x0, y0) to (x1, y1), in -PI..PI. */
+    private fun angleTo(x0: Float, y0: Float, x1: Float, y1: Float) = wrap(atan2(y1, x1) - atan2(y0, x0))
+
+    private fun wrap(r: Float): Float {
+        var v = r
+        while (v > PI.toFloat()) v -= 2f * PI.toFloat()
+        while (v < -PI.toFloat()) v += 2f * PI.toFloat()
+        return v
     }
 }
 

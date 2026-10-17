@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import com.example.storyrig.engine.ArtBuilder
+import com.example.storyrig.engine.FootLock
 import com.example.storyrig.engine.PathCache
 import com.example.storyrig.engine.PerfStats
 import com.example.storyrig.engine.RenderStats
@@ -59,11 +60,17 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
     private val layers2 = cfg.flagOf("motion", true)
     /** `--es clip 0` goes back to the old sine-wave poses, to compare. */
     private val useClips = cfg.flagOf("clip", true)
+    /** `--es feet 0` lets the feet slide with the pose, to compare with them pinned to the ground. */
+    private val pinFeet = cfg.flagOf("feet", true)
+    private val feetNear: Array<FootLock>
+    private val feetFar: Array<FootLock>
 
     init {
         val start = uptimeMillis()
         if (cfg.art == "mesh" && !mesh) logInfo("art=mesh unavailable (drawVertices needs API 29+), drawing bitmap parts")
         kais = Array(n) { KaiRig(assets, cfg.antiAlias, phase = it * .7f, useMeshes = mesh) }
+        feetNear = Array(n) { FootLock(kais[it].sk, kais[it].hipN, kais[it].kneeN, kais[it].ankleN) }
+        feetFar = Array(n) { FootLock(kais[it].sk, kais[it].hipF, kais[it].kneeF, kais[it].ankleF) }
         val art = ArtBuilder(PathCache(), cfg.antiAlias)
         val l = -Stage.BLEED_W / 2f + Stage.SAFE_W / 2f
         val t = -Stage.BLEED_H / 2f + Stage.SAFE_H / 2f
@@ -121,6 +128,7 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
             val bar = (b / SWITCH_BEATS).toInt().coerceAtLeast(0)
             k.player.play((i + bar) % DanceClips.ALL.size, bar * SWITCH_BEATS, fadeBeats = .5f)
             k.reset(homeX[i], GROUND_Y - ROOT_TO_SOLE * scale, scale)
+            feetNear[i].captureGround(); feetFar[i].captureGround()
             k.player.apply(b)
         } else {
             sinePose(k, i, beat)
@@ -129,6 +137,10 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
         if (layers2) {
             k.motion.apply(dtSec)
             k.auto.apply(dtSec)
+        }
+        if (useClips) {
+            feetNear[i].apply(dtSec, pinFeet)
+            feetFar[i].apply(dtSec, pinFeet)
         }
         k.rig.pose(stats)
     }
