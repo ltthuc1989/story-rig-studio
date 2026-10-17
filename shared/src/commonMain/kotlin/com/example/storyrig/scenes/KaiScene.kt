@@ -90,14 +90,22 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
         art.ellipse(0f, 0f, 120f, 18f, hex(0x2a8a4a), alpha = .35f)
         shadow = art.build()
 
-        // Fit n Kais across the safe area (arms spread ~520 ref px), never taller than ~62% of it.
-        val slot = Stage.SAFE_W / n
-        // Shrink everyone only if the tallest would leave the top ~10% of the safe area.
-        val tallest = cast.maxOf { it.heightScale }
-        scale = min(scaleFor(n), .9f * Stage.SAFE_H / (KaiRig.HEIGHT * tallest))
-        for (i in 0 until n) kaiScale[i] = scale * cast[i % cast.size].heightScale
+        // Each character gets a share of the width in proportion to its height (arms flung out ~ARM_SPAN), so a
+        // grown-up's arms don't reach into the next child. Kids stay ~62% of the safe height at most; everyone
+        // shrinks only if the tallest would leave the top ~10% of the safe area.
+        val h = FloatArray(n) { cast[it % cast.size].heightScale }
+        val widthUnits = h.sum()
+        scale = minOf(
+            .62f * Stage.SAFE_H / KaiRig.HEIGHT,
+            .95f * Stage.SAFE_W / (widthUnits * ARM_SPAN),
+            .9f * Stage.SAFE_H / (KaiRig.HEIGHT * h.max()),
+        )
+        var x = 0f
         for (i in 0 until n) {
-            homeX[i] = slot * (i + .5f)
+            kaiScale[i] = scale * h[i]
+            val slot = Stage.SAFE_W * h[i] / widthUnits
+            homeX[i] = x + slot / 2f
+            x += slot
             nextMouth[i] = rng.range(0f, 120f)
             nextBlink[i] = rng.range(800f, 3000f)
         }
@@ -221,7 +229,10 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
 
     companion object {
         /** Fit n Kais across the safe area (arms spread ~520 ref px), never taller than ~62% of it. */
-        fun scaleFor(n: Int) = min(.62f * Stage.SAFE_H / KaiRig.HEIGHT, .95f * (Stage.SAFE_W / n) / 520f)
+        fun scaleFor(n: Int) = min(.62f * Stage.SAFE_H / KaiRig.HEIGHT, .95f * (Stage.SAFE_W / n) / ARM_SPAN)
+
+        /** Arm span (ref px) to leave room for: the dances fling the arms out to the sides. */
+        private const val ARM_SPAN = 640f
 
         private const val BEAT_MS = 500f
         private const val SWITCH_BEATS = 8f
