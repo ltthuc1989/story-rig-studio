@@ -1,0 +1,22 @@
+# part,bone,x,y,w,h,drawn (x,y = top-left in ref.png pixels; drawn=1 in the rest pose, in draw order)
+arm_upper_far,shoulder_far,594,404,149,119,1
+arm_fore_far,elbow_far,686,465,124,101,1
+hand_far,wrist_far,754,510,120,105,1
+shin_far,knee_far,531,682,95,238,1
+shoe_far,ankle_far,549,875,131,64,1
+thigh_far,hip_far,522,620,105,88,1
+shin_near,knee_near,414,697,92,236,1
+shoe_near,ankle_near,409,879,129,64,1
+thigh_near,hip_near,412,616,113,91,1
+pelvis,root,414,600,211,79,1
+torso,torso,369,335,307,301,1
+head,head,294,45,365,332,1
+eye_near_open,head,494,225,59,48,1
+eye_far_open,head,596,225,51,46,1
+brow_near,head,502,204,39,19,1
+brow_far,head,605,204,34,18,1
+mouth_smile,head,544,300,59,15,1
+hair,hair,294,45,365,298,1
+arm_upper_near,shoulder_near,297,398,153,123,1
+arm_fore_near,elbow_near,227,462,128,103,1
+hand_near,wrist_near,163,509,120,106,1

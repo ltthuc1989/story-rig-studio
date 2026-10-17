@@ -89,24 +89,25 @@ class KaiAssets(
          * it is about [cellPx] stage units on screen (never finer than the group's own cell). [block]: see
          * [MeshData.grid].
          */
-        suspend fun load(mesh: Boolean = false, screenScale: Float = 1f, cellPx: Float = 0f, block: Int = 1): KaiAssets {
+        suspend fun load(name: String = "kai", mesh: Boolean = false, screenScale: Float = 1f, cellPx: Float = 0f, block: Int = 1): KaiAssets {
+            val dir = "files/$name"
             val t0 = uptimeMillis()
-            val boneRows = csv(Res.readBytes("files/kai/bones.csv").decodeToString())
-            val partRows = csv(Res.readBytes("files/kai/parts.csv").decodeToString())
+            val boneRows = csv(Res.readBytes("$dir/bones.csv").decodeToString())
+            val partRows = csv(Res.readBytes("$dir/parts.csv").decodeToString())
             val names = boneRows.map { it[0] }
             val parent = IntArray(names.size) { i -> if (boneRows[i][1].isEmpty()) -1 else names.indexOf(boneRows[i][1]) }
             val px = FloatArray(names.size) { boneRows[it][2].toFloat() }
             val py = FloatArray(names.size) { boneRows[it][3].toFloat() }
             val parts = partRows.map { PartRow(it[0], names.indexOf(it[1]), it[2].toInt(), it[3].toInt(), it[4].toInt(), it[5].toInt(), it[6] == "1") }
-            val images = parts.map { it.name to Res.readBytes("files/kai/parts/${it.name}.png").decodeToImageBitmap() }
+            val images = parts.map { it.name to Res.readBytes("$dir/parts/${it.name}.png").decodeToImageBitmap() }
             val atlas = Atlas.pack(images)
             var meshes = emptyList<Mesh>()
             var meshAtlas: Atlas? = null
             // Limbs, torso and pelvis as meshes, all weighted from the one influence table so that a sleeve and the
             // shirt under it (a shorts leg and the pelvis) get the same weights where they overlap and bend as one
             // cloth. Without mesh.csv the rig keeps its rigid parts.
-            val meshRows = if (mesh) runCatching { csv(Res.readBytes("files/kai/mesh.csv").decodeToString()) }.getOrNull() else null
-            if (mesh && meshRows == null) println("StoryRig: no files/kai/mesh.csv, drawing rigid parts")
+            val meshRows = if (mesh) runCatching { csv(Res.readBytes("$dir/mesh.csv").decodeToString()) }.getOrNull() else null
+            if (mesh && meshRows == null) println("StoryRig: no $dir/mesh.csv, drawing rigid parts")
             if (meshRows != null) {
                 val groups = meshRows.filter { it[0] == "group" }.map {
                     MeshGroup(it[1], it[3].split(';'), it[4].split(';'), it[2].toFloat())
@@ -256,9 +257,9 @@ class KaiRig(
         player = ClipPlayer(sk, clips, { a.boneOrNull(it) }) {
             when (it) { "shoulder_near" -> hangNear; "shoulder_far" -> hangFar; else -> 0f }
         }
-        mouths = MOUTHS.map { sprite(it) }.toTypedArray()
-        eyesNear = EYES.map { sprite("eye_near_$it") }.toTypedArray()
-        eyesFar = EYES.map { sprite("eye_far_$it") }.toTypedArray()
+        mouths = MOUTHS.map { spriteOr(it, "mouth_smile") }.toTypedArray()
+        eyesNear = EYES.map { spriteOr("eye_near_$it", "eye_near_open") }.toTypedArray()
+        eyesFar = EYES.map { spriteOr("eye_far_$it", "eye_far_open") }.toTypedArray()
     }
 
     /** Direction from the bone's pivot to the centre of its drawn parts (rest pose = local space). */
@@ -279,6 +280,9 @@ class KaiRig(
         val dx = a.pivotX[wrist] - a.pivotX[shoulder]; val dy = a.pivotY[wrist] - a.pivotY[shoulder]
         return 90f - kotlin.math.atan2(dy, dx) / DEG2RAD
     }
+
+    /** [name]'s sprite, or [fallback]'s when the character has no such expression (no face sheet yet). */
+    private fun spriteOr(name: String, fallback: String) = sprite(if (a.parts.any { it.name == name }) name else fallback)
 
     /** Sprite in its bone's local space: top-left relative to the bone's rest pivot. */
     private fun sprite(name: String): Sprite {

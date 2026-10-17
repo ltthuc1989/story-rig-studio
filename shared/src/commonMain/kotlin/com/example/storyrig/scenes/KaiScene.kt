@@ -31,9 +31,11 @@ import kotlin.math.sin
  * `kai`: first look at bitmap characters (SPIKE.md P5 groundwork, not the full P5 yet: no audio clock, karaoke
  * or confetti). [SceneConfig.count] Kais dance to a 120 BPM beat, swap mouths every 80-120 ms and blink.
  */
-class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, private val assets: KaiAssets) : Scene {
+class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, private val cast: List<KaiAssets>) : Scene {
+    /** First of the cast: what the complexity line reports. */
+    private val assets = cast[0]
     /** `--es art mesh`: arms, legs, torso and pelvis as skinned meshes; anything else: rigid bitmap parts. */
-    private val mesh = cfg.art == "mesh" && assets.meshes.isNotEmpty() && meshDrawSupported()
+    private val mesh = cfg.art == "mesh" && cast.all { it.meshes.isNotEmpty() } && meshDrawSupported()
     override val name = if (mesh) "kai mesh_dance (preview)" else "kai bitmap_dance (preview)"
     override val stats = RenderStats()
     override val layerCount = 0
@@ -48,8 +50,8 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
     private val background: Array<Shape>
     private val shadow: Array<Shape>
     private val scale: Float
-    /** Root pivot height above the ground line, in character px (from the cut data). */
-    private val rootY = assets.rootToSole + SOLE_LIFT
+    /** Root pivot height above the ground line per character, in character px (from the cut data). */
+    private val rootY = FloatArray(cfg.count.coerceIn(1, 12)) { cast[it % cast.size].rootToSole + SOLE_LIFT }
     private val homeX = FloatArray(n)
     private val nextMouth = FloatArray(n)
     private val nextBlink = FloatArray(n)
@@ -70,7 +72,7 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
     init {
         val start = uptimeMillis()
         if (cfg.art == "mesh" && !mesh) logInfo("art=mesh unavailable (drawVertices needs API 29+), drawing bitmap parts")
-        kais = Array(n) { KaiRig(assets, cfg.antiAlias, phase = it * .7f, useMeshes = mesh) }
+        kais = Array(n) { KaiRig(cast[it % cast.size], cfg.antiAlias, phase = it * .7f, useMeshes = mesh) }
         feetNear = Array(n) { FootLock(kais[it].sk, kais[it].hipN, kais[it].kneeN, kais[it].ankleN) }
         feetFar = Array(n) { FootLock(kais[it].sk, kais[it].hipF, kais[it].kneeF, kais[it].ankleF) }
         val art = ArtBuilder(PathCache(), cfg.antiAlias)
@@ -94,7 +96,7 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
             nextMouth[i] = rng.range(0f, 120f)
             nextBlink[i] = rng.range(800f, 3000f)
         }
-        perf.loadMs = assets.loadMs + (uptimeMillis() - start)
+        perf.loadMs = cast.sumOf { it.loadMs.toDouble() }.toFloat() + (uptimeMillis() - start)
     }
 
     override fun complexity(): String {
@@ -129,7 +131,7 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
             val b = beat - i * .04f
             val bar = (b / SWITCH_BEATS).toInt().coerceAtLeast(0)
             k.player.play((i + bar) % DanceClips.ALL.size, bar * SWITCH_BEATS, fadeBeats = .5f)
-            k.reset(homeX[i], GROUND_Y - rootY * scale, scale)
+            k.reset(homeX[i], GROUND_Y - rootY[i] * scale, scale)
             feetNear[i].captureGround(); feetFar[i].captureGround()
             k.player.apply(b)
         } else {
@@ -151,7 +153,7 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
         val ph = (beat + i * .15f) * PI.toFloat()
         val s = sin(ph)
         val bounce = abs(s)
-        k.reset(homeX[i], GROUND_Y - rootY * scale - 22f * bounce, scale)
+        k.reset(homeX[i], GROUND_Y - rootY[i] * scale - 22f * bounce, scale)
         k.rot(k.torso, 4f * sin(ph * .5f))
         k.rot(k.head, 6f * sin(ph + .6f))
         when (i % 3) {

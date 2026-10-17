@@ -30,6 +30,8 @@ class SceneConfig(private val args: Map<String, String>) {
     val seed = args["seed"]?.toLongOrNull() ?: 7L
     /** "seat": Ben starts at the log instead of walking in, so benchmark taps hit known spots. */
     val start = args["start"] ?: "walk"
+    /** Characters in scenes that take a cast (`kai`): `--es char mia,leo` uses files/mia, files/leo in turn. */
+    val chars = (args["char"] ?: "kai").split(',').map { it.trim() }.filter { it.isNotEmpty() }.ifEmpty { listOf("kai") }
     /** Number of characters in scenes that take one (`kai`). */
     val count = (args["count"]?.toIntOrNull() ?: 5).coerceIn(1, 12)
     /** false: no per-frame redraw (allocation bisecting only). */

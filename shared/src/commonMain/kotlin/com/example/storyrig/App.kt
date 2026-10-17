@@ -48,19 +48,22 @@ import com.example.storyrig.scenes.LakeScene
 import kotlinx.coroutines.delay
 
 fun createScene(cfg: SceneConfig, perf: PerfStats, assets: Any?): Scene = when (cfg.scene) {
-    "kai" -> KaiScene(cfg, perf, assets as KaiAssets)
+    "kai" -> @Suppress("UNCHECKED_CAST") KaiScene(cfg, perf, assets as List<KaiAssets>)
     // p1, p2, p4 arrive on day 2-3
     else -> LakeScene(cfg, perf)
 }
 
 /** Assets a scene needs before it can be built (image decoding is suspend). Vector scenes need none. */
 suspend fun loadSceneAssets(cfg: SceneConfig): Any? = when (cfg.scene) {
-    "kai" -> KaiAssets.load(
-        mesh = cfg.art == "mesh",
-        screenScale = KaiScene.scaleFor(cfg.count),
-        cellPx = cfg.meshPx,
-        block = if (cfg.meshGrid == "uniform") 1 else 4,
-    )
+    "kai" -> cfg.chars.map { name ->
+        KaiAssets.load(
+            name,
+            mesh = cfg.art == "mesh",
+            screenScale = KaiScene.scaleFor(cfg.count),
+            cellPx = cfg.meshPx,
+            block = if (cfg.meshGrid == "uniform") 1 else 4,
+        )
+    }
     else -> null
 }
 
