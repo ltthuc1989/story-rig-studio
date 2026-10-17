@@ -48,6 +48,8 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
     private val background: Array<Shape>
     private val shadow: Array<Shape>
     private val scale: Float
+    /** Root pivot height above the ground line, in character px (from the cut data). */
+    private val rootY = assets.rootToSole + SOLE_LIFT
     private val homeX = FloatArray(n)
     private val nextMouth = FloatArray(n)
     private val nextBlink = FloatArray(n)
@@ -127,7 +129,7 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
             val b = beat - i * .04f
             val bar = (b / SWITCH_BEATS).toInt().coerceAtLeast(0)
             k.player.play((i + bar) % DanceClips.ALL.size, bar * SWITCH_BEATS, fadeBeats = .5f)
-            k.reset(homeX[i], GROUND_Y - ROOT_TO_SOLE * scale, scale)
+            k.reset(homeX[i], GROUND_Y - rootY * scale, scale)
             feetNear[i].captureGround(); feetFar[i].captureGround()
             k.player.apply(b)
         } else {
@@ -149,7 +151,7 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
         val ph = (beat + i * .15f) * PI.toFloat()
         val s = sin(ph)
         val bounce = abs(s)
-        k.reset(homeX[i], GROUND_Y - ROOT_TO_SOLE * scale - 22f * bounce, scale)
+        k.reset(homeX[i], GROUND_Y - rootY * scale - 22f * bounce, scale)
         k.rot(k.torso, 4f * sin(ph * .5f))
         k.rot(k.head, 6f * sin(ph + .6f))
         when (i % 3) {
@@ -217,7 +219,7 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
         private const val BEAT_MS = 500f
         private const val SWITCH_BEATS = 8f
         private const val GROUND_Y = 960f
-        /** ref.png: pelvis centre (root pivot) to the soles. */
-        private const val ROOT_TO_SOLE = 291f
+        /** Soles sit this far (character px) above the shadow's centre line, so the shadow shows under them. */
+        private const val SOLE_LIFT = 11f
     }
 }
