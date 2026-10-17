@@ -35,6 +35,7 @@ fun main(args: Array<String>) {
         "cutref" -> cutRef(File(args[1]), File(args[2]), File(args[3]))
         "cutauto" -> cutAuto(File(args[1]), File(args[2]), File(args[3]), compareKai = args.getOrNull(4) == "kai")
         "autotest" -> autoTest(File(args[1]), File(args[2]))
+        "mannequin" -> drawMannequin(args[1], File(args[2]))
         "facetest" -> faceLayoutTest(File(args[1]), File(args[2]))
         else -> println("usage: scan <sheet.png> <outDir> | build|cutref|cutauto <geminiDir> <outDir> <previewDir> | autotest|facetest <geminiDir> <outRoot>")
     }
