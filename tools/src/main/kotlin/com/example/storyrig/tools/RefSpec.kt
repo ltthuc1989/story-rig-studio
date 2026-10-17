@@ -44,12 +44,12 @@ class RefSpec(
     val seedThighNear: Pt, val seedThighFar: Pt,
     val seedLegNear: Pt, val seedLegFar: Pt,
     /** Rough areas of the painted features to erase; the exact boxes come from what is found inside. */
-    val eyeNearArea: Box,
-    val eyeFarArea: Box,
+    val eyeNearArea: Box?,
+    val eyeFarArea: Box?,
     /** Null when the brows cannot be told apart (hidden by a fringe, joined to the hair): they stay painted. */
     val browNearArea: Box?,
     val browFarArea: Box?,
-    val mouthArea: Box,
+    val mouthArea: Box?,
     val colours: CutColours,
     /** How far (RGB L1) a painted feature's colour is from the skin. */
     val featureContrast: Int = 110,
@@ -58,6 +58,10 @@ class RefSpec(
      * (the real hip joints, hidden under the skirt). Null: the hips turn on their cut lines.
      */
     val hipPivotY: Float? = null,
+    /** "3q" (three-quarter, facing right), "front" or "back": picks the draw order; face sheets are 3q only. */
+    val view: String = "3q",
+    /** Cut the hair into its own part (it sways); off for a back view, where the head is all hair. */
+    val splitHair: Boolean = true,
 )
 
 /** Colour tests used where parts touch with no cut line between them. */

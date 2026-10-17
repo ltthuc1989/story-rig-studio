@@ -219,9 +219,10 @@ class KaiRig(
     /** Dance clips (data in [DanceClips]); run after [reset], before [motion]. */
     val player: ClipPlayer
 
-    val mouth: BitmapPart
-    val eyeNear: BitmapPart
-    val eyeFar: BitmapPart
+    /** Null in a view without a face (seen from behind); the arrays below are then empty. */
+    val mouth: BitmapPart?
+    val eyeNear: BitmapPart?
+    val eyeFar: BitmapPart?
     val mouths: Array<Sprite>
     val eyesNear: Array<Sprite>
     val eyesFar: Array<Sprite>
@@ -250,9 +251,9 @@ class KaiRig(
             items += bp
         }
         rig = Rig(sk, items.toTypedArray())
-        mouth = byName.getValue("mouth_smile")
-        eyeNear = byName.getValue("eye_near_open")
-        eyeFar = byName.getValue("eye_far_open")
+        mouth = byName["mouth_smile"]
+        eyeNear = byName["eye_near_open"]
+        eyeFar = byName["eye_far_open"]
         val springs = HumanoidMotion.springs { a.boneOrNull(it) }
         for (s in springs) massDir(s)
         motion = SecondaryMotion(sk, springs)
@@ -262,9 +263,9 @@ class KaiRig(
         player = ClipPlayer(sk, clips, { a.boneOrNull(it) }) {
             when (it) { "shoulder_near" -> hangNear; "shoulder_far" -> hangFar; else -> 0f }
         }
-        mouths = MOUTHS.map { spriteOr(it, "mouth_smile") }.toTypedArray()
-        eyesNear = EYES.map { spriteOr("eye_near_$it", "eye_near_open") }.toTypedArray()
-        eyesFar = EYES.map { spriteOr("eye_far_$it", "eye_far_open") }.toTypedArray()
+        mouths = if (mouth == null) emptyArray() else MOUTHS.map { spriteOr(it, "mouth_smile") }.toTypedArray()
+        eyesNear = if (eyeNear == null) emptyArray() else EYES.map { spriteOr("eye_near_$it", "eye_near_open") }.toTypedArray()
+        eyesFar = if (eyeFar == null) emptyArray() else EYES.map { spriteOr("eye_far_$it", "eye_far_open") }.toTypedArray()
     }
 
     /** Direction from the bone's pivot to the centre of its drawn parts (rest pose = local space). */

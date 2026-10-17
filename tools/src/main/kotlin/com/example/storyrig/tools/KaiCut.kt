@@ -33,7 +33,10 @@ fun main(args: Array<String>) {
         "scan" -> scan(File(args[1]), File(args[2]))
         "build" -> build(File(args[1]), File(args[2]), File(args[3]))
         "cutref" -> cutRef(File(args[1]), File(args[2]), File(args[3]))
-        "cutauto" -> cutAuto(File(args[1]), File(args[2]), File(args[3]), compareKai = args.getOrNull(4) == "kai")
+        // cutauto <dir> <out> <preview> [kai | front | back]: front/back cut view_<v>.png against rig_<v>.png
+        "cutauto" -> args.getOrNull(4).let { v ->
+            cutAuto(File(args[1]), File(args[2]), File(args[3]), compareKai = v == "kai", view = if (v == "front" || v == "back") v else "3q")
+        }
         "autotest" -> autoTest(File(args[1]), File(args[2]))
         "mannequin" -> drawMannequin(args[1], File(args[2]))
         "facetest" -> faceLayoutTest(File(args[1]), File(args[2]))
@@ -275,7 +278,18 @@ val drawOrder = listOf(
     "arm_upper_near", "arm_fore_near", "hand_near",
 )
 
-internal fun writeOut(outDir: File, bones: List<Bone>, parts: Map<String, Part>) {
+/** Front and back views: neither arm is behind the other, both go behind the torso so the shoulder cuts hide. */
+val drawOrderFrontBack = listOf(
+    "arm_upper_far", "arm_fore_far", "hand_far",
+    "arm_upper_near", "arm_fore_near", "hand_near",
+    "shin_far", "shoe_far", "thigh_far",
+    "shin_near", "shoe_near", "thigh_near",
+    "pelvis", "torso", "head", "nose",
+    "eye_near_open", "eye_far_open", "brow_near", "brow_far", "mouth_smile",
+    "hair",
+)
+
+internal fun writeOut(outDir: File, bones: List<Bone>, parts: Map<String, Part>, drawOrder: List<String> = com.example.storyrig.tools.drawOrder) {
     val partsDir = File(outDir, "parts")
     partsDir.deleteRecursively()
     for (p in parts.values) p.piece.img.save(File(partsDir, "${p.name}.png"))
@@ -295,7 +309,7 @@ internal fun writeOut(outDir: File, bones: List<Bone>, parts: Map<String, Part>)
     println("wrote ${parts.size} parts, ${bones.size} bones to $outDir")
 }
 
-private fun renderPose(ref: Img, bones: List<Bone>, parts: Map<String, Part>, angles: Map<String, Double>, swap: Map<String, String> = emptyMap(), pivots: Boolean = false): BufferedImage {
+private fun renderPose(ref: Img, bones: List<Bone>, parts: Map<String, Part>, angles: Map<String, Double>, swap: Map<String, String> = emptyMap(), pivots: Boolean = false, drawOrder: List<String> = com.example.storyrig.tools.drawOrder): BufferedImage {
     val bi = BufferedImage(ref.w, ref.h, BufferedImage.TYPE_INT_ARGB)
     val g = bi.createGraphics()
     g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
@@ -329,7 +343,7 @@ private fun renderPose(ref: Img, bones: List<Bone>, parts: Map<String, Part>, an
     return bi
 }
 
-internal fun renderPreviews(dir: File, ref: Img, bones: List<Bone>, parts: Map<String, Part>) {
+internal fun renderPreviews(dir: File, ref: Img, bones: List<Bone>, parts: Map<String, Part>, order: List<String> = drawOrder) {
     dir.mkdirs()
     // Pose angles below are relative to "arms hanging straight down", whatever the rest pose is.
     val byName = bones.associateBy { it.name }
@@ -342,11 +356,11 @@ internal fun renderPreviews(dir: File, ref: Img, bones: List<Bone>, parts: Map<S
         "shoulder_near" to (m["shoulder_near"] ?: 0.0) + hangN,
         "shoulder_far" to (m["shoulder_far"] ?: 0.0) + hangF,
     )
-    val rest = renderPose(ref, bones, parts, emptyMap())
+    val rest = renderPose(ref, bones, parts, emptyMap(), drawOrder = order)
     val side = BufferedImage(ref.w * 2, ref.h, BufferedImage.TYPE_INT_ARGB)
     side.createGraphics().apply { drawImage(ref.toBuffered(), 0, 0, null); drawImage(rest, ref.w, 0, null); dispose() }
     ImageIO.write(side, "png", File(dir, "rest_vs_ref.png"))
-    ImageIO.write(renderPose(ref, bones, parts, emptyMap(), pivots = true), "png", File(dir, "pivots.png"))
+    ImageIO.write(renderPose(ref, bones, parts, emptyMap(), pivots = true, drawOrder = order), "png", File(dir, "pivots.png"))
     // Sign: positive = clockwise on screen.
     val dance = mapOf(
         "torso" to -4.0, "head" to 8.0,
@@ -356,7 +370,7 @@ internal fun renderPreviews(dir: File, ref: Img, bones: List<Bone>, parts: Map<S
         "hip_far" to -15.0, "knee_far" to 20.0,
     )
     ImageIO.write(
-        renderPose(ref, bones, parts, relax(dance), swap = mapOf("mouth_smile" to "mouth_laugh", "eye_near_open" to "eye_near_happy", "eye_far_open" to "eye_far_happy").filterValues { it in parts }),
+        renderPose(ref, bones, parts, relax(dance), swap = mapOf("mouth_smile" to "mouth_laugh", "eye_near_open" to "eye_near_happy", "eye_far_open" to "eye_far_happy").filterValues { it in parts }, drawOrder = order),
         "png", File(dir, "pose_dance.png"),
     )
     val bend = mapOf(
@@ -365,5 +379,5 @@ internal fun renderPreviews(dir: File, ref: Img, bones: List<Bone>, parts: Map<S
         "hip_near" to -45.0, "knee_near" to 60.0, "ankle_near" to -20.0,
         "hip_far" to 30.0, "knee_far" to 45.0, "ankle_far" to 20.0,
     )
-    ImageIO.write(renderPose(ref, bones, parts, relax(bend), swap = mapOf("mouth_smile" to "mouth_o", "eye_near_open" to "eye_near_wide", "eye_far_open" to "eye_far_wide").filterValues { it in parts }), "png", File(dir, "pose_bend.png"))
+    ImageIO.write(renderPose(ref, bones, parts, relax(bend), swap = mapOf("mouth_smile" to "mouth_o", "eye_near_open" to "eye_near_wide", "eye_far_open" to "eye_far_wide").filterValues { it in parts }, drawOrder = order), "png", File(dir, "pose_bend.png"))
 }

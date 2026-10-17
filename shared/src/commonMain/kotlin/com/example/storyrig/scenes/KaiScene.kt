@@ -188,10 +188,11 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
     }
 
     private fun face(k: KaiRig, i: Int) {
-        if (nowMs >= nextMouth[i]) {
+        val mouth = k.mouth
+        if (mouth != null && nowMs >= nextMouth[i]) {
             var next = (rng.next() * KaiRig.MOUTHS.size).toInt().coerceAtMost(KaiRig.MOUTHS.size - 1)
-            if (k.mouth.sprite === k.mouths[next]) next = (next + 1) % KaiRig.MOUTHS.size
-            k.mouth.sprite = k.mouths[next]
+            if (mouth.sprite === k.mouths[next]) next = (next + 1) % KaiRig.MOUTHS.size
+            mouth.sprite = k.mouths[next]
             nextMouth[i] = nowMs + rng.range(80f, 120f)
         }
         if (nowMs >= nextBlink[i]) {
@@ -199,8 +200,8 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
             nextBlink[i] = nowMs + rng.range(2000f, 4000f)
         }
         val eye = if (nowMs < blinkEnd[i]) KaiRig.EYE_HAPPY else KaiRig.EYE_OPEN
-        k.eyeNear.sprite = k.eyesNear[eye]
-        k.eyeFar.sprite = k.eyesFar[eye]
+        k.eyeNear?.sprite = k.eyesNear[eye]
+        k.eyeFar?.sprite = k.eyesFar[eye]
     }
 
     override fun draw(scope: DrawScope) {

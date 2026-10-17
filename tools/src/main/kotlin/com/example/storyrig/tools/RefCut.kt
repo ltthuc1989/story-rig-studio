@@ -259,7 +259,7 @@ internal fun cutRef(dir: File, outDir: File, previewDir: File) = cutWith(dir, ou
 
 internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
     val col = S.colours
-    val ref = Img.load(File(dir, "ref.png"))
+    val ref = Img.load(File(dir, if (S.view == "3q") "ref.png" else "view_${S.view}.png"))
     val img = defringe(keyMagenta(ref))
     val cv = Canvas(img.w, img.h)
     for (s in listOf(S.neck, S.shoulderNear, S.shoulderFar, S.hipNear, S.hipFar, S.seam, S.shoes)) cv.block(s)
@@ -396,28 +396,33 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
     // Head (with hair and nose): erase the painted eyes, brows, mouth; what was found gives the face boxes.
     val head = pieceOf(img, headM)
     val found = LinkedHashMap<String, Pair<Box, Piece>>()
-    found["eye_near_open"] = eraseFeature(head, S.eyeNearArea, col.skin, S.featureContrast)
-    found["eye_far_open"] = eraseFeature(head, S.eyeFarArea, col.skin, S.featureContrast)
+    S.eyeNearArea?.let { found["eye_near_open"] = eraseFeature(head, it, col.skin, S.featureContrast) }
+    S.eyeFarArea?.let { found["eye_far_open"] = eraseFeature(head, it, col.skin, S.featureContrast) }
     S.browNearArea?.let { found["brow_near"] = eraseFeature(head, it, col.skin, S.featureContrast) }
     S.browFarArea?.let { found["brow_far"] = eraseFeature(head, it, col.skin, S.featureContrast) }
-    found["mouth_smile"] = eraseFeature(head, S.mouthArea, col.skin, S.featureContrast)
+    S.mouthArea?.let { found["mouth_smile"] = eraseFeature(head, it, col.skin, S.featureContrast) }
     for ((k, f) in found) println("  $k found at ${f.first.x0},${f.first.y0}-${f.first.x1},${f.first.y1}")
     parts["head"] = Part("head", "head", head)
-    parts["hair"] = Part("hair", "hair", hairOf(head, S.seedHair, col.hair, col.hairEdge))
-    bones += Bone("hair", "head", S.hairPivot.x, S.hairPivot.y)
+    if (S.splitHair) {
+        parts["hair"] = Part("hair", "hair", hairOf(head, S.seedHair, col.hair, col.hairEdge))
+        bones += Bone("hair", "head", S.hairPivot.x, S.hairPivot.y)
+    }
     // Skin colour (median of the head's skin pixels) for the face sheets' shape checks.
-    val skinPx = head.img.px.filter { a(it) > 200 && col.skin(it) }
-    require(skinPx.isNotEmpty()) { "no skin on the head" }
-    fun med(f: (Int) -> Int) = skinPx.map(f).sorted()[skinPx.size / 2]
-    addFaceParts(dir, parts, found.mapValues { it.value.first }, skin = argb(255, med(::r), med(::g), med(::b)))
+    // Face sheets are drawn for the three-quarter view; other views keep their own painted features only.
+    if (S.view == "3q") {
+        val skinPx = head.img.px.filter { a(it) > 200 && col.skin(it) }
+        require(skinPx.isNotEmpty()) { "no skin on the head" }
+        fun med(f: (Int) -> Int) = skinPx.map(f).sorted()[skinPx.size / 2]
+        addFaceParts(dir, parts, found.mapValues { it.value.first }, skin = argb(255, med(::r), med(::g), med(::b)))
+    }
     // Default sprites are ref.png's own features; the sheets only add the other expressions.
     for ((k, f) in found) parts[k] = Part(k, "head", f.second)
 
-    writeOut(outDir, bones, parts)
+    writeOut(outDir, bones, parts, if (S.view == "3q") drawOrder else drawOrderFrontBack)
     // Character facts for the app (height), kept next to the character's prompts.
     File(dir.parentFile, "character.csv").takeIf { it.exists() }?.copyTo(File(outDir, "character.csv"), overwrite = true)
     writeMesh(outDir, bones, parts, BodyMeasure(torsoHalf, hemY, elbowHalf.average().toFloat()))
-    renderPreviews(previewDir, ref, bones, parts)
+    renderPreviews(previewDir, ref, bones, parts, if (S.view == "3q") drawOrder else drawOrderFrontBack)
 }
 
 /** regions.png: every region in its own colour, cut lines in black, unassigned pixels as they are. */

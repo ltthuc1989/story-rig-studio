@@ -1,0 +1,24 @@
+# Joints of the mannequin in rig_front.png (1024x1024 px, magenta background), from tools Mannequin.kt (centre line x=512).
+# Symmetric: "near" = viewer's left, "far" = viewer's right (only names; in a front view neither side is behind).
+# name,x,y,meaning
+head_centre,512,235,centre of the head circle
+neck_top,512,360,bottom of the head circle
+neck_bottom,512,385,top of the torso (neck cut)
+shoulder_near,412,431,arm axis where it crosses the torso side
+armpit_near,412,467,arm's lower edge meets the torso side
+hand_near,190,570,centre of the hand circle
+shoulder_far,612,431,arm axis where it crosses the torso side
+armpit_far,612,467,arm's lower edge meets the torso side
+hand_far,834,570,centre of the hand circle
+waist,512,620,torso bottom / pelvis top on the body axis
+root,512,655,middle of the pelvis
+hip_near,467,690,leg axis on the bottom of the pelvis (hip cut line)
+hip_far,557,690,leg axis on the bottom of the pelvis (hip cut line)
+crotch,512,690,top of the gap between the legs
+ankle_near,455,900,bottom end of the leg capsule
+foot_near,440,918,centre of the foot ellipse
+ankle_far,569,900,bottom end of the leg capsule
+foot_far,584,918,centre of the foot ellipse
+gap_arm_near,360,520,background between the arm and the torso
+gap_arm_far,664,520,background between the arm and the torso
+gap_legs,512,800,background between the legs

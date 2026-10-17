@@ -126,7 +126,8 @@ private fun fitX(pts: List<Pt>): Pair<Float, Float> {
 /** Measurements kept for the report: the template guess of each point. */
 class AutoResult(val spec: RefSpec, val guesses: Map<String, Pt>, val sil: Silhouette)
 
-fun autoSpec(img: Img, template: RigTemplate = RigTemplate.load(TEMPLATE), debug: Boolean = false): AutoResult {
+fun autoSpec(img: Img, template: RigTemplate = RigTemplate.load(TEMPLATE), debug: Boolean = false, view: String = "3q"): AutoResult {
+    val face = view != "back"
     val sil = Silhouette(img)
     val tm = TemplateMap(template, sil)
     val s = tm.s
@@ -443,7 +444,9 @@ fun autoSpec(img: Img, template: RigTemplate = RigTemplate.load(TEMPLATE), debug
         return pal.maxBy { c -> px.count { dist(img.px[it], c) < 24 } }
     }
     val headH = neckY - topY
-    val skinCol = mostCommon(headPx.filter { val y = it / sil.w; y >= topY + .55f * headH && y <= topY + .85f * headH })
+    // Seen from behind the head is hair: the skin is the neck's colour.
+    val skinCol = if (!face) img[bodyX, narrowY]
+        else mostCommon(headPx.filter { val y = it / sil.w; y >= topY + .55f * headH && y <= topY + .85f * headH })
     var seedHair = Pt(headC.x.roundToInt().toFloat(), topY + (12 * s).roundToInt().toFloat())
     var hairCol = img[seedHair.x.toInt(), seedHair.y.toInt()]
     if (dist(hairCol, skinCol) < 90) {
@@ -521,7 +524,7 @@ fun autoSpec(img: Img, template: RigTemplate = RigTemplate.load(TEMPLATE), debug
     val round = blobs.filter { it.bh.toFloat() / it.bw in 0.6f..1.8f }
     var eyes: List<Blob> = emptyList()
     var bestScore = 0
-    for (i in round.indices) for (j in round.indices) {
+    if (face) for (i in round.indices) for (j in round.indices) {
         val a0 = round[i]; val b0 = round[j]
         if (a0.cx >= b0.cx) continue
         val h = max(a0.bh, b0.bh); val w = max(a0.bw, b0.bw)
@@ -530,13 +533,14 @@ fun autoSpec(img: Img, template: RigTemplate = RigTemplate.load(TEMPLATE), debug
         val score = min(a0.area, b0.area)
         if (score > bestScore) { bestScore = score; eyes = listOf(a0, b0) }
     }
-    require(eyes.size == 2) { "could not find two eyes" }
+    require(!face || eyes.size == 2) { "could not find two eyes" }
     fun browOf(e: Blob) = blobs.filter { it !== e && it.y1 < e.y0 && abs(it.cx - e.cx) < e.bw && it.bw > 1.5f * it.bh }.minByOrNull { e.y0 - it.y1 }
         .also { if (it == null) log("WARNING no brow above the eye at ${e.cx},${e.cy}: brows stay painted on the head (not swappable)") }
-    val browN = browOf(eyes[0]); val browF = browOf(eyes[1])
-    val eyeBottom = eyes.maxOf { it.cy } + 0.6f * eyes.maxOf { it.bh }
-    val mouth = blobs.filter { it.cy > eyeBottom && it.cx in eyes[0].cx..eyes[1].cx && it.bw > it.bh }.maxByOrNull { it.bw }
-        ?: error("no mouth found")
+    val browN = eyes.getOrNull(0)?.let(::browOf); val browF = eyes.getOrNull(1)?.let(::browOf)
+    val mouth = if (!face) null else {
+        val eyeBottom = eyes.maxOf { it.cy } + 0.6f * eyes.maxOf { it.bh }
+        blobs.filter { it.cy > eyeBottom && it.cx in eyes[0].cx..eyes[1].cx && it.bw > it.bh }.maxByOrNull { it.bw } ?: error("no mouth found")
+    }
     // Search area of each feature: its box plus a margin that stays clear of every other blob.
     fun area(f: Blob): Box {
         var pad = 8
@@ -569,18 +573,21 @@ fun autoSpec(img: Img, template: RigTemplate = RigTemplate.load(TEMPLATE), debug
         seedArmNear = onPt(armNear.elbow.x, armNear.elbow.y), seedArmFar = onPt(armFar.elbow.x, armFar.elbow.y),
         seedThighNear = onPt(jNear.seedThigh.x, jNear.seedThigh.y), seedThighFar = onPt(jFar.seedThigh.x, jFar.seedThigh.y),
         seedLegNear = onPt(jNear.seedLeg.x, jNear.seedLeg.y, legAllow), seedLegFar = onPt(jFar.seedLeg.x, jFar.seedLeg.y, legAllow),
-        eyeNearArea = area(eyes[0]), eyeFarArea = area(eyes[1]),
-        browNearArea = browN?.let(::area), browFarArea = browF?.let(::area), mouthArea = area(mouth),
+        eyeNearArea = eyes.getOrNull(0)?.let(::area), eyeFarArea = eyes.getOrNull(1)?.let(::area),
+        browNearArea = browN?.let(::area), browFarArea = browF?.let(::area), mouthArea = mouth?.let(::area),
         colours = CutColours(arm = { true }, leg = legAllow, pelvis = isGarment, skin = isSkin, hair = isHair, hairEdge = isHairEdge),
         featureContrast = contrast,
         hipPivotY = if (skirt) hipY.toFloat() else null,
+        view = view, splitHair = face,
     )
     return AutoResult(spec, guesses, sil)
 }
 
-internal fun cutAuto(dir: File, outDir: File, previewDir: File, compareKai: Boolean) {
-    val img = defringe(keyMagenta(Img.load(File(dir, "ref.png"))))
-    val res = autoSpec(img, debug = true)
+internal fun cutAuto(dir: File, outDir: File, previewDir: File, compareKai: Boolean, view: String = "3q") {
+    val image = if (view == "3q") "ref.png" else "view_$view.png"
+    val template = if (view == "3q") TEMPLATE else File("assets/templates/rig_$view.png")
+    val img = defringe(keyMagenta(Img.load(File(dir, image))))
+    val res = autoSpec(img, RigTemplate.load(template), debug = true, view = view)
     if (compareKai) compareWithKai(res.spec)
     drawPoints(File(previewDir, "points.png"), img, res, if (compareKai) KaiRefSpec.spec() else null)
     cutWith(dir, outDir, previewDir, res.spec)
@@ -615,9 +622,9 @@ fun compareWithKai(auto: RefSpec, expected: RefSpec = KaiRefSpec.spec(), label: 
     println("armNearRadii         ${auto.armNearRadii.joinToString { "%.0f".format(it) }}   ${expected.armNearRadii.joinToString { "%.0f".format(it) }}")
     println("armFarRadii          ${auto.armFarRadii.joinToString { "%.0f".format(it) }}   ${expected.armFarRadii.joinToString { "%.0f".format(it) }}")
     fun box(n: String, a: Box, m: Box) = println("%-20s %d,%d-%d,%d   %d,%d-%d,%d".format(n, a.x0, a.y0, a.x1, a.y1, m.x0, m.y0, m.x1, m.y1))
-    box("eyeNearArea", auto.eyeNearArea, expected.eyeNearArea); box("eyeFarArea", auto.eyeFarArea, expected.eyeFarArea)
+    box("eyeNearArea", auto.eyeNearArea!!, expected.eyeNearArea!!); box("eyeFarArea", auto.eyeFarArea!!, expected.eyeFarArea!!)
     auto.browNearArea?.let { box("browNearArea", it, expected.browNearArea!!) }; auto.browFarArea?.let { box("browFarArea", it, expected.browFarArea!!) }
-    box("mouthArea", auto.mouthArea, expected.mouthArea)
+    box("mouthArea", auto.mouthArea!!, expected.mouthArea!!)
 }
 
 /** points.png: template guesses (blue), measured cut lines and joints (green), and [expected] ones (red) if given. */
