@@ -1,0 +1,5 @@
+Edit image 1. Keep its pose, body position, arm angles, leg positions, framing and size exactly as they are: do not move any limb.
+Change only who the character is: make him exactly Kai from image 2 (same face, eyes, eyebrows, nose, hair shape and cowlick, skin tone, proportions of head and body, T-shirt, star patch, shorts, socks, sneakers, colors and art style).
+Only the two backpack straps are visible on the front of the T-shirt; the backpack itself stays hidden behind his body.
+Make the background a plain solid pure magenta (#FF00FF: red 255, green 0, blue 255) over the whole image, with absolutely no shadow under the feet and no ground.
+Absolutely no outlines. No text, no logo, no watermark.

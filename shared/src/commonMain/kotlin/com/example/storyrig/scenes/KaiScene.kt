@@ -1,0 +1,195 @@
+package com.example.storyrig.scenes
+
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.LinearGradientShader
+import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.layer.GraphicsLayer
+import com.example.storyrig.engine.ArtBuilder
+import com.example.storyrig.engine.PathCache
+import com.example.storyrig.engine.PerfStats
+import com.example.storyrig.engine.RenderStats
+import com.example.storyrig.engine.Rng
+import com.example.storyrig.engine.Scene
+import com.example.storyrig.engine.SceneConfig
+import com.example.storyrig.engine.Shape
+import com.example.storyrig.engine.Stage
+import com.example.storyrig.engine.Viewport
+import com.example.storyrig.engine.drawAll
+import com.example.storyrig.engine.hex
+import com.example.storyrig.engine.uptimeMillis
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.min
+import kotlin.math.sin
+
+/**
+ * `kai`: first look at bitmap characters (SPIKE.md P5 groundwork, not the full P5 yet: no audio clock, karaoke
+ * or confetti). [SceneConfig.count] Kais dance to a 120 BPM beat, swap mouths every 80-120 ms and blink.
+ */
+class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, private val assets: KaiAssets) : Scene {
+    override val name = "kai bitmap_dance (preview)"
+    override val stats = RenderStats()
+    override val layerCount = 0
+    override var layers: Array<GraphicsLayer>? = null
+    override var onSubtitle: ((String, String, String) -> Unit)? = null
+
+    private val vp = Viewport(Stage())
+    private val m = Matrix()
+    private val rng = Rng(cfg.seed)
+    private val n = cfg.count
+    private val kais: Array<KaiRig>
+    private val background: Array<Shape>
+    private val shadow: Array<Shape>
+    private val scale: Float
+    private val homeX = FloatArray(n)
+    private val nextMouth = FloatArray(n)
+    private val nextBlink = FloatArray(n)
+    private val blinkEnd = FloatArray(n)
+
+    private var t0Nanos = -1L
+    private var nowMs = 0f
+    private var dtSec = 1f / 60f
+    /** `--es motion 0` turns springs and auto layers off, to compare. */
+    private val layers2 = cfg.flagOf("motion", true)
+    /** `--es clip 0` goes back to the old sine-wave poses, to compare. */
+    private val useClips = cfg.flagOf("clip", true)
+
+    init {
+        val start = uptimeMillis()
+        kais = Array(n) { KaiRig(assets, cfg.antiAlias, phase = it * .7f) }
+        val art = ArtBuilder(PathCache(), cfg.antiAlias)
+        val l = -Stage.BLEED_W / 2f + Stage.SAFE_W / 2f
+        val t = -Stage.BLEED_H / 2f + Stage.SAFE_H / 2f
+        val sky = LinearGradientShader(Offset(0f, t), Offset(0f, 760f), listOf(hex(0x8fd3ff), hex(0xcfefff)))
+        art.rect(l, t, Stage.BLEED_W, 760f - t, hex(0xcfefff), shader = sky)
+        art.ellipse(300f, 820f, 700f, 220f, hex(0x7fd18b))
+        art.ellipse(1500f, 840f, 820f, 240f, hex(0x6cc47a))
+        art.rect(l, 780f, Stage.BLEED_W, Stage.BLEED_H, hex(0x3fbf6b))
+        art.circle(1650f, 170f, 90f, hex(0xffc83d))
+        background = art.build()
+        art.ellipse(0f, 0f, 120f, 18f, hex(0x2a8a4a), alpha = .35f)
+        shadow = art.build()
+
+        // Fit n Kais across the safe area (arms spread ~520 ref px), never taller than ~62% of it.
+        val slot = Stage.SAFE_W / n
+        scale = min(.62f * Stage.SAFE_H / KaiRig.HEIGHT, .95f * slot / 520f)
+        for (i in 0 until n) {
+            homeX[i] = slot * (i + .5f)
+            nextMouth[i] = rng.range(0f, 120f)
+            nextBlink[i] = rng.range(800f, 3000f)
+        }
+        perf.loadMs = assets.loadMs + (uptimeMillis() - start)
+    }
+
+    override fun complexity(): String {
+        val img = assets.atlas.image
+        return "kais=$n bitmap parts/kai=${kais[0].rig.items.size} atlas=${img.width}x${img.height} " +
+            "(${assets.atlas.regionCount} regions, ${(assets.atlas.bytes / 1024f / 1024f).toString().take(4)} MB) " +
+            "assets load=${assets.loadMs.toInt()} ms scale=${scale.toString().take(4)}"
+    }
+
+    override fun update(frameNanos: Long) {
+        stats.reset()
+        if (t0Nanos < 0) t0Nanos = frameNanos
+        val now = (frameNanos - t0Nanos) / 1_000_000f
+        dtSec = ((now - nowMs) / 1000f).coerceIn(0f, .05f)
+        nowMs = now
+        val beat = nowMs / BEAT_MS
+        for (i in 0 until n) pose(i, beat)
+    }
+
+    private fun pose(i: Int, beat: Float) {
+        val k = kais[i]
+        if (useClips) {
+            // Everyone changes dance every 8 beats, on the beat, with a half-beat crossfade; a small offset per
+            // Kai so they are not robot-synchronised.
+            val b = beat - i * .04f
+            val bar = (b / SWITCH_BEATS).toInt().coerceAtLeast(0)
+            k.player.play((i + bar) % DanceClips.ALL.size, bar * SWITCH_BEATS, fadeBeats = .5f)
+            k.reset(homeX[i], GROUND_Y - ROOT_TO_SOLE * scale, scale)
+            k.player.apply(b)
+        } else {
+            sinePose(k, i, beat)
+        }
+        face(k, i)
+        if (layers2) {
+            k.motion.apply(dtSec)
+            k.auto.apply(dtSec)
+        }
+        k.rig.pose(stats)
+    }
+
+    private fun sinePose(k: KaiRig, i: Int, beat: Float) {
+        val ph = (beat + i * .15f) * PI.toFloat()
+        val s = sin(ph)
+        val bounce = abs(s)
+        k.reset(homeX[i], GROUND_Y - ROOT_TO_SOLE * scale - 22f * bounce, scale)
+        k.rot(k.torso, 4f * sin(ph * .5f))
+        k.rot(k.head, 6f * sin(ph + .6f))
+        when (i % 3) {
+            0 -> { // wave
+                k.arm(true, 105f + 12f * s); k.rot(k.elbowN, 30f + 25f * s); k.rot(k.wristN, -15f * s)
+                k.arm(false, -25f); k.rot(k.elbowF, -40f)
+            }
+            1 -> { // arms out and in
+                k.arm(true, 60f + 35f * s); k.rot(k.elbowN, 30f * bounce)
+                k.arm(false, -60f - 35f * s); k.rot(k.elbowF, -30f * bounce)
+            }
+            else -> { // swing
+                k.arm(true, 30f * s); k.rot(k.elbowN, 20f + 20f * s)
+                k.arm(false, 30f * s); k.rot(k.elbowF, -20f + 20f * s)
+            }
+        }
+        k.rot(k.hipN, -12f * bounce); k.rot(k.kneeN, 24f * bounce); k.rot(k.ankleN, -12f * bounce)
+        k.rot(k.hipF, 8f * s); k.rot(k.kneeF, 12f * bounce)
+    }
+
+    private fun face(k: KaiRig, i: Int) {
+        if (nowMs >= nextMouth[i]) {
+            var next = (rng.next() * KaiRig.MOUTHS.size).toInt().coerceAtMost(KaiRig.MOUTHS.size - 1)
+            if (k.mouth.sprite === k.mouths[next]) next = (next + 1) % KaiRig.MOUTHS.size
+            k.mouth.sprite = k.mouths[next]
+            nextMouth[i] = nowMs + rng.range(80f, 120f)
+        }
+        if (nowMs >= nextBlink[i]) {
+            blinkEnd[i] = nowMs + 130f
+            nextBlink[i] = nowMs + rng.range(2000f, 4000f)
+        }
+        val eye = if (nowMs < blinkEnd[i]) KaiRig.EYE_HAPPY else KaiRig.EYE_OPEN
+        k.eyeNear.sprite = k.eyesNear[eye]
+        k.eyeFar.sprite = k.eyesFar[eye]
+    }
+
+    override fun draw(scope: DrawScope) {
+        val canvas = scope.drawContext.canvas
+        vp.fit(scope.size.width, scope.size.height)
+        canvas.save()
+        canvas.translate(vp.ox, vp.oy)
+        canvas.scale(vp.scale, vp.scale)
+        canvas.clipRect(vp.visLeft, vp.visTop, vp.visRight, vp.visBottom)
+        background.drawAll(canvas, 1f, stats)
+        for (i in 0 until n) {
+            canvas.save()
+            canvas.translate(homeX[i], GROUND_Y)
+            canvas.scale(scale * 1.4f, scale * 1.4f)
+            shadow.drawAll(canvas, 1f, stats)
+            canvas.restore()
+            kais[i].rig.draw(canvas, 1f, m, stats)
+        }
+        canvas.restore()
+        stats.commit()
+    }
+
+    override fun pointerDown(px: Float, py: Float, uptime: Long) {}
+    override fun pointerMove(px: Float, py: Float) {}
+    override fun pointerUp(px: Float, py: Float) {}
+
+    private companion object {
+        const val BEAT_MS = 500f
+        const val SWITCH_BEATS = 8f
+        const val GROUND_Y = 960f
+        /** ref.png: pelvis centre (root pivot) to the soles. */
+        const val ROOT_TO_SOLE = 291f
+    }
+}

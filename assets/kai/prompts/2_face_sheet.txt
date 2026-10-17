@@ -1,0 +1,8 @@
+Face parts sheet for lip sync and expressions of the attached character (Kai). Keep exactly the same style, colors, eye design and scale as the face in the attached image, three-quarter view facing right. Square 1:1, highest resolution available.
+Each piece separate, with a large empty gap around it, on a plain solid #FF00FF background. No labels, no text, no ground shadows, no sparkle or star icons.
+Do not draw any skin-colored patch around the pieces: only the eyes, the eyebrows and the mouths themselves.
+Eyes, as near+far pairs (the far eye slightly narrower): open, half closed (a skin-colored eyelid covering the top half), closed happy (a dark curved line like an upside-down U), wide surprised.
+Eyebrows, as near+far pairs: neutral, raised, frowning, sad (angled up in the middle).
+Mouths, all centered on the same point: closed smile (M/B/P), slightly open (E/I), wide open happy (A), small round (O), open showing top teeth (S/T), big open laugh, small downturned sad mouth.
+Absolutely no outlines.
+Art style: polished flat vector illustration for a modern educational app. Every form is built from simple geometric shapes (circles, rounded rectangles, soft triangles) joined with clean, smooth bezier curves. Absolutely no outlines. Bold saturated palette: tomato red #FF5A5F, cobalt blue #2E86DE, sunflower yellow #FFC83D, fresh green #3FBF6B, sky #CFEFFF. Shading is a single flat darker shape per form, no gradients, no texture. Simplified but appealing features: oval eyes with one small highlight, a simple open smile, hands as rounded mitten shapes with a thumb. Light comes from the upper right. Clean, balanced, professional.

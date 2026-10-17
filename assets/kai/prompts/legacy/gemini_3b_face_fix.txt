@@ -1,0 +1,6 @@
+The face sheet is good, keep the same style, scale and eye design. Now draw one more face sheet for the same character, plain solid #FF00FF background, square 1:1, highest resolution available, with only these new pieces:
+1. The nose, exactly as in the first reference image (a small curved line nose, three-quarter view facing right), drawn twice: once alone, once slightly larger.
+2. Surprised set: small round open mouth, near+far eyes wider and rounder than the open eyes, near+far eyebrows raised high.
+3. Sad set: small downturned mouth, near+far eyes half closed and looking down, near+far eyebrows angled up in the middle.
+4. Angry set: small tight frowning mouth, near+far eyes slightly narrowed, near+far eyebrows angled down toward the nose.
+Each piece separate with a large empty gap around it. No ground shadows, no sparkle or star icons, no text, no labels. Absolutely no outlines.

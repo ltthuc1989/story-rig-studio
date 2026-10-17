@@ -1,0 +1,9 @@
+Good style, keep it exactly. Now redraw the parts sheet of the same character with these corrections, same scale, same colors, same plain solid #FF00FF background, square 1:1, highest resolution available:
+1. Every arm must be split into 3 separate pieces: upper arm with the rolled red sleeve, forearm, hand. Do this for both arms (6 arm pieces). Hands look exactly like the hands in the first reference image.
+2. Every leg must be split into 3 separate pieces: thigh (the denim shorts leg with its turned-up cuff, and the bit of skin under it), shin with the sock, sneaker. Do this for both legs (6 leg pieces). Draw each sneaker only once; no extra pair of shoes.
+3. Hair is a separate piece from the head. The head is bald and faceless (keep the ear and the rosy cheeks).
+4. The torso is only the red T-shirt with the star patch and the backpack straps. No backpack body on the torso, no shorts on the torso. Pelvis is its own piece: only the top of the denim shorts (waistband and seat), without the shorts legs, because the shorts legs belong to the thighs.
+5. Keep the neck and the backpack as separate pieces, as before.
+6. Every limb piece ends in a full rounded cap at each joint so the pieces overlap when assembled. No straight cut edges.
+7. No ground shadows, no sparkle or star icons on the background, nothing else on the sheet.
+No text, no labels. Absolutely no outlines.

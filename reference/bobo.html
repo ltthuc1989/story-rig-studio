@@ -1,0 +1,396 @@
+<title>Bobo Hát Và Làm Theo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Be+Vietnam+Pro:wght@400;500;600&display=swap">
+<style>
+/* Layout: sân khấu đồi cỏ 16:9 chiếm trọn chiều ngang, phụ đề lời hát ngay dưới, hàng nút hành động cuối cùng. */
+:root{
+  --bg:#f4f7fb; --surface:#ffffff; --surface-2:#f6f8fc; --ink:#1d2540; --muted:#5b6585;
+  --line:#dde3ef; --accent:#ff6f61; --accent-soft:#ffe6e2; --sky:#5aa9e6;
+  --f-display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10141f; --surface:#181e2e; --surface-2:#1f2638; --ink:#e9edf7; --muted:#a2acc6;
+  --line:#2b3450; --accent:#ff8a7e; --accent-soft:#3d221f; --sky:#7cc0f2; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10141f; --surface:#181e2e; --surface-2:#1f2638; --ink:#e9edf7; --muted:#a2acc6;
+  --line:#2b3450; --accent:#ff8a7e; --accent-soft:#3d221f; --sky:#7cc0f2; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;padding-inline:16px;padding-block:24px 48px}
+.wrap{max-width:1060px;margin:0 auto;display:grid;gap:18px}
+h1{font-family:var(--f-display);font-size:clamp(30px,5vw,46px);font-weight:800;line-height:1.1;margin:0}
+p{margin:0}
+.lede{color:var(--muted);max-width:72ch;margin-top:8px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:22px;overflow:hidden}
+.stage{position:relative;touch-action:pan-y;background:#cfeeff}
+.stage svg{display:block;width:100%;height:auto}
+.sub{padding:14px 20px;border-top:1px solid var(--line);display:grid;gap:4px;min-height:96px}
+.who{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.en{font-family:var(--f-display);font-size:clamp(22px,3.4vw,30px);font-weight:600;line-height:1.25}
+.en .w{border-radius:6px;padding:0 2px}
+.en .w.on{background:var(--accent-soft);color:var(--accent)}
+.vi{color:var(--muted);font-size:14px}
+.ctrl{display:flex;flex-wrap:wrap;gap:8px;padding:12px 20px 18px;border-top:1px solid var(--line);align-items:center}
+button{font:inherit;font-weight:600;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);padding:8px 15px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-size:16px;padding:10px 20px}
+button:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+.note{font-size:13px;color:var(--muted)}
+/* scene motion */
+.drift{animation:drift var(--d,80s) linear infinite}
+@keyframes drift{from{transform:translateX(-240px)}to{transform:translateX(1200px)}}
+.rays{animation:spin 24s linear infinite;transform-box:fill-box;transform-origin:center}
+.rays.fast{animation-duration:2.5s}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sway{animation:sway var(--s,3s) ease-in-out infinite alternate;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes sway{from{transform:rotate(-4deg)}to{transform:rotate(4deg)}}
+.flower{cursor:pointer}
+.flower.pop{animation:pop .5s cubic-bezier(.3,1.8,.5,1)}
+@keyframes pop{40%{transform:scale(1.35)}}
+.flower .head{transform-box:fill-box;transform-origin:center}
+.par{transition:transform .35s ease-out}
+#kid{cursor:pointer}
+@media (prefers-reduced-motion:reduce){.drift,.rays,.sway{animation:none}.par{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Nhân vật nguyên bản · phong cách hoạt hình thiếu nhi tròn mềm, pastel</div>
+    <h1>Bobo Hát Và Làm Theo</h1>
+    <p class="lede">Bobo là nhân vật mình vẽ mới hoàn toàn: hình tròn, không viền, mắt chấm, tay chân là một đường liền nên gập khuỷu, gập gối mềm. Cảnh đồi cỏ có 5 lớp chiều sâu, mây trôi, mặt trời xoay, hoa đung đưa, bướm bay. Nhấn <b>Hát cả bài</b> để Bobo hát và làm từng động tác, hoặc bấm từng nút. Chạm vào Bobo, mặt trời hoặc bông hoa để xem phản ứng.</p>
+  </header>
+
+  <section class="card">
+    <div class="stage" id="stage">
+      <svg id="svg" viewBox="0 0 960 540" role="img" aria-label="Bobo trên đồi cỏ"></svg>
+    </div>
+    <div class="sub" aria-live="polite">
+      <div class="who" id="who">Bobo</div>
+      <div class="en" id="en">Hello! Let's sing and move!</div>
+      <div class="vi" id="vi">Xin chào! Cùng hát và vận động nào!</div>
+    </div>
+    <div class="ctrl">
+      <button class="primary" id="btnSong">▶ Hát cả bài</button>
+      <button data-act="wave">👋 Vẫy tay</button>
+      <button data-act="clap">👏 Vỗ tay</button>
+      <button data-act="stomp">🦶 Dậm chân</button>
+      <button data-act="jump">⬆️ Nhảy</button>
+      <button data-act="turn">🔄 Quay vòng</button>
+      <button data-act="dance">💃 Nhảy múa</button>
+      <button id="btnStop">Dừng</button>
+    </div>
+  </section>
+  <p class="note">Giọng hát dùng giọng đọc của trình duyệt; tiếng vỗ tay, dậm chân, bật nhảy được tạo bằng âm thanh tổng hợp. Toàn bộ nhân vật và cảnh là vector vẽ bằng code: tay chân tính bằng IK hai đoạn từ vị trí bàn tay, bàn chân, nên chỉ cần nói "tay đặt ở đâu" là khuỷu tự gập.</p>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const NS="http://www.w3.org/2000/svg";
+const svg=$("#svg");
+
+/* ================= SCENE ================= */
+const C={skin:"#ffd8b8",skin2:"#f7c19c",hair:"#6b4a3a",shirt:"#ff9a76",shirt2:"#f3845f",shorts:"#5b8bd9",shorts2:"#4a77c2",shoe:"#ff5d73",eye:"#2b2b3a",cheek:"#ff9fa6",mouth:"#8f2d3f",tongue:"#ff7d8f",line:"#b5475a"};
+function flower(x,y,col,id,s=1){return `<g class="flower" data-id="${id}" transform="translate(${x} ${y}) scale(${s})" tabindex="0" role="button" aria-label="bông hoa"><g class="sway" style="--s:${(2.4+Math.random()*1.4).toFixed(2)}s"><path d="M0 0 Q-3 -24 0 -46" stroke="#4caf6a" stroke-width="5" fill="none" stroke-linecap="round"/><ellipse cx="-9" cy="-22" rx="9" ry="4.5" fill="#5cc27a" transform="rotate(-30 -9 -22)"/><g class="head" transform="translate(0 -52)">${[0,72,144,216,288].map(a=>`<ellipse cx="0" cy="-11" rx="8" ry="11" fill="${col}" transform="rotate(${a})"/>`).join("")}<circle r="7.5" fill="#ffd34d"/></g></g></g>`;}
+function tree(x,y,s,c1,c2){return `<g transform="translate(${x} ${y}) scale(${s})"><g class="sway" style="--s:${(3+Math.random()*2).toFixed(2)}s"><rect x="-7" y="-60" width="14" height="62" rx="7" fill="#b07b55"/><circle cy="-88" r="44" fill="${c1}"/><circle cx="-24" cy="-70" r="26" fill="${c2}"/><circle cx="26" cy="-74" r="28" fill="${c2}"/></g></g>`;}
+function cloud(x,y,s,o,d,delay){return `<g class="drift" style="--d:${d}s;animation-delay:${delay}s"><g transform="translate(${x} ${y}) scale(${s})" opacity="${o}" fill="#fff"><ellipse cx="0" cy="0" rx="60" ry="26"/><circle cx="-26" cy="-14" r="26"/><circle cx="14" cy="-24" r="32"/><circle cx="42" cy="-6" r="22"/></g></g>`;}
+
+svg.innerHTML=`
+<defs>
+  <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fd9ff"/><stop offset=".7" stop-color="#dff4ff"/><stop offset="1" stop-color="#f3fbff"/></linearGradient>
+  <radialGradient id="sunG"><stop offset="0" stop-color="#fff2a8"/><stop offset="1" stop-color="#ffd84d"/></radialGradient>
+</defs>
+<rect width="960" height="540" fill="url(#skyG)"/>
+<g class="par" data-d="2" id="L0">
+  <g id="sun" transform="translate(820 104)" style="cursor:pointer" tabindex="0" role="button" aria-label="mặt trời">
+    <g class="rays" id="rays">${Array.from({length:12},(_,i)=>`<rect x="-5" y="-82" width="10" height="24" rx="5" fill="#ffd84d" transform="rotate(${i*30})"/>`).join("")}</g>
+    <circle r="50" fill="url(#sunG)"/>
+    <ellipse cx="-16" cy="-6" rx="5" ry="7" fill="#7a5a1a"/><ellipse cx="16" cy="-6" rx="5" ry="7" fill="#7a5a1a"/>
+    <circle cx="-28" cy="10" r="8" fill="#ffb07a" opacity=".6"/><circle cx="28" cy="10" r="8" fill="#ffb07a" opacity=".6"/>
+    <path id="sunMouth" d="M-14 10 Q0 22 14 10" stroke="#7a5a1a" stroke-width="4" fill="none" stroke-linecap="round"/>
+  </g>
+</g>
+<g class="par" data-d="6" id="L1">
+  ${cloud(120,90,1,.95,90,-20)}${cloud(380,60,.7,.85,120,-70)}${cloud(620,140,.55,.8,100,-45)}${cloud(-80,120,.8,.9,110,-90)}
+  <path d="M-60 340 Q120 250 300 320 Q470 230 660 310 Q820 250 1020 320 V560 H-60Z" fill="#c8ecc0"/>
+</g>
+<g class="par" data-d="14" id="L2">
+  <path d="M-60 380 Q160 300 380 372 Q600 300 820 360 Q930 330 1020 350 V560 H-60Z" fill="#9edc8f"/>
+  ${tree(120,382,.9,"#6cc46f","#5bb562")}${tree(820,360,.75,"#6cc46f","#5bb562")}${tree(905,372,.55,"#79cc78","#66bd69")}
+  <g id="bird" transform="translate(700 335)"><g id="birdBody"><ellipse rx="16" ry="12" fill="#5aa9e6"/><circle cx="12" cy="-8" r="9" fill="#5aa9e6"/><circle cx="15" cy="-10" r="2.4" fill="#2b2b3a"/><path d="M20 -7 l9 2 l-9 3z" fill="#ffb347"/><path d="M-6 -2 q-8 -10 -16 -2" stroke="#3f8ed1" stroke-width="5" fill="none" stroke-linecap="round"/></g></g>
+</g>
+<g class="par" data-d="24" id="L3">
+  <path d="M-60 440 Q240 400 480 430 Q720 400 1020 436 V560 H-60Z" fill="#7fcf74"/>
+  <ellipse id="shadow" cx="480" cy="482" rx="62" ry="10" fill="#2f6b2a" opacity=".18"/>
+  <g id="kid"></g>
+  ${flower(150,470,"#ff8fb1","f1",1)}${flower(230,488,"#b18cf2","f2",.85)}${flower(760,476,"#ffb347","f3",1)}${flower(840,492,"#ff8fb1","f4",.8)}
+</g>
+<g class="par" data-d="40" id="L4">
+  <path d="M-60 520 Q60 490 160 512 Q260 494 360 520 V560 H-60Z" fill="#62bb5d"/>
+  <path d="M640 524 Q760 492 880 514 Q950 500 1020 516 V560 H640Z" fill="#62bb5d"/>
+  <g id="bf1"><g class="wings"><ellipse cx="-8" cy="0" rx="9" ry="12" fill="#ff8fb1"/><ellipse cx="8" cy="0" rx="9" ry="12" fill="#ff8fb1"/></g><rect x="-2" y="-9" width="4" height="18" rx="2" fill="#5b3a2e"/></g>
+  <g id="bf2"><g class="wings"><ellipse cx="-7" cy="0" rx="8" ry="10" fill="#b18cf2"/><ellipse cx="7" cy="0" rx="8" ry="10" fill="#b18cf2"/></g><rect x="-2" y="-8" width="4" height="16" rx="2" fill="#5b3a2e"/></g>
+</g>`;
+
+/* ================= CHARACTER (rubber-hose limbs, 2-bone IK) ================= */
+const kid=$("#kid");
+const MOUTH={
+  rest:`<path d="M-13 -3 Q0 10 13 -3" stroke="${C.line}" stroke-width="4.5" fill="none" stroke-linecap="round"/>`,
+  A:`<path d="M-13 -5 Q0 -8 13 -5 Q11 14 0 15 Q-11 14 -13 -5Z" fill="${C.mouth}"/><ellipse cy="8" rx="7" ry="4" fill="${C.tongue}"/>`,
+  E:`<path d="M-14 -3 Q0 -6 14 -3 Q8 8 0 8 Q-8 8 -14 -3Z" fill="${C.mouth}"/><path d="M-11 -3 Q0 -5 11 -3 L10 0 Q0 -1 -10 0Z" fill="#fff"/>`,
+  O:`<ellipse rx="8" ry="10" fill="${C.mouth}"/><ellipse cy="5" rx="5" ry="3" fill="${C.tongue}"/>`,
+  U:`<ellipse rx="5.5" ry="6.5" fill="${C.mouth}"/>`,
+  MBP:`<path d="M-10 0 Q0 3 10 0" stroke="${C.line}" stroke-width="5" fill="none" stroke-linecap="round"/>`,
+  FV:`<path d="M-12 -2 Q0 -4 12 -2 Q0 6 -12 -2Z" fill="${C.mouth}"/><rect x="-8" y="-4" width="16" height="4" rx="2" fill="#fff"/>`,
+  L:`<path d="M-12 -4 Q0 -7 12 -4 Q9 11 0 12 Q-9 11 -12 -4Z" fill="${C.mouth}"/><ellipse cy="-1" rx="6" ry="3.5" fill="${C.tongue}"/>`,
+  big:`<path d="M-17 -6 Q0 -6 17 -6 Q13 16 0 17 Q-13 16 -17 -6Z" fill="${C.mouth}"/><path d="M-14 -6 Q0 -6 14 -6 L13 -2 Q0 -1 -13 -2Z" fill="#fff"/><ellipse cy="10" rx="8" ry="4" fill="${C.tongue}"/>`
+};
+const armMk=(s,k)=>`<g id="arm${s}"><path id="arm${s}p" fill="none" stroke="${C.skin}" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <g id="hand${s}"><ellipse cx="0" cy="11" rx="12.5" ry="15.5" fill="${C.skin}"/><path d="M-4 17 v6 M3.5 17 v6" stroke="${C.skin2}" stroke-width="2" stroke-linecap="round"/>
+  <ellipse id="thumb${s}" cx="${9*k}" cy="3" rx="5" ry="8" fill="${C.skin}" transform="rotate(${-25*k} ${9*k} 3)"/></g>
+  <circle id="slv${s}" cy="336" r="17" fill="${C.shirt}"/></g>`;
+const earMk=s=>`<g id="ear${s}"><circle cy="262" r="16" fill="${C.skin}"/><circle cy="262" r="8" fill="${C.skin2}" opacity=".7"/></g>`;
+kid.innerHTML=`
+  <defs><clipPath id="headClip"><circle cx="480" cy="250" r="75"/></clipPath></defs>
+  <g id="legs">
+    <g id="legLg"><path id="legL" fill="none" stroke="${C.skin}" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/><ellipse id="shoeL" rx="21" ry="12" fill="${C.shoe}"/></g>
+    <g id="legRg"><path id="legR" fill="none" stroke="${C.skin}" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/><ellipse id="shoeR" rx="21" ry="12" fill="${C.shoe}"/></g>
+  </g>
+  <g id="upper">
+    <g id="armsBack"></g>
+    <g id="torso">
+      <path d="M430 322 Q480 310 530 322 Q546 362 538 400 L422 400 Q414 362 430 322Z" fill="${C.shirt}"/>
+      <path d="M422 388 Q480 398 538 388 L538 400 L422 400Z" fill="${C.shirt2}"/>
+      <path d="M422 386 L538 386 Q544 406 537 418 L492 418 L480 406 L468 418 L423 418 Q416 406 422 386Z" fill="${C.shorts}"/>
+      <path d="M423 410 L468 410 L468 418 L423 418Z M492 410 L537 410 L537 418 L492 418Z" fill="${C.shorts2}"/>
+    </g>
+    <g id="badge"><circle cx="480" cy="356" r="9" fill="#fff" opacity=".85"/><path d="M476 352 l8 8 M484 352 l-8 8" stroke="${C.shirt2}" stroke-width="3" stroke-linecap="round"/></g>
+    <g id="head">
+      <g id="earsBack">${earMk("L")}${earMk("R")}</g>
+      <circle cx="480" cy="250" r="75" fill="${C.hair}"/>
+      <g clip-path="url(#headClip)">
+        <ellipse id="faceSkin" cx="480" cy="262" rx="72" ry="64" fill="${C.skin}"/>
+        <path id="fringe" d="M406 252 Q400 168 480 164 Q560 168 554 252 Q544 214 516 206 Q496 222 474 204 Q450 222 424 212 Q412 230 406 252Z" fill="${C.hair}"/>
+      </g>
+      <path id="whorl" d="M462 204 q18 -16 34 0 q-10 12 -20 4" stroke="#8a654f" stroke-width="5" fill="none" stroke-linecap="round" opacity="0"/>
+      <path id="curl" d="M478 178 q-8 -24 12 -28 q18 -2 13 15 q-4 11 -15 4" stroke="${C.hair}" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <g id="earsFront"></g>
+      <g clip-path="url(#headClip)">
+      <g id="eyes"><g id="eyeL"><ellipse cx="452" cy="258" rx="8.5" ry="11.5" fill="${C.eye}"/><circle cx="455" cy="253" r="3.2" fill="#fff"/></g><g id="eyeR"><ellipse cx="508" cy="258" rx="8.5" ry="11.5" fill="${C.eye}"/><circle cx="511" cy="253" r="3.2" fill="#fff"/></g></g>
+      <g id="eyesHappy" style="display:none"><path id="happyL" d="M443 262 Q452 248 461 262" stroke="${C.eye}" stroke-width="5" fill="none" stroke-linecap="round"/><path id="happyR" d="M499 262 Q508 248 517 262" stroke="${C.eye}" stroke-width="5" fill="none" stroke-linecap="round"/></g>
+      <ellipse id="cheekL" cx="430" cy="284" rx="14" ry="8.5" fill="${C.cheek}" opacity=".6"/><ellipse id="cheekR" cx="530" cy="284" rx="14" ry="8.5" fill="${C.cheek}" opacity=".6"/>
+      <g id="mouthW"><g id="mouth" transform="translate(480 294)">${MOUTH.rest}</g></g>
+      </g>
+    </g>
+    <g id="armsFront">${armMk("L",1)}${armMk("R",-1)}</g>
+    <g id="spark"><g id="sparkIn" opacity="0">${[0,1,2,3,4,5].map(i=>{const a=(i*60-90)*Math.PI/180;return `<line x1="${(10*Math.cos(a)).toFixed(1)}" y1="${(10*Math.sin(a)).toFixed(1)}" x2="${(22*Math.cos(a)).toFixed(1)}" y2="${(22*Math.sin(a)).toFixed(1)}" stroke="#fff6b0" stroke-width="4.5" stroke-linecap="round"/>`}).join("")}</g></g>
+  </g>
+  <g id="swoosh" opacity="0" fill="none" stroke="#fff" stroke-linecap="round">
+    <path id="swArc" d="M396 484 A84 16 0 0 0 564 484" stroke-width="6" stroke-dasharray="50 28"/>
+    <path d="M392 300 q-20 44 0 92" stroke-width="5" opacity=".8"/><path d="M568 300 q20 44 0 92" stroke-width="5" opacity=".8"/>
+  </g>`;
+const E={}; kid.querySelectorAll("[id]").forEach(el=>E[el.id]=el);
+
+const GROUND=478, A1=46,A2=44, L1=40,L2=40;
+const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+const lerpAng=(a,b,k)=>{ const d=((b-a)%360+540)%360-180; return a+d*k; };
+function ik(S,T,l1,l2,outward){
+  let dx=T[0]-S[0], dy=T[1]-S[1], d=Math.hypot(dx,dy)||1; const dd=Math.min(Math.max(d,Math.abs(l1-l2)+1),l1+l2-0.5);
+  const ux=dx/d, uy=dy/d, cosA=(l1*l1+dd*dd-l2*l2)/(2*l1*dd), a=Math.acos(Math.max(-1,Math.min(1,cosA)));
+  const c=[[Math.cos(a),Math.sin(a)],[Math.cos(-a),Math.sin(-a)]].map(([c,s])=>[S[0]+l1*(ux*c-uy*s), S[1]+l1*(ux*s+uy*c)]);
+  const El = outward<0 ? (c[0][0]<c[1][0]?c[0]:c[1]) : (c[0][0]>c[1][0]?c[0]:c[1]);
+  return {E:El, W:[S[0]+ux*dd, S[1]+uy*dd]};
+}
+function hose(S,Q,W){ const k=.45; const p1=[S[0]+(Q[0]-S[0])*(1-k),S[1]+(Q[1]-S[1])*(1-k)], p2=[Q[0]+(W[0]-Q[0])*k,Q[1]+(W[1]-Q[1])*k];
+  const f=v=>v.toFixed(1); return `M${f(S[0])} ${f(S[1])} L${f(p1[0])} ${f(p1[1])} Q${f(Q[0])} ${f(Q[1])} ${f(p2[0])} ${f(p2[1])} L${f(W[0])} ${f(W[1])}`; }
+
+/* pose state. yaw = body rotation around vertical axis (rad); hy = head lead; pm = palm-up blend; hs = hand squash; sw = swoosh */
+const REST={lx:-10,ly:84,rx:10,ry:84,fL:0,fR:0,jy:0,fy:0,sq:0,hd:0,lean:0,yaw:0,hy:0,pm:0,hs:0,sw:0};
+const P={...REST};
+const FEAT=[["eyeL",-28],["eyeR",28],["happyL",-28],["happyR",28],["cheekL",-50],["cheekR",50],["mouthW",0]];
+let idleT0=performance.now(), lastHands=null; const layerOf={};
+function toLayer(el,name){ if(layerOf[el.id]!==name){ layerOf[el.id]=name; E[name].appendChild(el); } }
+function render(now){
+  const t=(now-idleT0)/1000;
+  const breath=Math.sin(t*2.2)*0.012, bob=Math.sin(t*2.2)*1.5;
+  const jy=P.jy+bob, sq=P.sq+breath;
+  const cy=Math.cos(P.yaw), sy=Math.sin(P.yaw), yh=P.yaw+P.hy, ch=Math.cos(yh), shh=Math.sin(yh);
+  const swayA=Math.sin(t*1.6)*3;
+  // torso: narrower when seen from the side; badge slides around the chest
+  E.torso.setAttribute("transform",`translate(480 0) scale(${(.74+.26*Math.abs(cy)).toFixed(3)} 1) translate(-480 0)`);
+  E.badge.setAttribute("transform",`translate(${(480+44*sy).toFixed(1)} 0) scale(${Math.max(.01,cy).toFixed(3)} 1) translate(-480 0)`);
+  E.badge.setAttribute("opacity",clamp(cy/.25).toFixed(2));
+  // arms: shoulders orbit the body; arm on the far side goes behind the torso
+  const HW={};
+  ["L","R"].forEach(s=>{ const sg=s==="L"?-1:1, z=-sg*sy, S=[480+sg*50*cy,336];
+    const lx=(s==="L"?P.lx:P.rx)+sg*swayA*.3, ly=s==="L"?P.ly:P.ry;
+    const r=ik(S,[S[0]+lx*cy,S[1]+ly],A1,A2,cy>=0?sg:-sg);
+    E["arm"+s+"p"].setAttribute("d",hose(S,r.E,r.W));
+    const base=Math.atan2(r.W[1]-r.E[1],r.W[0]-r.E[0])*180/Math.PI-90;
+    const rot=lerpAng(base,s==="L"?-165:165,P.pm);
+    E["hand"+s].setAttribute("transform",`translate(${r.W[0].toFixed(1)} ${r.W[1].toFixed(1)}) rotate(${rot.toFixed(1)}) scale(${(1-.22*P.pm).toFixed(3)} ${(1+.12*P.hs).toFixed(3)})`);
+    E["thumb"+s].setAttribute("opacity",(1-P.pm).toFixed(2));
+    E["slv"+s].setAttribute("cx",S[0].toFixed(1));
+    toLayer(E["arm"+s], z>=-.05?"armsFront":"armsBack"); HW[s]=r.W; });
+  lastHands=HW;
+  E.upper.setAttribute("transform",`translate(0 ${jy.toFixed(2)}) rotate(${P.lean.toFixed(2)} 480 404) translate(480 404) scale(${(1+sq).toFixed(3)} ${(1-sq).toFixed(3)}) translate(-480 -404)`);
+  E.head.setAttribute("transform",`rotate(${(P.hd+Math.sin(t*1.3)*1.5).toFixed(2)} 480 320)`);
+  // head turn: face patch, fringe and features slide around the sphere (pseudo-3D)
+  E.faceSkin.setAttribute("cx",(480+58*shh).toFixed(1)); E.faceSkin.setAttribute("rx",(72*(.5+.5*Math.abs(ch))).toFixed(1));
+  E.faceSkin.setAttribute("opacity",clamp((ch+.45)/.45).toFixed(2));
+  E.fringe.setAttribute("transform",`translate(${(480+56*shh).toFixed(1)} 0) scale(${(.5+.5*Math.abs(ch)).toFixed(3)} 1) translate(-480 0)`);
+  E.curl.setAttribute("transform",`translate(${(14*shh).toFixed(1)} 0)`);
+  E.whorl.setAttribute("transform",`translate(${(-34*shh).toFixed(1)} 0)`); E.whorl.setAttribute("opacity",(clamp(-ch/.4)*.7).toFixed(2));
+  ["L","R"].forEach(s=>{ const a=Math.asin((s==="L"?-73:73)/78)+yh; E["ear"+s].setAttribute("transform",`translate(${(480+79*Math.sin(a)).toFixed(1)} 0)`); toLayer(E["ear"+s], Math.cos(a)>.55?"earsFront":"earsBack"); });
+  FEAT.forEach(([id,dx])=>{ const a=Math.asin(dx/78)+yh, c=Math.cos(a);
+    E[id].setAttribute("transform",`translate(${(480+78*Math.sin(a)).toFixed(1)} 0) scale(${Math.max(.01,c).toFixed(3)} 1) translate(${-(480+dx)} 0)`); E[id].setAttribute("opacity",clamp((c-.12)/.3).toFixed(2)); });
+  // legs: hips orbit too; far leg drawn first
+  const order=[];
+  ["L","R"].forEach(s=>{ const sg=s==="L"?-1:1, H=[480+sg*22*cy,404+jy], lift=s==="L"?P.fL:P.fR;
+    const r=ik(H,[H[0]+sg*4*cy,GROUND+P.fy-lift],L1,L2,cy>=0?sg:-sg);
+    E["leg"+s].setAttribute("d",hose(H,r.E,r.W)); E["shoe"+s].setAttribute("cx",(r.W[0]+sg*6*cy+9*sy).toFixed(1)); E["shoe"+s].setAttribute("cy",(r.W[1]+6).toFixed(1));
+    order.push([-sg*sy,s]); });
+  order.sort((a,b)=>a[0]-b[0]);
+  const ok=order.map(o=>o[1]).join(""); if(E.legs.dataset.o!==ok){ E.legs.dataset.o=ok; order.forEach(([,s])=>E.legs.appendChild(E["leg"+s+"g"])); }
+  E.swoosh.setAttribute("opacity",P.sw.toFixed(2)); E.swArc.setAttribute("stroke-dashoffset",(-(t*900)%780).toFixed(0));
+  const air=Math.max(0,-P.fy); $("#shadow").setAttribute("rx",(62-air*.25).toFixed(1)); $("#shadow").setAttribute("opacity",(.18-air*.0009).toFixed(3));
+  // scene: butterflies, bird, auto camera
+  const b1=$("#bf1"), b2=$("#bf2");
+  b1.setAttribute("transform",`translate(${(250+Math.sin(t*.5)*120).toFixed(1)} ${(200+Math.sin(t*1.3)*40).toFixed(1)})`);
+  b2.setAttribute("transform",`translate(${(720+Math.cos(t*.42)*110).toFixed(1)} ${(230+Math.sin(t*1.1+1)*45).toFixed(1)}) scale(.85)`);
+  document.querySelectorAll(".wings").forEach((w,i)=>w.setAttribute("transform",`scale(${(0.35+Math.abs(Math.sin(t*12+i))*0.65).toFixed(2)} 1)`));
+  const hop=Math.max(0,Math.sin(t*2.6))**8*14; $("#birdBody").setAttribute("transform",`translate(0 ${-hop.toFixed(1)})`);
+  if(!pointerCam){ const cx=Math.sin(t*.25)*.35; setCam(cx); }
+  requestAnimationFrame(render);
+}
+
+/* blink */
+setInterval(()=>{ const e=$("#eyes"); if(e.style.display==="none") return; e.setAttribute("transform","translate(0 258) scale(1 .1) translate(0 -258)"); setTimeout(()=>e.removeAttribute("transform"),130); },3600);
+
+/* ================= CAMERA / PARALLAX ================= */
+const pars=[...document.querySelectorAll(".par")]; let pointerCam=false;
+function setCam(x){ pars.forEach(p=>p.style.transform=`translateX(${(-x*p.dataset.d).toFixed(1)}px)`); }
+const stage=$("#stage"), reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+if(!reduce){ stage.addEventListener("pointermove",e=>{ pointerCam=true; const r=stage.getBoundingClientRect(); setCam(((e.clientX-r.left)/r.width-.5)*2); });
+  stage.addEventListener("pointerleave",()=>{ pointerCam=false; }); }
+
+/* ================= TWEEN (keyframes hold their values; per-key easing) ================= */
+let anim=null;
+const EASE={io:t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2, in:t=>t*t*t, out:t=>1-Math.pow(1-t,3), lin:t=>t};
+function play(frames,cues=[]){
+  return new Promise(res=>{
+    if(anim) anim.cancel();
+    P.yaw=Math.atan2(Math.sin(P.yaw),Math.cos(P.yaw));
+    const fs=[{t:0,...P}]; frames.filter(f=>f.t>0).forEach(f=>{ fs.push({...fs[fs.length-1],e:undefined,...f}); });
+    const start=performance.now(), total=fs[fs.length-1].t; let alive=true; const fired=new Set();
+    anim={cancel(){alive=false; res();}};
+    const step=now=>{ if(!alive) return; const el=Math.min(now-start,total);
+      let i=0; while(i<fs.length-2&&fs[i+1].t<=el) i++;
+      const a=fs[i], b=fs[i+1], k=(EASE[b.e]||EASE.io)(clamp((el-a.t)/Math.max(1,b.t-a.t)));
+      for(const key in REST) P[key]=a[key]+(b[key]-a[key])*k;
+      cues.forEach((c,ci)=>{ if(!fired.has(ci)&&el>=c[0]){ fired.add(ci); c[1](); } });
+      if(el<total) requestAnimationFrame(step); else { anim=null; res(); } };
+    requestAnimationFrame(step); });
+}
+const rest=t=>({t,...REST});
+function spark(){ const W=lastHands; if(!W) return; E.spark.setAttribute("transform",`translate(${((W.L[0]+W.R[0])/2).toFixed(1)} ${(Math.min(W.L[1],W.R[1])-22).toFixed(1)})`);
+  E.sparkIn.animate([{opacity:1,transform:"scale(.4)"},{opacity:0,transform:"scale(1.5)"}],{duration:340,easing:"ease-out"}); }
+
+/* ================= SOUND ================= */
+let ac=null;
+function audio(){ try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)(); if(ac.state==="suspended") ac.resume(); }catch(e){} return ac; }
+function noise(dur,freq,q,vol){ const a=audio(); if(!a) return; const n=a.createBufferSource(), b=a.createBuffer(1,a.sampleRate*dur,a.sampleRate), d=b.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,3); n.buffer=b;
+  const f=a.createBiquadFilter(); f.type="bandpass"; f.frequency.value=freq; f.Q.value=q; const g=a.createGain(); g.gain.value=vol; n.connect(f).connect(g).connect(a.destination); n.start(); }
+function tone(f0,f1,dur,type="sine",vol=.18){ const a=audio(); if(!a) return; const o=a.createOscillator(), g=a.createGain(); o.type=type;
+  o.frequency.setValueAtTime(f0,a.currentTime); o.frequency.exponentialRampToValueAtTime(f1,a.currentTime+dur); g.gain.setValueAtTime(vol,a.currentTime); g.gain.exponentialRampToValueAtTime(.001,a.currentTime+dur);
+  o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime+dur); }
+const sfx={clap:()=>noise(.12,1800,1.2,1.2), stomp:()=>{ tone(110,50,.18,"sine",.5); noise(.08,300,1,.5); }, boing:()=>tone(220,660,.25,"triangle",.15), land:()=>tone(160,60,.14,"sine",.4), whoosh:()=>noise(.35,900,.6,.5), ding:()=>tone(880,1320,.3,"sine",.12)};
+
+/* ================= ACTIONS ================= */
+function happy(on){ $("#eyes").style.display=on?"none":""; $("#eyesHappy").style.display=on?"":"none"; setMouth(on?"big":"rest"); }
+const ACT={
+  wave(){ const f=[{t:250,rx:52,ry:-70,lx:-14,ly:80,hd:5,lean:-2}]; let t=250; for(let i=0;i<4;i++){ t+=220; f.push({t,rx:24,ry:-62}); t+=220; f.push({t,rx:58,ry:-66}); } f.push(rest(t+350)); return play(f); },
+  clap(){ // open palms, elbows out, hands meet at chest: fast in, tiny hold, soft rebound
+    const f=[{t:260,e:"out",lx:12,ly:18,rx:-12,ry:18,pm:1,hd:0,hs:0,lean:0}], cues=[]; let t=260;
+    for(let i=0;i<4;i++){ t+=115; f.push({t,e:"in",lx:40,ly:12,rx:-40,ry:12,jy:2,sq:.02,hd:i%2?-3:3});
+      cues.push([t,()=>{sfx.clap();spark();}]); t+=45; f.push({t,e:"lin",hs:1}); t+=45; f.push({t,e:"lin",hs:0});
+      t+=180; f.push({t,e:"out",lx:10,ly:20,rx:-10,ry:20,jy:0,sq:0,hd:0}); }
+    f.push(rest(t+380)); return play(f,cues); },
+  stomp(){ const f=[], cues=[]; let t=0; for(let i=0;i<4;i++){ const L=i%2===0; t+=220; f.push(L?{t,fL:30,lean:4,lx:-28,ly:70,rx:20,ry:76,hd:-3}:{t,fR:30,lean:-4,rx:28,ry:70,lx:-20,ly:76,hd:3});
+      t+=160; f.push(L?{t,fL:0,jy:3,sq:.05}:{t,fR:0,jy:3,sq:.05}); cues.push([t,sfx.stomp]); t+=60; f.push({t,jy:0,sq:0}); } f.push(rest(t+300)); return play(f,cues); },
+  jump(){ const f=[], cues=[]; let t=0; for(let i=0;i<2;i++){ t+=220; f.push({t,jy:16,sq:.1,lx:-34,ly:62,rx:34,ry:62,hd:0});
+      t+=230; f.push({t,jy:-96,fy:-96,sq:-.08,lx:-44,ly:-64,rx:44,ry:-64}); cues.push([t-200,sfx.boing]);
+      t+=230; f.push({t,jy:12,fy:0,sq:.12,lx:-30,ly:66,rx:30,ry:66}); cues.push([t,sfx.land]); t+=140; f.push({t,jy:0,sq:-.02}); } f.push(rest(t+260)); return play(f,cues); },
+  turn(){ // wind-up, head leads the spin, little hops, overshoot then settle
+    const TAU=Math.PI*2;
+    const f=[
+      {t:220,e:"out",yaw:-.35,hy:-.12,jy:8,fy:0,sq:.08,lx:-4,ly:72,rx:4,ry:72,lean:0,hd:0},
+      {t:440,e:"in", yaw:1.25,hy:.55,jy:-16,fy:-16,sq:-.04,lx:-46,ly:24,rx:46,ry:24,sw:1},
+      {t:650,e:"lin",yaw:3.4,hy:.5,jy:0,fy:0,sq:.03},
+      {t:860,e:"lin",yaw:5.5,hy:.3,jy:-14,fy:-14,sq:-.03},
+      {t:1070,e:"out",yaw:TAU+.2,hy:-.12,jy:7,fy:0,sq:.08,sw:0,lx:-30,ly:54,rx:30,ry:54},
+      {t:1280,yaw:TAU,hy:0,jy:0,sq:-.02},
+      {t:1560,...REST,yaw:TAU}];
+    return play(f,[[230,sfx.whoosh],[650,sfx.land],[1070,sfx.land]]); },
+  dance(){ const f=[], cues=[]; let t=0; for(let i=0;i<6;i++){ const s=i%2?1:-1; t+=300; f.push({t,lean:8*s,hd:-6*s,lx:s>0?-40:-30,ly:s>0?-60:60,rx:s>0?30:40,ry:s>0?60:-60,jy:-8,fy:0,fL:s>0?14:0,fR:s>0?0:14,sq:-.03}); t+=120; f.push({t,jy:2,sq:.04,fL:0,fR:0}); cues.push([t,sfx.stomp]); }
+      f.push(rest(t+350)); return play(f,cues); },
+  giggle(){ happy(true); setTimeout(()=>happy(false),1100); sfx.ding(); return play([{t:150,jy:8,sq:.1},{t:380,jy:-40,fy:-40,sq:-.06,lx:-40,ly:-50,rx:40,ry:-50},{t:620,jy:6,fy:0,sq:.08},rest(860)],[[620,sfx.land]]); }
+};
+
+/* ================= SPEECH + LIP-SYNC ================= */
+const mouthEl=$("#mouth"); let curMouth="rest";
+function setMouth(v){ if(v===curMouth) return; curMouth=v; mouthEl.innerHTML=MOUTH[v]||MOUTH.rest; }
+function vis(w){ const s=w.toLowerCase().replace(/[^a-z]/g,"").replace(/e$/,""); const o=[]; for(let i=0;i<s.length;i++){ const c=s[i]; let v;
+  if("mbp".includes(c)) v="MBP"; else if("fv".includes(c)) v="FV"; else if(c==="o") v="O"; else if("uwq".includes(c)) v="U"; else if("ai".includes(c)) v="A"; else if(c==="e"||c==="y") v="E"; else if(c==="l") v="L"; else if(c==="h"&&i>0) continue; else v="E";
+  if(o[o.length-1]!==v) o.push(v); } return o.length?o:["E"]; }
+let run=0;
+function voice(){ try{ const vs=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang)); return vs.find(v=>/en-US/i.test(v.lang)&&/female|samantha|aria|jenny|zira|google us/i.test(v.name))||vs.find(v=>/en-US/i.test(v.lang))||vs[0]||null; }catch(e){ return null; } }
+try{ speechSynthesis.getVoices(); }catch(e){}
+async function sing(text,vi){
+  const id=run; const words=text.split(/\s+/), segs=[], ws=[], cs=[]; let t=0, ci=0;
+  words.forEach(w=>{ const p=text.indexOf(w,ci); cs.push(p); ci=p+w.length; ws.push(t); vis(w).forEach(v=>{segs.push([t,v]); t+=95;}); segs.push([t,"rest"]); t+=/[,.!?]$/.test(w)?300:60; });
+  const dur=t; $("#who").textContent="Bobo"; $("#en").innerHTML=words.map((w,i)=>`<span class="w" data-i="${i}">${w}</span>`).join(" "); $("#vi").textContent=vi;
+  const spans=$("#en").querySelectorAll(".w"); const scale=1.2; let start=performance.now(), live=true;
+  const fr=()=>{ if(id!==run||!live){ setMouth("rest"); spans.forEach(s=>s.classList.remove("on")); return; }
+    const el=(performance.now()-start)/scale; let v="rest"; for(const [a,b] of segs){ if(a<=el) v=b; else break; } if(el>dur) v="rest"; setMouth(v);
+    let wi=-1; ws.forEach((a,k)=>{ if(el>=a&&el<=dur) wi=k; }); spans.forEach(s=>s.classList.toggle("on",+s.dataset.i===wi)); requestAnimationFrame(fr); };
+  requestAnimationFrame(fr);
+  await new Promise(res=>{ let done=false; const fin=()=>{ if(!done){done=true;res();} }; const est=dur*scale+300;
+    try{ if(!("speechSynthesis" in window)) throw 0; const u=new SpeechSynthesisUtterance(text); const v=voice(); if(v){u.voice=v;u.lang=v.lang;} else u.lang="en-US";
+      u.rate=.88; u.pitch=1.45; let st=false; u.onstart=()=>{st=true; start=performance.now();};
+      u.onboundary=e=>{ let wi=0; cs.forEach((c,k)=>{ if(e.charIndex>=c) wi=k; }); start=performance.now()-ws[wi]*scale; };
+      u.onend=fin; u.onerror=()=>setTimeout(fin,st?0:est); speechSynthesis.speak(u); setTimeout(()=>{ if(!st) setTimeout(fin,est); },1200); setTimeout(fin,12000);
+    }catch(e){ setTimeout(fin,est); } });
+  live=false;
+}
+
+/* ================= SONG ================= */
+const SONG=[
+  ["Hello, hello! How are you?","Xin chào, xin chào! Bạn khỏe không?","wave"],
+  ["Can you clap your hands?","Bạn vỗ tay được không?","clap"],
+  ["Can you stomp your feet?","Bạn dậm chân được không?","stomp"],
+  ["Can you jump up high?","Bạn nhảy thật cao được không?","jump"],
+  ["Can you turn around?","Bạn quay một vòng được không?","turn"],
+  ["Let's dance, dance, dance!","Cùng nhảy múa nào!","dance"],
+  ["Goodbye, goodbye! See you soon!","Tạm biệt, tạm biệt! Hẹn gặp lại!","wave"]
+];
+async function song(){
+  const id=++run; audio(); try{ speechSynthesis.cancel(); }catch(e){}
+  for(const [en,vi,act] of SONG){ if(id!==run) return; await sing(en,vi); if(id!==run) return; await ACT[act](); if(id!==run) return; await new Promise(r=>setTimeout(r,250)); }
+  if(id===run){ happy(true); sfx.ding(); setTimeout(()=>happy(false),1400); $("#en").textContent="Yay! Great job!"; $("#vi").textContent="Giỏi quá!"; }
+}
+function stop(){ run++; try{ speechSynthesis.cancel(); }catch(e){} if(anim) anim.cancel(); play([rest(300)]); setMouth("rest"); happy(false); }
+$("#btnSong").onclick=song;
+$("#btnStop").onclick=stop;
+const LABEL={wave:["Wave your hand!","Vẫy tay nào!"],clap:["Clap, clap, clap!","Vỗ tay, vỗ tay!"],stomp:["Stomp, stomp, stomp!","Dậm chân, dậm chân!"],jump:["Jump, jump, jump!","Nhảy, nhảy, nhảy!"],turn:["Turn around!","Quay một vòng!"],dance:["Dance, dance, dance!","Nhảy múa nào!"]};
+document.querySelectorAll("[data-act]").forEach(b=>b.onclick=async()=>{ const id=++run; audio(); try{ speechSynthesis.cancel(); }catch(e){} const [en,vi]=LABEL[b.dataset.act]; sing(en,vi); await ACT[b.dataset.act](); });
+$("#kid").addEventListener("click",()=>{ audio(); ACT.giggle(); $("#en").textContent="Hee hee!"; $("#vi").textContent="Hi hi!"; });
+$("#sun").addEventListener("click",()=>{ audio(); sfx.ding(); $("#rays").classList.add("fast"); $("#sunMouth").setAttribute("d","M-18 8 Q0 34 18 8 Z"); $("#sunMouth").setAttribute("fill","#c0563a");
+  setTimeout(()=>{ $("#rays").classList.remove("fast"); $("#sunMouth").setAttribute("d","M-14 10 Q0 22 14 10"); $("#sunMouth").setAttribute("fill","none"); },2200); });
+document.querySelectorAll(".flower").forEach(f=>{ const go=()=>{ audio(); tone(660+Math.random()*400,990,.18,"sine",.1); const h=f.querySelector(".head"); h.classList.remove("pop"); void h.getBBox(); f.classList.remove("pop"); void f.getBBox(); f.classList.add("pop"); setTimeout(()=>f.classList.remove("pop"),520); };
+  f.addEventListener("click",go); f.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } }); });
+
+requestAnimationFrame(render);
+setTimeout(()=>{ ACT.wave(); },700);
+</script>

@@ -1,0 +1,17 @@
+# bone,parent,pivotX,pivotY (ref.png pixels, rest pose)
+root,,515.0,660.0
+torso,root,515.0,615.0
+head,torso,515.0,392.0
+shoulder_near,torso,401.0,471.0
+elbow_near,shoulder_near,323.9,502.0
+wrist_near,elbow_near,248.0,542.5
+shoulder_far,torso,624.0,471.0
+elbow_far,shoulder_far,701.8,503.4
+wrist_far,elbow_far,780.2,545.6
+hip_near,root,467.5,690.0
+knee_near,hip_near,454.8,752.0
+ankle_near,knee_near,456.0,869.9
+hip_far,root,567.5,690.0
+knee_far,hip_far,556.8,752.0
+ankle_far,knee_far,560.5,870.0
+hair,head,518.0,250.0

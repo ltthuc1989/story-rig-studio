@@ -1,0 +1,450 @@
+<title>Ben Ra Hồ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Be+Vietnam+Pro:wght@400;500;600&display=swap">
+<style>
+/* Layout: sân khấu cảnh hồ 16:9 trọn chiều ngang, phụ đề lời thoại bên dưới, hàng nút hành động cuối cùng. */
+:root{
+  --bg:#f3f7f6; --surface:#ffffff; --surface-2:#f4f8f7; --ink:#1c2a33; --muted:#5a6b76;
+  --line:#dbe5e3; --accent:#1f8fbf; --accent-soft:#dff1f8; --focus:#ffb020;
+  --f-display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1719; --surface:#162125; --surface-2:#1c2a2f; --ink:#e6f0f2; --muted:#9db1b8;
+  --line:#28393f; --accent:#5cc3ec; --accent-soft:#16323d; --focus:#ffc24d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1719; --surface:#162125; --surface-2:#1c2a2f; --ink:#e6f0f2; --muted:#9db1b8;
+  --line:#28393f; --accent:#5cc3ec; --accent-soft:#16323d; --focus:#ffc24d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;padding-inline:16px;padding-block:24px 48px;margin:0}
+.wrap{max-width:1060px;margin:0 auto;display:grid;gap:18px}
+h1{font-family:var(--f-display);font-size:clamp(30px,5vw,46px);font-weight:800;line-height:1.1;margin:0}
+p{margin:0}
+.lede{color:var(--muted);max-width:74ch;margin-top:8px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:22px;overflow:hidden}
+.stage{position:relative;background:#bfe6fb;touch-action:manipulation}
+.stage svg{display:block;width:100%;height:auto;user-select:none;-webkit-user-select:none}
+.sub{padding:14px 20px;border-top:1px solid var(--line);display:grid;gap:4px;min-height:96px}
+.who{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.en{font-family:var(--f-display);font-size:clamp(22px,3.4vw,30px);font-weight:600;line-height:1.25}
+.vi{color:var(--muted);font-size:14px}
+.ctrl{display:flex;flex-wrap:wrap;gap:8px;padding:12px 20px 18px;border-top:1px solid var(--line)}
+button{font:inherit;font-weight:600;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);padding:8px 15px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.note{font-size:13px;color:var(--muted)}
+.tap{cursor:pointer}
+.drift{animation:drift var(--d,90s) linear infinite}
+@keyframes drift{from{transform:translateX(-260px)}to{transform:translateX(1220px)}}
+.sway{animation:sway var(--s,3s) ease-in-out infinite alternate;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes sway{from{transform:rotate(-5deg)}to{transform:rotate(5deg)}}
+.par{transition:transform .4s ease-out}
+@media (prefers-reduced-motion:reduce){.drift,.sway{animation:none}.par{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Thử khả năng · cảnh tương tác, nhân vật đi nghiêng</div>
+    <h1>Ben Ra Hồ</h1>
+    <p class="lede">Cảnh núi, hồ có bóng phản chiếu, con vịt bơi và thỉnh thoảng chúi đầu xuống nước, con ếch ngồi trên lá sen rồi nhảy xuống bơi sang lá khác. Ben đi nghiêng ra hồ, ngồi xuống khúc gỗ, đứng lên, vẫy tay, chỉ con vịt. <b>Chạm vào bãi cỏ</b> để Ben đi tới chỗ đó, chạm vào vịt, ếch hoặc Ben để xem phản ứng.</p>
+  </header>
+
+  <section class="card">
+    <div class="stage" id="stage"><svg id="svg" viewBox="0 0 960 540" role="img" aria-label="Cảnh hồ nước với cậu bé Ben, con vịt và con ếch"></svg></div>
+    <div class="sub" aria-live="polite">
+      <div class="who" id="who">Ben</div>
+      <div class="en" id="en">…</div>
+      <div class="vi" id="vi"></div>
+    </div>
+    <div class="ctrl">
+      <button class="primary" data-a="go">🚶 Ra hồ</button>
+      <button data-a="sit">🪵 Ngồi xuống</button>
+      <button data-a="stand">🧍 Đứng lên</button>
+      <button data-a="wave">👋 Vẫy tay</button>
+      <button data-a="point">👉 Chỉ con vịt</button>
+      <button data-a="frog">🐸 Ếch ơi nhảy đi</button>
+      <button data-a="home">🏠 Đi về</button>
+    </div>
+  </section>
+  <p class="note">Toàn bộ là vector vẽ bằng code, không có ảnh hay video. Ben đi theo chu kỳ bước tính từ quãng đường nên bàn chân không bị trượt; ngồi xuống thì chân giữ nguyên chỗ, hông lùi và hạ xuống khúc gỗ. Vịt và ếch phần dưới nước được vẽ mờ đi như nhìn qua mặt nước.</p>
+</div>
+
+<script>
+const $=s=>document.querySelector(s), svg=$("#svg");
+const lerp=(a,b,k)=>a+(b-a)*k, clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+const C={skin:"#ffd9bd",skin2:"#efbd99",hair:"#5a3a2a",shirt:"#4fb3e8",shirt2:"#3c97cb",shorts:"#34507a",shoe:"#ff5d5d",shoe2:"#d64848",eye:"#2b2b3a",cheek:"#ff9fa6",line:"#b5475a",mouth:"#8f2d3f"};
+
+/* ===================== SCENE MARKUP ===================== */
+const cloud=(x,y,s,o,d,dl)=>`<g class="drift" style="--d:${d}s;animation-delay:${dl}s"><g transform="translate(${x} ${y}) scale(${s})" opacity="${o}" fill="#fff"><ellipse rx="60" ry="24"/><circle cx="-26" cy="-12" r="24"/><circle cx="14" cy="-22" r="30"/><circle cx="42" cy="-4" r="20"/></g></g>`;
+const pine=(x,y,s,c)=>`<g transform="translate(${x} ${y}) scale(${s})"><rect x="-2.5" y="-8" width="5" height="10" fill="#7a5a3a"/><path d="M0 -46 L13 -20 L7 -20 L16 -6 L-16 -6 L-7 -20 L-13 -20Z" fill="${c}"/></g>`;
+const tree=(x,y,s)=>`<g transform="translate(${x} ${y}) scale(${s})"><g class="sway" style="--s:4.2s"><rect x="-9" y="-80" width="18" height="82" rx="8" fill="#a8744c"/><circle cy="-112" r="54" fill="#5fb85f"/><circle cx="-34" cy="-88" r="32" fill="#52a955"/><circle cx="34" cy="-92" r="34" fill="#52a955"/><circle cx="10" cy="-140" r="28" fill="#6cc46a"/></g></g>`;
+const daisy=(x,y,c)=>`<g transform="translate(${x} ${y})"><g class="sway" style="--s:${(2.4+Math.random()*1.6).toFixed(2)}s"><path d="M0 0 Q-2 -12 0 -22" stroke="#4caf6a" stroke-width="3" fill="none"/>${[0,60,120,180,240,300].map(a=>`<ellipse cy="-28" rx="3.2" ry="6" fill="${c}" transform="rotate(${a} 0 -22)"/>`).join("")}<circle cy="-22" r="3.5" fill="#ffd34d"/></g></g>`;
+const cattail=(x,y,h,s)=>`<g transform="translate(${x} ${y})"><g class="sway" style="--s:${s}s"><path d="M0 0 Q2 ${-h/2} 0 ${-h}" stroke="#5f9e45" stroke-width="3" fill="none"/><rect x="-4" y="${-h-2}" width="8" height="20" rx="4" fill="#8a5a36"/><path d="M0 ${-h-2} v-8" stroke="#5f9e45" stroke-width="2"/><path d="M0 ${-h*0.4} Q14 ${-h*.7} 18 ${-h*.9}" stroke="#6fb352" stroke-width="3" fill="none"/></g></g>`;
+
+const DUCK=`
+<g id="duckArt">
+  <g id="duckFeet"><path d="M-8 5 L-13 17 L-3 17Z" fill="#ff9f1c"/><path d="M6 5 L1 17 L11 17Z" fill="#ff9f1c"/></g>
+  <path d="M-30 -10 Q-48 -28 -40 -34 Q-30 -24 -18 -16Z" fill="#fff4c4"/>
+  <ellipse cx="-2" cy="-3" rx="32" ry="16" fill="#fff4c4"/>
+  <ellipse cx="-4" cy="5" rx="27" ry="8" fill="#efdc9a"/>
+  <ellipse cx="17" cy="-17" rx="9" ry="13" fill="#fff4c4"/>
+  <circle cx="20" cy="-30" r="13" fill="#fff4c4"/>
+  <path d="M30 -32 Q44 -33 47 -27 Q41 -22 30 -25Z" fill="#ff9f1c"/>
+  <circle cx="24" cy="-33" r="2.8" fill="#2b2b3a"/><circle cx="25" cy="-34" r="1" fill="#fff"/>
+  <ellipse cx="21" cy="-24" rx="4" ry="2.4" fill="#ffb3b3" opacity=".75"/>
+  <g id="duckWing"><path d="M-22 -9 Q-4 -24 14 -9 Q0 3 -22 -9Z" fill="#ffe58a"/></g>
+</g>`;
+const FROG=`
+<g id="frogArt">
+  <g id="frogSitArt">
+    <ellipse cx="-8" cy="-10" rx="15" ry="10" fill="#4f9a3c"/>
+    <path d="M-18 -4 Q-22 -30 0 -38 Q20 -42 26 -26 Q28 -10 14 -2Z" fill="#6cc04a"/>
+    <ellipse cx="11" cy="-16" rx="9" ry="10" fill="#d8f0a8"/>
+    <ellipse cx="-6" cy="-9" rx="15" ry="9" fill="#5fb548"/>
+    <ellipse cx="8" cy="-1.5" rx="11" ry="3.5" fill="#4f9a3c"/>
+    <path d="M14 -16 Q18 -8 20 -2" stroke="#4f9a3c" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <ellipse id="frogSac" cx="20" cy="-24" rx="6" ry="5" fill="#fff1b0"/>
+    <ellipse cx="13" cy="-34" rx="15" ry="10" fill="#6cc04a"/>
+    <circle cx="6" cy="-44" r="7" fill="#6cc04a"/><circle cx="19" cy="-44" r="7" fill="#6cc04a"/>
+    <circle cx="6" cy="-45" r="4.6" fill="#fff"/><circle cx="19" cy="-45" r="4.6" fill="#fff"/>
+    <circle cx="8" cy="-45" r="2.5" fill="#2b2b3a"/><circle cx="21" cy="-45" r="2.5" fill="#2b2b3a"/>
+    <path d="M11 -31 Q20 -26 28 -32" stroke="#2f6b22" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    <ellipse cx="9" cy="-31" rx="3.5" ry="2" fill="#ff9fa6" opacity=".7"/>
+  </g>
+  <g id="frogSwimArt">
+    <path id="fLegFar" fill="none" stroke="#4f9a3c" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <ellipse id="fFootFar" rx="6" ry="3.5" fill="#4f9a3c"/>
+    <ellipse cx="-2" cy="2" rx="19" ry="9" fill="#5fb548"/>
+    <circle cx="-8" cy="-3" r="3" fill="#4f9a3c"/><circle cx="2" cy="-5" r="2.4" fill="#4f9a3c"/>
+    <ellipse cx="14" cy="0" rx="11" ry="8" fill="#5fb548"/>
+    <circle cx="10" cy="-8" r="5" fill="#5fb548"/><circle cx="10" cy="-8.5" r="3.4" fill="#fff"/><circle cx="11.2" cy="-8.5" r="1.8" fill="#2b2b3a"/>
+    <circle cx="17" cy="-7" r="5.5" fill="#6cc04a"/><circle cx="17" cy="-7.5" r="3.8" fill="#fff"/><circle cx="18.5" cy="-7.5" r="2" fill="#2b2b3a"/>
+    <path d="M17 3 Q23 4 25 0" stroke="#2f6b22" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    <path id="fLegNear" fill="none" stroke="#6cc04a" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <ellipse id="fFootNear" rx="7" ry="4" fill="#5fb548"/>
+    <path d="M8 6 L13 12" stroke="#6cc04a" stroke-width="4" stroke-linecap="round"/>
+  </g>
+</g>`;
+const MTN=`<g id="mtnArt">
+  <path d="M-40 318 L60 226 L130 270 L230 150 L330 252 L420 196 L520 290 L600 212 L700 262 L800 168 L900 252 L1000 214 V318Z" fill="#9db8d6"/>
+  <path d="M230 150 L208 172 L220 168 L230 178 L242 166 L253 172Z" fill="#fff"/>
+  <path d="M800 168 L776 192 L789 187 L800 197 L812 185 L825 192Z" fill="#fff"/>
+  <path d="M420 196 L405 210 L414 208 L420 214 L428 207 L436 210Z" fill="#fff"/>
+  <path d="M-40 318 L90 268 L170 300 L300 238 L420 300 L560 250 L680 296 L860 236 L1000 290 V318Z" fill="#86a6c8"/>
+</g>`;
+const LAKE="M360 314 Q680 306 1000 312 V560 H360Z";
+
+svg.innerHTML=`
+<defs>
+  <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fd2ff"/><stop offset=".75" stop-color="#d9f2ff"/><stop offset="1" stop-color="#f1fbff"/></linearGradient>
+  <linearGradient id="lakeG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a7def2"/><stop offset=".45" stop-color="#6cbde0"/><stop offset="1" stop-color="#3d93c2"/></linearGradient>
+  <radialGradient id="sunG"><stop offset="0" stop-color="#fff6c2"/><stop offset="1" stop-color="#ffd84d"/></radialGradient>
+  <clipPath id="lakeClip"><path d="${LAKE}"/></clipPath>
+  <clipPath id="above" clipPathUnits="userSpaceOnUse"><rect x="-140" y="-220" width="280" height="220"/></clipPath>
+  <clipPath id="below" clipPathUnits="userSpaceOnUse"><rect x="-140" y="0" width="280" height="90"/></clipPath>
+  ${MTN}${DUCK}${FROG}
+</defs>
+<rect width="960" height="540" fill="url(#skyG)"/>
+<g class="par" data-d="2">
+  <circle cx="132" cy="92" r="70" fill="#fff3b0" opacity=".35"/><circle cx="132" cy="92" r="44" fill="url(#sunG)"/>
+  ${cloud(160,70,.9,.95,95,-20)}${cloud(520,52,.7,.85,130,-80)}${cloud(760,110,.55,.8,110,-50)}
+  <path id="bird1" fill="none" stroke="#3a4a5a" stroke-width="2.5" stroke-linecap="round"/><path id="bird2" fill="none" stroke="#3a4a5a" stroke-width="2.2" stroke-linecap="round"/>
+</g>
+<g class="par" data-d="5"><use href="#mtnArt"/></g>
+<g class="par" data-d="9">
+  <path d="M-40 330 Q120 286 260 304 Q380 270 520 300 Q660 280 780 302 Q880 288 1000 300 V340 H-40Z" fill="#7cc274"/>
+  ${[380,402,430,466,500,540,590,630,676,720,760,806,850,890,930,968].map((x,i)=>pine(x,316+(i%3),.55+((i*37)%5)/20,i%2?"#3f8f4f":"#4b9d58")).join("")}
+</g>
+<g class="par" data-d="14" id="Lwater">
+  <path d="${LAKE}" fill="url(#lakeG)"/>
+  <g clip-path="url(#lakeClip)"><g id="refl" opacity=".28"><use href="#mtnArt" transform="translate(0 628) scale(1 -1)"/></g><g id="shimmer"></g></g>
+  <path d="M362 314 Q680 306 1000 312" stroke="#fff" stroke-width="3" opacity=".5" fill="none"/>
+  <g id="ripples"></g>
+  <g id="waterObjs"></g>
+</g>
+<g class="par" data-d="20" id="Lground">
+  <path d="M-40 296 Q120 286 300 304 Q410 314 452 344 Q480 374 488 424 Q500 484 576 560 H-40Z" fill="#ead8a2"/>
+  <path id="bank" class="tap" d="M-40 296 Q120 286 300 304 Q400 314 440 342 Q466 372 474 422 Q484 482 556 560 H-40Z" fill="#94d36f"/>
+  <path d="M-40 360 Q160 340 380 356 Q420 360 446 380" stroke="#a4dc80" stroke-width="18" fill="none" opacity=".6" pointer-events="none"/>
+  <path d="M-40 446 Q180 430 430 442 Q452 450 432 458 Q180 450 -40 472Z" fill="#e4cf98" pointer-events="none"/>
+  ${tree(70,334,1.05)}
+  <g pointer-events="none">${daisy(150,392,"#fff")}${daisy(230,410,"#ffb3c7")}${daisy(310,384,"#fff")}${daisy(120,500,"#ffb3c7")}${daisy(260,512,"#fff")}</g>
+  <g transform="translate(0 0)" pointer-events="none">
+    <rect x="370" y="404" width="80" height="34" rx="16" fill="#a0683f"/><rect x="376" y="408" width="66" height="6" rx="3" fill="#b9814f" opacity=".7"/>
+    <ellipse cx="450" cy="421" rx="9" ry="17" fill="#d9a86c"/><ellipse cx="450" cy="421" rx="5" ry="10" fill="none" stroke="#b07a45" stroke-width="2"/>
+  </g>
+  <g pointer-events="none">${cattail(486,456,62,2.8)}${cattail(498,450,76,3.4)}${cattail(512,468,58,3.1)}</g>
+  <g id="boy" class="tap"></g>
+</g>
+<g class="par" data-d="32" pointer-events="none">
+  <path d="M-40 560 Q-10 512 10 560 Q24 506 44 560 Q60 520 80 560 Q100 500 120 560 Q140 526 160 560Z" fill="#6fbf58"/>
+  <ellipse cx="560" cy="528" rx="26" ry="12" fill="#9aa3ad"/><ellipse cx="590" cy="534" rx="16" ry="8" fill="#b4bcc5"/>
+</g>`;
+
+/* ===================== BOY RIG (side view, faces +x, origin at ground under hips) ===================== */
+const boy=$("#boy");
+boy.innerHTML=`
+  <ellipse id="bShadow" cy="2" rx="30" ry="6" fill="#2f6b2a" opacity=".16"/>
+  <path id="legFar" fill="none" stroke="${C.skin2}" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse id="shoeFar" rx="14" ry="8" fill="${C.shoe2}"/>
+  <path id="legNear" fill="none" stroke="${C.skin}" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse id="shoeNear" rx="14" ry="8" fill="${C.shoe}"/>
+  <g id="torso">
+    <defs><clipPath id="shirtClip" clipPathUnits="userSpaceOnUse"><path d="M-16 -62 Q4 -70 22 -60 Q28 -36 24 -6 L-20 -6 Q-24 -36 -16 -62Z"/></clipPath></defs>
+    <path id="armFar" fill="none" stroke="${C.skin2}" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle id="handFar" r="6.5" fill="${C.skin2}"/><circle cx="4" cy="-54" r="9.5" fill="${C.shirt2}"/>
+    <path d="M-18 -12 L20 -12 Q24 4 20 10 L-16 10 Q-22 2 -18 -12Z" fill="${C.shorts}"/>
+    <path d="M-16 -62 Q4 -70 22 -60 Q28 -36 24 -6 L-20 -6 Q-24 -36 -16 -62Z" fill="${C.shirt}"/>
+    <rect x="-26" y="-32" width="56" height="8" fill="#fff" opacity=".85" clip-path="url(#shirtClip)"/>
+    <g id="head">
+      <g id="headSide">
+        <circle cx="4" cy="-40" r="42" fill="${C.skin}"/>
+        <path d="M38 -62 Q30 -86 0 -84 Q-38 -82 -40 -44 Q-41 -26 -30 -14 Q-26 -30 -22 -40 Q-16 -36 -10 -44 Q-2 -54 6 -56 Q18 -52 26 -58 Q32 -54 38 -62Z" fill="${C.hair}"/>
+        <path d="M2 -83 q-4 -14 9 -16" stroke="${C.hair}" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <circle cx="-6" cy="-36" r="9" fill="${C.skin}"/><circle cx="-6" cy="-36" r="4.5" fill="${C.skin2}"/>
+        <circle cx="45" cy="-35" r="6.5" fill="${C.skin}"/>
+        <path d="M20 -58 Q26 -61 32 -58" stroke="${C.hair}" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <g id="sEyeOpen"><ellipse cx="27" cy="-46" rx="4.8" ry="6.8" fill="${C.eye}"/><circle cx="28.6" cy="-48.6" r="1.7" fill="#fff"/></g>
+        <path id="sEyeBlink" d="M22 -46 L32 -46" stroke="${C.eye}" stroke-width="3" stroke-linecap="round" style="display:none"/>
+        <path id="sEyeHappy" d="M22 -44 Q27 -52 32 -44" stroke="${C.eye}" stroke-width="3.4" fill="none" stroke-linecap="round" style="display:none"/>
+        <ellipse cx="24" cy="-28" rx="7" ry="4.5" fill="${C.cheek}" opacity=".6"/>
+        <path id="sMouthSmile" d="M30 -20 Q36 -14 42 -21" stroke="${C.line}" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <g id="sMouthOpen" style="display:none"><ellipse cx="36" cy="-18" rx="4.6" ry="5.4" fill="${C.mouth}"/><ellipse cx="36" cy="-15.5" rx="2.6" ry="1.8" fill="#ff7d8f"/></g>
+      </g>
+      <g id="headFront" style="display:none">
+        <circle cx="-42" cy="-36" r="9" fill="${C.skin}"/><circle cx="42" cy="-36" r="9" fill="${C.skin}"/>
+        <circle cx="0" cy="-40" r="42" fill="${C.skin}"/>
+        <path d="M-42 -38 Q-44 -84 0 -84 Q44 -84 42 -38 Q36 -62 18 -60 Q4 -66 -10 -58 Q-28 -64 -42 -38Z" fill="${C.hair}"/>
+        <ellipse cx="-14" cy="-42" rx="5" ry="7" fill="${C.eye}"/><ellipse cx="14" cy="-42" rx="5" ry="7" fill="${C.eye}"/>
+        <ellipse cx="0" cy="-32" rx="3.5" ry="2.5" fill="${C.skin2}"/>
+        <ellipse cx="-24" cy="-28" rx="7" ry="4.5" fill="${C.cheek}" opacity=".6"/><ellipse cx="24" cy="-28" rx="7" ry="4.5" fill="${C.cheek}" opacity=".6"/>
+        <path d="M-8 -20 Q0 -13 8 -20" stroke="${C.line}" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
+    </g>
+    <path id="armNear" fill="none" stroke="${C.skin}" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle id="handNear" r="7" fill="${C.skin}"/><circle cx="4" cy="-54" r="10" fill="${C.shirt}"/>
+  </g>`;
+const E={}; svg.querySelectorAll("[id]").forEach(el=>E[el.id]=el);
+
+function ik(S,T,l1,l2,outward){
+  const dx=T[0]-S[0], dy=T[1]-S[1], d=Math.hypot(dx,dy)||1, dd=clamp(d,Math.abs(l1-l2)+1,l1+l2-.5);
+  const ux=dx/d, uy=dy/d, a=Math.acos(clamp((l1*l1+dd*dd-l2*l2)/(2*l1*dd),-1,1));
+  const c=[a,-a].map(s=>[S[0]+l1*(ux*Math.cos(s)-uy*Math.sin(s)),S[1]+l1*(ux*Math.sin(s)+uy*Math.cos(s))]);
+  const El=outward<0?(c[0][0]<c[1][0]?c[0]:c[1]):(c[0][0]>c[1][0]?c[0]:c[1]);
+  return {E:El,W:[S[0]+ux*dd,S[1]+uy*dd]};
+}
+const f1=v=>v.toFixed(1);
+function hose(S,Q,W){ const k=.45, p1=[S[0]+(Q[0]-S[0])*(1-k),S[1]+(Q[1]-S[1])*(1-k)], p2=[Q[0]+(W[0]-Q[0])*k,Q[1]+(W[1]-Q[1])*k];
+  return `M${f1(S[0])} ${f1(S[1])} L${f1(p1[0])} ${f1(p1[1])} Q${f1(Q[0])} ${f1(Q[1])} ${f1(p2[0])} ${f1(p2[1])} L${f1(W[0])} ${f1(W[1])}`; }
+
+/* ===================== TWEENS ===================== */
+const EASE={io:t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2,in:t=>t*t*t,out:t=>1-Math.pow(1-t,3),lin:t=>t};
+let NOW=performance.now(); const TW=[];
+function tween(obj,to,dur,ease="io"){ return new Promise(res=>{ TW.forEach(tw=>{ if(tw.obj===obj) for(const k in to) delete tw.to[k]; });
+  const from={}; for(const k in to) from[k]=obj[k]; TW.push({obj,from,to:{...to},dur,t0:NOW,e:EASE[ease],res}); }); }
+function stepTweens(){ for(let i=TW.length-1;i>=0;i--){ const tw=TW[i], k=clamp((NOW-tw.t0)/tw.dur), e=tw.e(k);
+  for(const key in tw.to) tw.obj[key]=lerp(tw.from[key],tw.to[key],e); if(k>=1){ TW.splice(i,1); tw.res(); } } }
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* ===================== SOUND ===================== */
+let ac=null;
+function audio(){ try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)(); if(ac.state==="suspended") ac.resume(); }catch(e){} return ac; }
+function noise(dur,type,freq,q,vol,delay=0){ const a=ac; if(!a||a.state!=="running") return; const n=a.createBufferSource(), b=a.createBuffer(1,Math.max(1,a.sampleRate*dur),a.sampleRate), d=b.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2.5); n.buffer=b; const f=a.createBiquadFilter(); f.type=type; f.frequency.value=freq; f.Q.value=q;
+  const g=a.createGain(); g.gain.value=vol; n.connect(f).connect(g).connect(a.destination); n.start(a.currentTime+delay); }
+function osc(type,f0,f1,dur,vol,delay=0,filt){ const a=ac; if(!a||a.state!=="running") return; const o=a.createOscillator(), g=a.createGain(), t0=a.currentTime+delay; o.type=type;
+  o.frequency.setValueAtTime(f0,t0); o.frequency.exponentialRampToValueAtTime(f1,t0+dur); g.gain.setValueAtTime(.0001,t0); g.gain.exponentialRampToValueAtTime(vol,t0+.012); g.gain.exponentialRampToValueAtTime(.0008,t0+dur);
+  let node=o; if(filt){ const f=a.createBiquadFilter(); f.type=filt[0]; f.frequency.value=filt[1]; f.Q.value=filt[2]; o.connect(f); node=f; } node.connect(g).connect(a.destination); o.start(t0); o.stop(t0+dur+.02); }
+const sfx={
+  step:()=>noise(.06,"bandpass",420,1,.22),
+  quack:()=>{ osc("sawtooth",560,330,.13,.32,0,["bandpass",1300,3]); osc("sawtooth",540,320,.13,.3,.17,["bandpass",1300,3]); },
+  ribbit:()=>{ osc("square",150,105,.07,.18,0,["lowpass",700,1]); osc("square",160,110,.08,.18,.1,["lowpass",700,1]); },
+  splash:()=>noise(.4,"lowpass",1600,.7,.7),
+  plop:()=>osc("sine",520,170,.13,.25),
+  boing:()=>osc("triangle",260,620,.18,.12)
+};
+
+/* ===================== WATER FX ===================== */
+const ripG=E.ripples, RIP=[], DROPS=[];
+const depth=y=>.72+clamp((y-390)/110)*.3;
+function ripple(x,y,max,dur){ const el=document.createElementNS("http://www.w3.org/2000/svg","ellipse"); el.setAttribute("fill","none"); el.setAttribute("stroke","#fff"); ripG.appendChild(el); RIP.push({el,x,y,max:max*depth(y),dur,t0:NOW}); }
+function splash(x,y){ for(let i=0;i<3;i++) setTimeout(()=>ripple(x,y,40+i*14,1200),i*140);
+  for(let i=0;i<9;i++){ const el=document.createElementNS("http://www.w3.org/2000/svg","circle"); el.setAttribute("r",(2+Math.random()*2).toFixed(1)); el.setAttribute("fill","#e8f7ff"); ripG.appendChild(el);
+    DROPS.push({el,x,y,y0:y,vx:(Math.random()-.5)*110,vy:-90-Math.random()*110}); } }
+const shim=[]; for(let i=0;i<12;i++){ const el=document.createElementNS("http://www.w3.org/2000/svg","rect"); const y=330+Math.random()*190;
+  el.setAttribute("height","2.4"); el.setAttribute("rx","1.2"); el.setAttribute("fill","#fff"); el.setAttribute("width",(14+Math.random()*30).toFixed(0)); E.shimmer.appendChild(el); shim.push({el,x:380+Math.random()*580,y,p:Math.random()*6}); }
+function renderWater(t,dt){
+  for(let i=RIP.length-1;i>=0;i--){ const r=RIP[i], k=clamp((NOW-r.t0)/r.dur); r.el.setAttribute("cx",f1(r.x)); r.el.setAttribute("cy",f1(r.y)); r.el.setAttribute("rx",f1(4+r.max*k)); r.el.setAttribute("ry",f1((4+r.max*k)*.28));
+    r.el.setAttribute("stroke-width",(2.2*(1-k)+.4).toFixed(2)); r.el.setAttribute("opacity",((1-k)*.85).toFixed(2)); if(k>=1){ r.el.remove(); RIP.splice(i,1); } }
+  for(let i=DROPS.length-1;i>=0;i--){ const d=DROPS[i]; d.vy+=420*dt; d.x+=d.vx*dt; d.y+=d.vy*dt; d.el.setAttribute("cx",f1(d.x)); d.el.setAttribute("cy",f1(d.y)); if(d.y>d.y0&&d.vy>0){ d.el.remove(); DROPS.splice(i,1); } }
+  shim.forEach(s=>{ s.el.setAttribute("x",f1(s.x+Math.sin(t*.35+s.p)*24)); s.el.setAttribute("y",f1(s.y)); s.el.setAttribute("opacity",(.12+.25*(.5+.5*Math.sin(t*1.4+s.p*2))).toFixed(2)); });
+  E.refl.setAttribute("transform",`translate(${f1(Math.sin(t*.9)*2.5)} 0)`);
+  // birds
+  [["bird1",t*.024,140,1],["bird2",t*.019+.4,176,.8]].forEach(([id,u,y,s])=>{ const x=((u%1)*1260)-150, fl=Math.sin(t*7+y)*7*s;
+    E[id].setAttribute("d",`M${f1(x-12*s)} ${f1(y-fl)} Q${f1(x-5*s)} ${f1(y-4*s)} ${f1(x)} ${f1(y)} Q${f1(x+5*s)} ${f1(y-4*s)} ${f1(x+12*s)} ${f1(y-fl)}`); });
+}
+
+/* lily pads + water objects (sorted by depth each frame) */
+const PADS=[{x:700,y:452,rx:38,ry:10},{x:862,y:398,rx:29,ry:8},{x:596,y:496,rx:32,ry:9,flower:1}];
+const objs=[];
+PADS.forEach(p=>{ const g=document.createElementNS("http://www.w3.org/2000/svg","g"); const a=.32;
+  g.innerHTML=`<path d="M0 0 L${f1(p.rx*Math.cos(-a))} ${f1(p.ry*Math.sin(-a))} A${p.rx} ${p.ry} 0 1 0 ${f1(p.rx*Math.cos(a))} ${f1(p.ry*Math.sin(a))}Z" fill="#4fae55"/>
+    <path d="M0 0 L${-p.rx*.8} 0 M0 0 L${-p.rx*.5} ${-p.ry*.7} M0 0 L${-p.rx*.5} ${p.ry*.7}" stroke="#3f9447" stroke-width="1.6"/>
+    ${p.flower?`<g transform="translate(-8 -4)">${[0,72,144,216,288].map(r=>`<ellipse cy="-7" rx="4" ry="8" fill="#ffb3cf" transform="rotate(${r})"/>`).join("")}<circle r="3.6" fill="#ffe066"/></g>`:""}`;
+  g.setAttribute("transform",`translate(${p.x} ${p.y})`); E.waterObjs.appendChild(g); objs.push({el:g,y:()=>p.y}); });
+function swimmer(id){ const g=document.createElementNS("http://www.w3.org/2000/svg","g"); g.id=id; g.classList.add("tap");
+  g.innerHTML=`<g clip-path="url(#below)" opacity=".38"><g class="in"><use href="#${id}Art"/></g></g><g clip-path="url(#above)"><g class="in"><use href="#${id}Art"/></g></g>
+    <ellipse class="hit" cx="0" cy="-14" rx="44" ry="34" fill="transparent"/>`; E.waterObjs.appendChild(g); return {g,ins:[...g.querySelectorAll(".in")]}; }
+const duckEl=swimmer("duck"), frogEl=swimmer("frog");
+objs.push({el:duckEl.g,y:()=>D.y},{el:frogEl.g,y:()=>F.y+(F.mode==="sit"?1:0)});
+let lastOrder="";
+function sortWater(){ const s=objs.slice().sort((a,b)=>a.y()-b.y()); const key=s.map(o=>objs.indexOf(o)).join(); if(key!==lastOrder){ lastOrder=key; s.forEach(o=>E.waterObjs.appendChild(o.el)); } }
+
+/* ===================== DUCK ===================== */
+const D={x:780,y:414,dir:-1,sx:-1,tilt:0,flap:0,hop:0,busy:false,nextDab:performance.now()+7000,nextWake:0};
+function updateDuck(dt){
+  if(!D.busy){ D.x+=D.dir*24*dt;
+    if(D.x>905&&D.dir>0){ D.dir=-1; tween(D,{sx:-1},700); } if(D.x<575&&D.dir<0){ D.dir=1; tween(D,{sx:1},700); }
+    if(NOW>D.nextWake){ D.nextWake=NOW+650; ripple(D.x-D.dir*26*depth(D.y),D.y+1,14,900); }
+    if(NOW>D.nextDab){ D.nextDab=NOW+9000+Math.random()*6000; dabble(); } }
+}
+async function dabble(){ D.busy=true; await tween(D,{tilt:78},480,"in"); ripple(D.x+D.dir*14,D.y,22,900); await wait(1000); await tween(D,{tilt:0},420,"out"); ripple(D.x,D.y,18,800); D.busy=false; }
+async function duckTap(){ if(D.busy&&D.tilt>5) return; audio(); D.busy=true; sfx.quack(); ripple(D.x,D.y,26,900);
+  for(let i=0;i<3;i++){ await tween(D,{flap:1,hop:-12},130,"out"); await tween(D,{flap:0,hop:0},150,"in"); } ripple(D.x,D.y,30,1000); D.busy=false; }
+function renderDuck(t){ const sc=depth(D.y), bob=Math.sin(t*2.3)*1.6, s=Math.sign(D.sx)||1;
+  duckEl.g.setAttribute("transform",`translate(${f1(D.x)} ${f1(D.y)})`);
+  const tr=`translate(0 ${f1(bob+D.hop)}) rotate(${f1(D.tilt*s+Math.sin(t*2.3+1)*2)}) scale(${(D.sx*sc).toFixed(3)} ${sc.toFixed(3)})`;
+  duckEl.ins.forEach(n=>n.setAttribute("transform",tr));
+  E.duckFeet.setAttribute("transform",`rotate(${f1(Math.sin(t*8)*24)} 0 6)`); E.duckWing.setAttribute("transform",`rotate(${f1(-D.flap*55)} 12 -9)`); }
+
+/* ===================== FROG ===================== */
+const F={x:700,y:451,sx:1,rot:0,hop:0,sq:0,sac:0,mode:"sit",k:0,kp:0,v:0,tx:0,ty:0,pad:0,nextRib:performance.now()+3000};
+let frogPoke=null;
+function leap(x1,y1,dur,h,after){ return new Promise(res=>{ sfx.boing(); F.mode="leap"; F.L={x0:F.x,y0:F.y,x1,y1,t0:NOW,dur,h,after,res}; }); }
+async function frogLife(){ await wait(2600);
+  for(;;){ const a=PADS[F.pad], nb=F.pad?0:1, b=PADS[nb];
+    F.mode="sit"; F.x=a.x; F.y=a.y-1; F.sx=Math.sign(b.x-a.x)||1;
+    await Promise.race([wait(7000+Math.random()*4000),new Promise(r=>frogPoke=r)]); frogPoke=null;
+    await tween(F,{sq:.12},140,"out"); await tween(F,{sq:-.06},90,"in");
+    await leap(lerp(a.x,b.x,.3),lerp(a.y,b.y,.3)+6,560,52,"swim"); F.sq=0; splash(F.x,F.y); sfx.splash();
+    F.tx=lerp(a.x,b.x,.8); F.ty=lerp(a.y,b.y,.8)+5; F.kp=.3; await new Promise(r=>F.arrive=r);
+    await leap(b.x,b.y-1,420,28,"sit"); F.pad=nb; sfx.plop(); ripple(b.x,b.y,30,900); await tween(F,{sq:.14},90,"out"); await tween(F,{sq:0},220,"out"); }
+}
+async function ribbit(){ sfx.ribbit(); for(let i=0;i<2;i++){ await tween(F,{sac:1},100,"out"); await tween(F,{sac:0},110,"in"); } }
+function updateFrog(dt){
+  if(F.mode==="sit"&&NOW>F.nextRib){ F.nextRib=NOW+3800+Math.random()*3500; ribbit(); }
+  if(F.mode==="leap"){ const L=F.L, u=clamp((NOW-L.t0)/L.dur); F.x=lerp(L.x0,L.x1,u); F.y=lerp(L.y0,L.y1,u); F.hop=-L.h*4*u*(1-u);
+    const vx=L.x1-L.x0, vy=(L.y1-L.y0)-L.h*4*(1-2*u); F.sx=Math.sign(vx)||F.sx; F.rot=Math.atan2(F.sx*vy,Math.abs(vx)+1)*57.3*.75;
+    if(u>=1){ F.rot=0; F.hop=0; F.mode=L.after; L.res(); } }
+  if(F.mode==="swim"){ const dx=F.tx-F.x, dy=F.ty-F.y, d=Math.hypot(dx,dy); if(Math.abs(dx)>2) F.sx=Math.sign(dx);
+    const p=F.kp; F.kp=(F.kp+dt/.95)%1; if(p<.6&&F.kp>=.6){ F.v=78; ripple(F.x-F.sx*22*depth(F.y),F.y,14,700); }
+    F.k=F.kp<.6?EASE.io(F.kp/.6):F.kp<.72?1-(F.kp-.6)/.12:0;
+    F.v*=Math.exp(-dt*2.4); const mv=Math.min(d,(F.v+5)*dt); if(d>0){ F.x+=dx/d*mv; F.y+=dy/d*mv; }
+    if(d<2.5&&F.arrive){ const r=F.arrive; F.arrive=null; r(); } }
+}
+function renderFrog(t){ const sc=depth(F.y)*1.05, sit=F.mode==="sit";
+  E.frogSitArt.style.display=sit?"":"none"; E.frogSwimArt.style.display=sit?"none":"";
+  const k=F.mode==="leap"?0:F.k;
+  [["Near",5,7],["Far",1,6]].forEach(([n,oy])=>{ const H=[-16,oy], K=[lerp(-34,-6,k),lerp(6,13,k)+oy-4], P=[lerp(-54,-25,k),lerp(7,10,k)+oy-4];
+    E["fLeg"+n].setAttribute("d",`M${H[0]} ${H[1]} L${f1(K[0])} ${f1(K[1])} L${f1(P[0])} ${f1(P[1])}`); E["fFoot"+n].setAttribute("cx",f1(P[0]-4)); E["fFoot"+n].setAttribute("cy",f1(P[1])); });
+  E.frogSac.setAttribute("transform",`translate(20 -24) scale(${(1+F.sac*.9).toFixed(2)}) translate(-20 24)`);
+  const y=F.mode==="swim"?2+Math.sin(t*3)*1:0;
+  frogEl.g.setAttribute("transform",`translate(${f1(F.x)} ${f1(F.y)})`);
+  const tr=`translate(0 ${f1(y+F.hop)}) rotate(${f1(F.rot)}) scale(${(F.sx*sc*(1+F.sq)).toFixed(3)} ${(sc*(1-F.sq)).toFixed(3)})`;
+  frogEl.ins.forEach(n=>n.setAttribute("transform",tr)); }
+
+/* ===================== BOY ===================== */
+const GROUND=440, SEAT=446, SPEED=96, STRIDE=18;
+const B={x:-90,dir:1,sx:1,target:null,arrive:null,w:0,phase:0,s:0,lean:0,sq:0,hd:0,wave:0,point:0,happy:false,talking:false,blink:false,lastStep:0};
+function updateBoy(dt){
+  if(B.target!==null){ const d=B.target-B.x, ad=Math.abs(d);
+    if(ad<.8){ B.x=B.target; B.target=null; const a=B.arrive; B.arrive=null; a&&a(); }
+    else { B.w=Math.min(1,B.w+dt*3.2); const sp=SPEED*B.w*clamp(ad/45+.28); const mv=Math.min(ad,sp*dt); B.x+=Math.sign(d)*mv; B.phase+=mv/STRIDE; } }
+  else B.w=Math.max(0,B.w-dt*4.5);
+  const st=Math.floor((B.phase-Math.PI/2)/Math.PI); if(st!==B.lastStep){ B.lastStep=st; if(B.w>.35) sfx.step(); }
+}
+function renderBoy(t){
+  const w=B.w, ph=B.phase, s=B.s;
+  const bob=-2.6*Math.cos(2*ph)*w;
+  const hip=[lerp(0,-36,s),lerp(-62,-40,s)+bob];
+  [["Far",-2,ph+Math.PI],["Near",2,ph]].forEach(([n,off,p])=>{
+    const F=[off+STRIDE*Math.sin(p)*w, -Math.max(0,Math.cos(p))*11*w], H=[hip[0]+off*.5,hip[1]];
+    const r=ik(H,F,32,32,1); E["leg"+n].setAttribute("d",hose(H,r.E,r.W));
+    E["shoe"+n].setAttribute("cx",f1(r.W[0]+6)); E["shoe"+n].setAttribute("cy",f1(r.W[1]-3)); });
+  E.bShadow.setAttribute("cx",f1(hip[0]*.6));
+  const breath=Math.sin(t*2.1)*.01*(1-w);
+  E.torso.setAttribute("transform",`translate(${f1(hip[0])} ${f1(hip[1])}) rotate(${f1(B.lean+(w*2.5))}) scale(${(1+B.sq).toFixed(3)} ${(1-B.sq+breath).toFixed(3)})`);
+  const S=[4,-54];
+  const near=[lerp(-15*Math.sin(ph)*w,24,s),lerp(46,36,s)], far=[lerp(15*Math.sin(ph)*w,20,s),lerp(46,38,s)];
+  const wv=[16+9*Math.sin(t*12),-50], pt=[50,-16];
+  const nT=[lerp(lerp(near[0],wv[0],B.wave),pt[0],B.point),lerp(lerp(near[1],wv[1],B.wave),pt[1],B.point)];
+  [["Near",nT],["Far",far]].forEach(([n,T])=>{ const r=ik(S,[S[0]+T[0],S[1]+T[1]],25,24,-1); E["arm"+n].setAttribute("d",hose(S,r.E,r.W)); E["hand"+n].setAttribute("cx",f1(r.W[0])); E["hand"+n].setAttribute("cy",f1(r.W[1])); });
+  E.head.setAttribute("transform",`translate(4 -62) rotate(${f1(B.hd+Math.sin(t*1.4)*1.2+(B.talking?Math.sin(t*9)*1.5:0))})`);
+  // turning: show front face while passing through edge-on
+  const as=Math.abs(B.sx), front=as<.6, sxE=(Math.sign(B.sx)||1)*Math.max(as,.55);
+  E.headSide.style.display=front?"none":""; E.headFront.style.display=front?"":"none";
+  E.headFront.setAttribute("transform",`scale(${(1/sxE).toFixed(3)} 1)`);
+  boy.setAttribute("transform",`translate(${f1(B.x)} ${GROUND}) scale(${sxE.toFixed(3)} 1)`);
+  // face
+  E.sEyeOpen.style.display=(!B.happy&&!B.blink)?"":"none"; E.sEyeBlink.style.display=(B.blink&&!B.happy)?"":"none"; E.sEyeHappy.style.display=B.happy?"":"none";
+  const open=B.talking&&Math.sin(t*19)>-.3; E.sMouthOpen.style.display=(open||B.happy)?"":"none"; E.sMouthSmile.style.display=(open||B.happy)?"none":"";
+}
+setInterval(()=>{ B.blink=true; setTimeout(()=>B.blink=false,130); },3400);
+
+let walkId=0;
+function turn(d){ B.dir=d; return tween(B,{sx:d},340,"io"); }
+async function walkTo(tx){ const id=++walkId; B.target=null; if(B.s>.05) await stand(true); if(id!==walkId) return false;
+  const d=Math.sign(tx-B.x); if(d&&d!==B.dir) await turn(d); if(id!==walkId) return false;
+  if(Math.abs(tx-B.x)<1) return true; B.target=tx; await new Promise(r=>B.arrive=r); return id===walkId; }
+async function sit(){ if(B.s>.9) return; if(Math.abs(B.x-SEAT)>1||B.target!==null){ if(!await walkTo(SEAT)) return; } if(B.dir!==1) await turn(1);
+  await tween(B,{s:.55,lean:16},330,"in"); await tween(B,{s:1,lean:-4,sq:.06},260,"out"); await tween(B,{sq:0},200); }
+async function stand(quiet){ if(B.s<.05) return; await tween(B,{lean:20,s:.85},260); await tween(B,{s:0,lean:-2},340,"out"); await tween(B,{lean:0},180); }
+async function ensureIn(){ if(B.x<40) await walkTo(SEAT); }
+
+/* ===================== DIALOGUE ===================== */
+let sayId=0;
+function voice(){ try{ const vs=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang)); return vs.find(v=>/en-US/i.test(v.lang)&&/female|samantha|aria|jenny|zira|google us/i.test(v.name))||vs.find(v=>/en-US/i.test(v.lang))||vs[0]||null; }catch(e){ return null; } }
+try{ speechSynthesis.getVoices(); }catch(e){}
+function say(who,en,vi,boyTalks=true){ const id=++sayId; $("#who").textContent=who; $("#en").textContent=en; $("#vi").textContent=vi; if(boyTalks) B.talking=true;
+  const est=600+en.split(/\s+/).length*360;
+  return new Promise(res=>{ let done=false; const fin=()=>{ if(done) return; done=true; if(id===sayId) B.talking=false; res(); };
+    try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(en), v=voice(); if(v){u.voice=v;u.lang=v.lang;} else u.lang="en-US";
+      u.rate=.92; u.pitch=boyTalks?1.55:1.1; let st=false; u.onstart=()=>st=true; u.onend=fin; u.onerror=()=>setTimeout(fin,st?0:est); speechSynthesis.speak(u); setTimeout(()=>{ if(!st) setTimeout(fin,est); },900); }
+    catch(e){ setTimeout(fin,est); } setTimeout(fin,est+4000); }); }
+
+/* ===================== ACTIONS ===================== */
+const ACT={
+  async go(){ say("Ben","Let's go to the lake!","Mình ra hồ nào!"); if(await walkTo(SEAT)){ B.hd=0; await tween(B,{hd:-5},300); say("Ben","Wow! A duck and a frog!","Ồ! Có con vịt và con ếch!"); B.happy=true; await wait(1200); B.happy=false; await tween(B,{hd:0},400); } },
+  async sit(){ await ensureIn(); await sit(); if(B.s>.9) say("Ben","I sit down on the log.","Mình ngồi xuống khúc gỗ."); },
+  async stand(){ if(B.s<.05){ say("Ben","I am standing.","Mình đang đứng mà."); return; } await stand(); say("Ben","Stand up!","Đứng lên nào!"); },
+  async wave(){ await ensureIn(); say("Ben","Hello! Hello!","Xin chào! Xin chào!"); await tween(B,{wave:1,point:0},220,"out"); await wait(1400); await tween(B,{wave:0},260); },
+  async point(){ await ensureIn(); if(B.dir!==1) await turn(1); tween(B,{hd:-7},300); await tween(B,{point:1,wave:0},260,"out"); await say("Ben","Look! A duck!","Nhìn kìa! Một con vịt!");
+    duckTap(); say("Duck","Quack, quack!","Quạc quạc!",false); B.happy=true; await wait(1100); B.happy=false; await tween(B,{point:0,hd:0},320); },
+  async frog(){ if(F.mode==="sit"&&frogPoke){ say("Ben","Jump, frog, jump!","Ếch ơi, nhảy đi!",B.x>40); frogPoke(); } else say("Ben","The frog is swimming.","Con ếch đang bơi.",B.x>40); },
+  async home(){ say("Ben","Bye-bye, lake!","Tạm biệt hồ nhé!"); await walkTo(-90); }
+};
+document.querySelectorAll("[data-a]").forEach(b=>b.addEventListener("click",()=>{ audio(); ACT[b.dataset.a](); }));
+function toLocal(e,el){ const p=svg.createSVGPoint(); p.x=e.clientX; p.y=e.clientY; return p.matrixTransform(el.getScreenCTM().inverse()); }
+E.bank.addEventListener("click",e=>{ audio(); const p=toLocal(e,E.Lground); walkTo(clamp(p.x,24,SEAT)); });
+boy.addEventListener("click",e=>{ e.stopPropagation(); audio(); ACT.wave(); });
+duckEl.g.addEventListener("click",()=>{ duckTap(); say("Duck","Quack, quack!","Quạc quạc!",false); });
+frogEl.g.addEventListener("click",()=>{ audio(); if(F.mode==="sit"){ ribbit(); ACT.frog(); } else { ripple(F.x,F.y,24,800); say("Frog","Ribbit!","Ộp ộp!",false); } });
+
+/* ===================== CAMERA / LOOP ===================== */
+const pars=[...document.querySelectorAll(".par")]; let camX=0, pointerCam=false;
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+function setCam(x){ pars.forEach(p=>p.style.transform=`translateX(${f1(-x*p.dataset.d)}px)`); }
+if(!reduce){ $("#stage").addEventListener("pointermove",e=>{ if(e.pointerType!=="mouse") return; pointerCam=true; const r=e.currentTarget.getBoundingClientRect(); setCam(((e.clientX-r.left)/r.width-.5)*1.6); });
+  $("#stage").addEventListener("pointerleave",()=>pointerCam=false); }
+let last=performance.now();
+function loop(now){ const dt=Math.min(.05,(now-last)/1000); last=now; NOW=now; const t=now/1000;
+  stepTweens(); updateBoy(dt); updateDuck(dt); updateFrog(dt);
+  renderBoy(t); renderDuck(t); renderFrog(t); renderWater(t,dt); sortWater();
+  if(!pointerCam&&!reduce) setCam(Math.sin(t*.2)*.3);
+  requestAnimationFrame(loop); }
+requestAnimationFrame(loop);
+frogLife();
+setTimeout(()=>ACT.go(),700);
+</script>

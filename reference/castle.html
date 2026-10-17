@@ -1,0 +1,439 @@
+<title>Về Lâu Đài</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Be+Vietnam+Pro:wght@400;500;600&display=swap">
+<style>
+/* Layout: sân khấu cảnh cổ tích 16:9 trọn chiều ngang, phụ đề kể chuyện bên dưới, hàng nút điều khiển cuối cùng. */
+:root{
+  --bg:#f7f3fa; --surface:#ffffff; --surface-2:#f6f1fa; --ink:#241b33; --muted:#665a78;
+  --line:#e4dcec; --accent:#c23f86; --accent-soft:#fbe3f0; --focus:#f2b82e;
+  --f-display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#130f1b; --surface:#1c1626; --surface-2:#241c31; --ink:#efe8f7; --muted:#ab9fbf;
+  --line:#33294a; --accent:#f07bbd; --accent-soft:#3a1d30; --focus:#f6c84f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#130f1b; --surface:#1c1626; --surface-2:#241c31; --ink:#efe8f7; --muted:#ab9fbf;
+  --line:#33294a; --accent:#f07bbd; --accent-soft:#3a1d30; --focus:#f6c84f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;padding-inline:16px;padding-block:24px 48px;margin:0}
+.wrap{max-width:1060px;margin:0 auto;display:grid;gap:18px}
+h1{font-family:var(--f-display);font-size:clamp(30px,5vw,46px);font-weight:800;line-height:1.1;margin:0}
+p{margin:0}
+.lede{color:var(--muted);max-width:74ch;margin-top:8px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:22px;overflow:hidden}
+.stage{position:relative;background:#e9a0a8;touch-action:manipulation}
+.stage svg{display:block;width:100%;height:auto;user-select:none;-webkit-user-select:none}
+.sub{padding:14px 20px;border-top:1px solid var(--line);display:grid;gap:4px;min-height:96px}
+.who{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.en{font-family:var(--f-display);font-size:clamp(22px,3.4vw,30px);font-weight:600;line-height:1.25}
+.vi{color:var(--muted);font-size:14px}
+.ctrl{display:flex;flex-wrap:wrap;gap:8px;padding:12px 20px 18px;border-top:1px solid var(--line)}
+button{font:inherit;font-weight:600;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);padding:8px 15px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.note{font-size:13px;color:var(--muted)}
+.tap{cursor:pointer}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Thử khả năng · phong cảnh phức tạp, 100% vector</div>
+    <h1>Về Lâu Đài</h1>
+    <p class="lede">Hoàng tử và công chúa cưỡi ngựa trắng theo con đường uốn lượn về tòa lâu đài lúc hoàng hôn. Ngựa nhỏ dần theo phối cảnh, bốn chân chạy đúng dáng đi bộ, nước kiệu hay phi nước đại; bờm, đuôi, tóc công chúa bay theo gió. <b>Chạm vào ngựa</b> để ngựa hí và công chúa vẫy tay, <b>chạm vào lâu đài</b> để bắn pháo hoa.</p>
+  </header>
+  <section class="card">
+    <div class="stage"><svg id="svg" viewBox="0 0 960 540" role="img" aria-label="Hoàng tử và công chúa cưỡi ngựa về lâu đài lúc hoàng hôn"></svg></div>
+    <div class="sub" aria-live="polite"><div class="who" id="who">Người kể</div><div class="en" id="en">…</div><div class="vi" id="vi"></div></div>
+    <div class="ctrl">
+      <button id="bPlay" aria-pressed="true">⏸ Tạm dừng</button>
+      <button data-g="walk">🐴 Đi bộ</button><button data-g="trot" aria-pressed="true">🐎 Nước kiệu</button><button data-g="gallop">💨 Phi nước đại</button>
+      <button id="bNight">🌙 Ban đêm</button><button id="bFire">🎆 Pháo hoa</button><button id="bReset">↺ Đi lại từ đầu</button>
+    </div>
+  </section>
+  <p class="note">Không dùng file ảnh nào: bầu trời, mây, núi, lâu đài, ngựa và nhân vật đều là hình vector do code tạo ra (khoảng 50 KB). Hiệu ứng ánh sáng dùng dải màu chuyển và bộ lọc làm mờ, lớp hạt giấy mờ phủ toàn cảnh để bớt cảm giác "phẳng".</p>
+</div>
+
+<script>
+const $=s=>document.querySelector(s), svg=$("#svg"), NS="http://www.w3.org/2000/svg";
+const lerp=(a,b,k)=>a+(b-a)*k, clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)), f1=v=>(+v).toFixed(1);
+const rnd=(a,b)=>a+Math.random()*(b-a);
+
+/* ===================== STATIC SCENE ===================== */
+function win(x,y,w=8,h=13){ return `M${x-w/2} ${y+h/2} V${y-h/2+w/2} A${w/2} ${w/2} 0 0 1 ${x+w/2} ${y-h/2+w/2} V${y+h/2}Z`; }
+function crenel(x0,x1,y,step=12,w=8,h=10,fill="#efe2f4"){ let s=""; for(let x=x0;x<=x1-w+.1;x+=step) s+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}"/>`; return s; }
+function tower(x,yTop,w,roofH,roofC,roofS){ return `
+  <rect x="${x-w/2}" y="${yTop}" width="${w}" height="${-yTop}" fill="url(#wallG)"/>
+  <rect x="${x-w/2}" y="${yTop}" width="${w*.28}" height="${-yTop}" fill="#cdb6df" opacity=".75"/>
+  <path d="M${x-w/2-7} ${yTop} L${x} ${yTop-roofH} L${x+w/2+7} ${yTop}Z" fill="${roofC}"/>
+  <path d="M${x-w/2-7} ${yTop} L${x} ${yTop-roofH} L${x-2} ${yTop}Z" fill="${roofS}"/>
+  <rect x="${x-w/2-9}" y="${yTop-4}" width="${w+18}" height="7" rx="3.5" fill="#f7eefa"/>`; }
+const WINS=[[-76,-122],[-76,-90],[-76,-58],[75,-100],[75,-70],[0,-176],[-34,-96],[34,-96],[-117,-64],[117,-64],[-60,-30],[60,-30]];
+const CASTLE=`
+  ${tower(-76,-150,40,66,"#5c6fd8","#4656b8")}
+  ${tower(75,-128,38,62,"#e2589c","#c03f80")}
+  <rect x="-54" y="-118" width="108" height="118" fill="url(#wallG)"/><rect x="-54" y="-118" width="26" height="118" fill="#cdb6df" opacity=".7"/>
+  ${crenel(-54,54,-128)}
+  ${tower(0,-196,44,84,"#e2589c","#c03f80")}
+  <circle cx="0" cy="-76" r="13" fill="#7c5a92"/>
+  <rect x="-118" y="-54" width="236" height="54" fill="url(#wallG)"/><rect x="-118" y="-54" width="236" height="10" fill="#e3d2ee"/>
+  ${crenel(-118,118,-64)}
+  ${tower(-117,-86,30,44,"#5c6fd8","#4656b8")}${tower(117,-86,30,44,"#5c6fd8","#4656b8")}
+  <path d="M-17 0 V-26 Q0 -46 17 -26 V0Z" fill="#5d3f6e"/>
+  <path d="M-11 0 V-28 M-4 0 V-34 M4 0 V-34 M11 0 V-28 M-16 -12 H16 M-16 -22 H16" stroke="#3e2950" stroke-width="2"/>
+  <g opacity=".14" stroke="#6b4f86" stroke-width="1.5">${[-40,-20].map(y=>`<path d="M-118 ${y} H118"/>`).join("")}${[-100,-80,-60,-40,-20].map(y=>`<path d="M-54 ${y} H54"/>`).join("")}</g>`;
+const flagPole=(x,y,h)=>`<path d="M${x} ${y} V${y-h}" stroke="#7a6a8a" stroke-width="2.4"/>`;
+const FLAGS=[[-76,-216,22,"#ffcf4d"],[75,-190,20,"#ff8fc4"],[0,-280,26,"#ffcf4d"],[-117,-130,14,"#ff8fc4"],[117,-130,14,"#ff8fc4"]];
+const cloud=(x,y,s,id)=>`<g id="${id}" data-x="${x}" data-y="${y}" data-s="${s}"><g transform="scale(${s})"><ellipse cx="0" cy="0" rx="90" ry="22" fill="url(#cloudG)"/><ellipse cx="-36" cy="-14" rx="44" ry="22" fill="url(#cloudG)"/><ellipse cx="22" cy="-22" rx="52" ry="28" fill="url(#cloudG)"/><ellipse cx="66" cy="-6" rx="34" ry="16" fill="url(#cloudG)"/></g></g>`;
+const roundTree=(x,y,s)=>`<g transform="translate(${x} ${y}) scale(${s})"><rect x="-5" y="-40" width="10" height="42" rx="4" fill="#7a5640"/><circle cy="-60" r="32" fill="#5f9b5a"/><circle cx="-14" cy="-70" r="18" fill="#7fb86a"/><circle cx="16" cy="-52" r="20" fill="#548c50"/><circle cx="8" cy="-80" r="10" fill="#f2c58a" opacity=".35"/></g>`;
+const cypress=(x,y,s)=>`<g transform="translate(${x} ${y}) scale(${s})"><path d="M0 -110 Q16 -60 12 -4 L-12 -4 Q-16 -60 0 -110Z" fill="#4c8550"/><path d="M0 -110 Q8 -60 6 -4 L0 -4Z" fill="#6aa260"/><rect x="-3" y="-6" width="6" height="8" fill="#6a4a38"/></g>`;
+const bloom=(x,y,c,s=1)=>`<g transform="translate(${x} ${y}) scale(${s})"><path d="M0 0 Q-3 -16 0 -30" stroke="#5c9b4f" stroke-width="3" fill="none"/>${[0,72,144,216,288].map(a=>`<ellipse cy="-38" rx="4.5" ry="8" fill="${c}" transform="rotate(${a} 0 -30)"/>`).join("")}<circle cy="-30" r="4" fill="#ffe27a"/></g>`;
+
+svg.innerHTML=`
+<defs>
+  <linearGradient id="skyDusk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3d2b73"/><stop offset=".38" stop-color="#9b4f95"/><stop offset=".62" stop-color="#ec7b88"/><stop offset=".8" stop-color="#ffb784"/><stop offset="1" stop-color="#ffd9a0"/></linearGradient>
+  <linearGradient id="skyNight" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c0b2a"/><stop offset=".6" stop-color="#2a2462"/><stop offset="1" stop-color="#5a4a8c"/></linearGradient>
+  <radialGradient id="sunG"><stop offset="0" stop-color="#fff6d6"/><stop offset=".45" stop-color="#ffd48a"/><stop offset="1" stop-color="#ff9e7a" stop-opacity="0"/></radialGradient>
+  <linearGradient id="cloudG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd0c4"/><stop offset="1" stop-color="#b77fb8"/></linearGradient>
+  <linearGradient id="mtnFar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b88fc4"/><stop offset="1" stop-color="#d9a3b8"/></linearGradient>
+  <linearGradient id="mtnNear" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8e6aa8"/><stop offset="1" stop-color="#b58bb0"/></linearGradient>
+  <linearGradient id="hillG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fc27a"/><stop offset="1" stop-color="#6e9c5c"/></linearGradient>
+  <linearGradient id="meadowG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a9c97e"/><stop offset="1" stop-color="#5f9152"/></linearGradient>
+  <linearGradient id="roadG" gradientUnits="userSpaceOnUse" x1="0" y1="260" x2="0" y2="540"><stop offset="0" stop-color="#fbe6c9"/><stop offset="1" stop-color="#e9c294"/></linearGradient>
+  <linearGradient id="wallG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e2d0ee"/><stop offset=".7" stop-color="#f7ecfb"/><stop offset="1" stop-color="#ffe6d8"/></linearGradient>
+  <linearGradient id="horseG" gradientUnits="userSpaceOnUse" x1="0" y1="-136" x2="0" y2="-70"><stop offset="0" stop-color="#ffffff"/><stop offset=".6" stop-color="#f6f0fb"/><stop offset="1" stop-color="#ddd0ec"/></linearGradient>
+  <linearGradient id="maneG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b9a3f0"/><stop offset="1" stop-color="#f7a8d0"/></linearGradient>
+  <linearGradient id="hairG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd970"/><stop offset="1" stop-color="#f2a94a"/></linearGradient>
+  <linearGradient id="dressG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f77fb2"/><stop offset="1" stop-color="#ffb4d3"/></linearGradient>
+  <radialGradient id="vign" cx=".5" cy=".5" r=".75"><stop offset=".6" stop-color="#2a1640" stop-opacity="0"/><stop offset="1" stop-color="#2a1640" stop-opacity=".35"/></radialGradient>
+  <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter>
+  <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 .35  0 0 0 0 .25  0 0 0 0 .4  0 0 0 .55 0"/></filter>
+</defs>
+<rect width="960" height="540" fill="url(#skyDusk)"/>
+<rect id="skyN" width="960" height="540" fill="url(#skyNight)" opacity="0"/>
+<g id="stars" opacity=".15"></g>
+<g id="moon" opacity="0" transform="translate(180 92)"><path d="M4 -26 A26 26 0 1 0 4 26 A21 23 0 1 1 4 -26Z" fill="#fff6d8" filter="url(#glow)"/></g>
+<g id="sun"><circle cx="770" cy="236" r="150" fill="url(#sunG)" opacity=".9"/><circle cx="770" cy="236" r="46" fill="#fff1c9" filter="url(#soft)"/><circle cx="770" cy="236" r="40" fill="#fff4d4"/></g>
+<g id="clouds">${cloud(140,96,1,"c1")}${cloud(470,64,.8,"c2")}${cloud(640,150,.6,"c3")}${cloud(900,110,.75,"c4")}</g>
+<path d="M-20 300 L80 236 L150 268 L250 186 L340 258 L430 214 L520 270 L600 220 L690 262 L800 200 L900 250 L980 222 V340 H-20Z" fill="url(#mtnFar)"/>
+<path d="M250 186 L232 202 L242 200 L250 208 L258 199 L268 203Z M800 200 L784 214 L793 212 L800 219 L808 211 L817 214Z" fill="#fde9f1" opacity=".85"/>
+<path d="M-20 318 L60 284 L160 300 L260 262 L360 300 L460 276 L540 304 L620 290 L700 318 L760 340 V350 H-20Z" fill="url(#mtnNear)"/>
+<path d="M500 380 Q620 300 690 270 Q765 238 840 266 Q910 292 980 300 V420 H500Z" fill="url(#hillG)"/>
+<path d="M690 270 Q765 238 840 266" stroke="#ffd59a" stroke-width="5" fill="none" opacity=".7"/>
+<g id="castle" class="tap" transform="translate(765 258) scale(.82)">
+  ${FLAGS.map(([x,y,h])=>flagPole(x,y+h,h)).join("")}
+  ${FLAGS.map((f,i)=>`<path id="flag${i}" fill="${f[3]}"/>`).join("")}
+  ${CASTLE}
+</g>
+<path d="M-20 350 Q160 300 360 330 Q470 344 560 372 Q640 396 700 420 V540 H-20Z" fill="url(#meadowG)"/>
+<path d="M480 420 Q640 360 760 360 Q880 360 980 330 V540 H480Z" fill="url(#meadowG)"/>
+${cypress(560,352,.55)}${cypress(588,346,.48)}${roundTree(640,338,.5)}${roundTree(860,330,.55)}${cypress(900,336,.5)}${roundTree(250,330,.6)}${cypress(212,326,.55)}
+<path id="road" fill="url(#roadG)" stroke="#d9b386" stroke-width="2"/>
+<path id="roadLine" fill="none" stroke="none" d="M70 528 Q300 474 430 444 Q590 404 680 336 Q730 296 765 260"/>
+<g id="meadowDots"></g>
+<g id="trail"></g>
+<g id="horse" class="tap"></g>
+<g id="fg">${bloom(30,540,"#ff9fcd",1.2)}${bloom(64,548,"#fff1f6",1)}${bloom(900,540,"#ffd36b",1.2)}${bloom(932,548,"#ff9fcd",1.1)}${bloom(870,552,"#fff1f6",.9)}
+  <path d="M-20 540 Q30 500 70 540 Q100 508 140 540Z M820 540 Q870 506 920 540 Q950 512 990 540Z" fill="#4f8248"/></g>
+<rect id="nightOver" width="960" height="540" fill="#1a1442" opacity="0" pointer-events="none"/>
+<g id="winGlow" transform="translate(765 258) scale(.82)" pointer-events="none">${WINS.map(([x,y])=>`<path d="${win(x,y)}" fill="#ffd56e" class="w"/>`).join("")}<circle cx="0" cy="-76" r="9" fill="#ffd56e" class="w"/></g>
+<g id="flies" pointer-events="none"></g>
+<g id="fireworks" pointer-events="none"></g>
+<rect width="960" height="540" fill="url(#vign)" pointer-events="none"/>
+<rect width="960" height="540" filter="url(#grain)" opacity=".08" pointer-events="none" style="mix-blend-mode:multiply"/>`;
+const E={}; svg.querySelectorAll("[id]").forEach(el=>E[el.id]=el);
+E.winGlow.setAttribute("filter","url(#glow)");
+
+/* stars, meadow dots, fireflies */
+for(let i=0;i<46;i++){ const c=document.createElementNS(NS,"circle"); c.setAttribute("cx",f1(rnd(0,960))); c.setAttribute("cy",f1(rnd(0,230))); c.setAttribute("r",f1(rnd(.6,1.8))); c.setAttribute("fill","#fff"); c.dataset.p=rnd(0,6); E.stars.appendChild(c); }
+const dotCols=["#ffd1e6","#fff6c8","#ffb3d1","#ffffff","#ffd36b"];
+for(let i=0;i<70;i++){ const y=rnd(350,530), x=rnd(-10,970); const s=clamp((y-300)/240); const c=document.createElementNS(NS,"circle"); c.setAttribute("cx",f1(x)); c.setAttribute("cy",f1(y)); c.setAttribute("r",f1(1+s*2.6)); c.setAttribute("fill",dotCols[i%5]); E.meadowDots.appendChild(c); }
+const FLIES=[]; for(let i=0;i<22;i++){ const c=document.createElementNS(NS,"circle"); c.setAttribute("r",f1(rnd(1.4,2.6))); c.setAttribute("fill","#fff3b0"); c.setAttribute("filter","url(#glow)"); E.flies.appendChild(c); FLIES.push({el:c,x:rnd(0,960),y:rnd(300,520),p:rnd(0,6),s:rnd(.5,1.2)}); }
+
+/* road polygon built from the centre line with perspective width */
+const RL=E.roadLine, RLEN=RL.getTotalLength();
+const persp=y=>clamp((y-222)/290,.08,1.1);
+(function buildRoad(){ const L=[],R=[]; const N=60;
+  for(let i=0;i<=N;i++){ const l=RLEN*i/N, p=RL.getPointAtLength(l), q=RL.getPointAtLength(Math.min(RLEN,l+1)), r=RL.getPointAtLength(Math.max(0,l-1));
+    let tx=q.x-r.x, ty=q.y-r.y; const d=Math.hypot(tx,ty)||1; tx/=d; ty/=d; const w=(i===N?6:150*persp(p.y)); const nx=-ty, ny=tx;
+    L.push([p.x+nx*w/2,p.y+ny*w/2]); R.push([p.x-nx*w/2,p.y-ny*w/2]); }
+  const first=RL.getPointAtLength(0); L.unshift([L[0][0]-60,560]); R.unshift([R[0][0]+40,560]);
+  E.road.setAttribute("d","M"+L.map(p=>p.map(f1).join(" ")).join(" L")+" L"+R.reverse().map(p=>p.map(f1).join(" ")).join(" L")+"Z"); })();
+
+/* ===================== HORSE + RIDERS (local: faces +x, ground y=0) ===================== */
+const H=E.horse;
+H.innerHTML=`
+  <ellipse id="hShadow" cx="-4" cy="2" rx="96" ry="12" fill="#3b2550" opacity=".22"/>
+  <path id="tail" fill="url(#maneG)" stroke="#9b7ccc" stroke-width="1.4"/>
+  <g id="legsFar"></g>
+  <g id="hBody">
+    <g stroke="#a996c4" stroke-width="3.6" fill="#fbf8ff"><ellipse cx="-50" cy="-106" rx="34" ry="32"/><ellipse cx="0" cy="-102" rx="64" ry="30"/><ellipse cx="46" cy="-104" rx="30" ry="31"/></g>
+    <path id="neckO" d="M50 -112 Q66 -152 92 -178" stroke="#a996c4" stroke-width="42" stroke-linecap="round" fill="none"/>
+    <ellipse cx="-50" cy="-106" rx="34" ry="32" fill="url(#horseG)"/>
+    <ellipse cx="0" cy="-102" rx="64" ry="30" fill="url(#horseG)"/>
+    <ellipse cx="46" cy="-104" rx="30" ry="31" fill="url(#horseG)"/>
+    <path id="neck" d="M50 -112 Q66 -152 92 -178" stroke="#fbf8ff" stroke-width="38" stroke-linecap="round" fill="none"/>
+    <path d="M-34 -130 Q-6 -138 26 -132 Q32 -116 26 -100 Q-4 -94 -34 -100 Q-40 -116 -34 -130Z" fill="#f48fb8"/>
+    <path d="M-34 -100 Q-4 -94 26 -100" stroke="#f2c14e" stroke-width="4" fill="none"/>
+    <circle cx="-30" cy="-98" r="3" fill="#f2c14e"/><circle cx="-4" cy="-95" r="3" fill="#f2c14e"/><circle cx="22" cy="-99" r="3" fill="#f2c14e"/>
+    <g id="hHead" transform="translate(100 -180)">
+      <path d="M-12 -12 L-16 -36 L-1 -18Z" fill="#fbf8ff" stroke="#a996c4" stroke-width="2" stroke-linejoin="round"/><path d="M-11 -16 L-14 -30 L-5 -19Z" fill="#f7b6d2"/>
+      <ellipse rx="23" ry="16" transform="rotate(34)" fill="#fbf8ff" stroke="#a996c4" stroke-width="2"/>
+      <ellipse cx="16" cy="19" rx="14" ry="12" fill="#f4e4ee" stroke="#a996c4" stroke-width="2"/>
+      <ellipse cx="24" cy="22" rx="2.2" ry="3.4" fill="#c49ab3"/>
+      <path d="M14 28 Q20 31 26 28" stroke="#b78aa4" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <ellipse cx="-1" cy="-3" rx="4.2" ry="5.4" fill="#2b2240"/><circle cx="0.4" cy="-5" r="1.5" fill="#fff"/>
+      <path d="M-5 -8 l-4 -3 M-2 -9 l-2 -4 M1 -9 l0 -4" stroke="#2b2240" stroke-width="1.4" stroke-linecap="round"/>
+      <ellipse cx="6" cy="9" rx="6" ry="3.5" fill="#ff9fc7" opacity=".55"/>
+      <path d="M-9 -12 Q2 6 14 9 M5 2 L22 13" stroke="#ff7eb6" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <circle cx="5" cy="2" r="2.6" fill="#f2c14e"/>
+      <path d="M-14 -18 Q-2 -26 6 -16 Q-4 -18 -10 -10Z" fill="url(#maneG)"/>
+    </g>
+    <path id="mane" fill="url(#maneG)" stroke="#9b7ccc" stroke-width="1.4"/>
+    <g id="princess" transform="translate(-26 -134)"></g>
+    <g id="prince" transform="translate(14 -132)"></g>
+    <path id="pArmO" fill="none" stroke="#cf8a70" stroke-width="7.4" stroke-linecap="round" stroke-linejoin="round"/><path id="pArm" fill="none" stroke="#ffd9c2" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round"/><circle id="pHand" r="3.4" fill="#ffd9c2" stroke="#cf8a70" stroke-width="1.2"/><circle id="pSleeve" r="5.8" fill="#ffc3dc" stroke="#c94a82" stroke-width="1.2"/>
+    <path id="kArmO" fill="none" stroke="#283f94" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><path id="kArm" fill="none" stroke="#4b6ee0" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round"/><circle id="kHand" r="3.6" fill="#ffd9c2" stroke="#cf8a70" stroke-width="1.2"/><ellipse id="kEp" rx="5.4" ry="3.2" fill="#ffcf3d" stroke="#c9922b" stroke-width="1"/>
+    <path id="reins" fill="none" stroke="#7a3a5a" stroke-width="1.8"/>
+  </g>
+  <g id="legsNear"></g>`;
+Object.assign(E,Object.fromEntries([...H.querySelectorAll("[id]")].map(el=>[el.id,el])));
+const LEGS={FF:{hip:[34,-82],front:1,far:1},HF:{hip:[-56,-84],front:0,far:1},FN:{hip:[42,-80],front:1,far:0},HN:{hip:[-48,-82],front:0,far:0}};
+for(const k in LEGS){ const L=LEGS[k], g=document.createElementNS(NS,"g"), col=L.far?"#d9cde8":"#f4eefa";
+  g.innerHTML=`<path class="upO" fill="none" stroke="#a996c4" stroke-width="${L.front?22.6:25.6}" stroke-linecap="round"/><path class="loO" fill="none" stroke="#a996c4" stroke-width="13.6" stroke-linecap="round"/><path class="up" fill="none" stroke="${col}" stroke-width="${L.front?19:22}" stroke-linecap="round"/><path class="lo" fill="none" stroke="${col}" stroke-width="10" stroke-linecap="round"/>
+    <ellipse class="tuft" rx="8" ry="5" fill="${L.far?"#e6d6f0":"#fff"}"/><path class="hoof" fill="${L.far?"#8a7a9c":"#9c8bb0"}" stroke="#6b5c80" stroke-width="1.4" stroke-linejoin="round"/>`;
+  (L.far?E.legsFar:E.legsNear).appendChild(g); L.up=g.querySelector(".up"); L.upO=g.querySelector(".upO"); L.loO=g.querySelector(".loO"); L.lo=g.querySelector(".lo"); L.tuft=g.querySelector(".tuft"); L.hoof=g.querySelector(".hoof"); }
+
+function ik(S,T,l1,l2,outward){ const dx=T[0]-S[0], dy=T[1]-S[1], d=Math.hypot(dx,dy)||1, dd=clamp(d,Math.abs(l1-l2)+1,l1+l2-.5);
+  const ux=dx/d, uy=dy/d, a=Math.acos(clamp((l1*l1+dd*dd-l2*l2)/(2*l1*dd),-1,1));
+  const c=[a,-a].map(s=>[S[0]+l1*(ux*Math.cos(s)-uy*Math.sin(s)),S[1]+l1*(ux*Math.sin(s)+uy*Math.cos(s))]);
+  return {E:outward<0?(c[0][0]<c[1][0]?c[0]:c[1]):(c[0][0]>c[1][0]?c[0]:c[1]), W:[S[0]+ux*dd,S[1]+uy*dd]}; }
+/** filled ribbon along a quadratic curve with wave — used for mane, tail, hair, ribbon */
+function ribbon(A,Cc,B,w0,w1,amp,t,freq,side=1,n=10){ const top=[],bot=[];
+  for(let i=0;i<=n;i++){ const u=i/n, x=(1-u)*(1-u)*A[0]+2*(1-u)*u*Cc[0]+u*u*B[0], y=(1-u)*(1-u)*A[1]+2*(1-u)*u*Cc[1]+u*u*B[1];
+    const dx=2*(1-u)*(Cc[0]-A[0])+2*u*(B[0]-Cc[0]), dy=2*(1-u)*(Cc[1]-A[1])+2*u*(B[1]-Cc[1]), d=Math.hypot(dx,dy)||1, nx=-dy/d*side, ny=dx/d*side;
+    const wv=Math.sin(t*freq-u*5)*amp*u, w=lerp(w0,w1,u)*(1-Math.pow(u,6)*.6);
+    top.push([x+nx*wv,y+ny*wv]); bot.push([x+nx*(wv+w),y+ny*(wv+w)]); }
+  const pts=top.concat(bot.reverse()); let s=`M${f1(pts[0][0])} ${f1(pts[0][1])}`;
+  for(let i=1;i<pts.length-1;i++){ const m=[(pts[i][0]+pts[i+1][0])/2,(pts[i][1]+pts[i+1][1])/2]; s+=` Q${f1(pts[i][0])} ${f1(pts[i][1])} ${f1(m[0])} ${f1(m[1])}`; }
+  return s+"Z"; }
+
+
+/* ===================== NEW RIDERS: Leo & Lily (same design as the character sheet, seated) ===================== */
+const K={skin:"#ffd9c2",skinS:"#f4b89c",skinO:"#cf8a70",blush:"#ff9fb2",mouth:"#b8325a",tongue:"#ff8fa8",
+  gH:"#ffcf5a",gS:"#f0a93a",gO:"#c58a2a",gL:"#fff2a6", bH:"#7a4a32",bO:"#45281a",bL:"#a8714f",
+  pink:"#ff86b5",pinkS:"#e9619a",pinkO:"#c94a82",pinkL:"#ffc3dc", blue:"#4b6ee0",blueS:"#3756be",blueO:"#283f94",
+  gold:"#ffcf3d",goldO:"#c9922b",navy:"#2f3a6b",boot:"#80502f",bootO:"#4f2e1a"};
+const HEADP="M-54 -212 C-56 -250 -28 -270 4 -270 C38 -270 60 -250 58 -212 C58 -182 42 -152 8 -150 C-28 -150 -52 -178 -54 -212Z";
+function cEyes(pre,iris,lash){ const Ey=(x,rx,ry,side)=>`
+  <g class="eo"><ellipse cx="${x}" cy="-202" rx="${rx}" ry="${ry}" fill="#33233f"/><ellipse cx="${x}" cy="${-202+ry*.38}" rx="${rx*.74}" ry="${ry*.42}" fill="${iris}" opacity=".85"/>
+  <circle cx="${x+rx*.3}" cy="${-202-ry*.36}" r="${rx*.4}" fill="#fff"/><circle cx="${x-rx*.36}" cy="${-202+ry*.36}" r="${rx*.18}" fill="#fff"/>
+  ${lash?`<path d="M${x-rx-1.5} ${-202-ry*.35} Q${x} ${-202-ry-4} ${x+rx+1.5} ${-202-ry*.35} l${side*5} -4" stroke="#33233f" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`:""}</g>
+  <path class="eh" d="M${x-rx} -200 Q${x} ${-200-ry*1.1} ${x+rx} -200" stroke="#33233f" stroke-width="3.6" fill="none" stroke-linecap="round" style="display:none"/>`;
+  return `<g id="${pre}eyeF" data-cx="-14">${Ey(-14,8,11.5,-1)}</g><g id="${pre}eyeN" data-cx="27">${Ey(27,9,12.5,1)}</g>`; }
+function cFace(pre,iris,lash,browCol,browW){ const mx=10; return `
+  <path d="${HEADP}" fill="${K.skin}" stroke="${K.skinO}" stroke-width="2.6"/>
+  <path d="M-44 -176 Q-30 -156 8 -154 Q-26 -160 -40 -184Z" fill="${K.skinS}" opacity=".55"/>
+  <ellipse cx="-28" cy="-182" rx="10" ry="6" fill="${K.blush}" opacity=".55"/><ellipse cx="42" cy="-182" rx="10" ry="6" fill="${K.blush}" opacity=".55"/>
+  ${cEyes(pre,iris,lash)}
+  <g id="${pre}brows"><path d="M-24 -224 Q-14 -230 -5 -225" stroke="${browCol}" stroke-width="${browW}" fill="none" stroke-linecap="round"/><path d="M17 -226 Q28 -232 38 -225" stroke="${browCol}" stroke-width="${browW}" fill="none" stroke-linecap="round"/></g>
+  <path d="M8 -190 q3 4 -1 6" stroke="${K.skinO}" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <g id="${pre}m_smile"><path d="M${mx-10} -176 Q${mx} -165 ${mx+10} -176" stroke="${K.mouth}" stroke-width="2.8" fill="none" stroke-linecap="round"/></g>
+  <g id="${pre}m_open" style="display:none"><path d="M${mx-11} -178 Q${mx} -178 ${mx+11} -178 Q${mx+9} -163 ${mx} -162 Q${mx-9} -163 ${mx-11} -178Z" fill="${K.mouth}"/><path d="M${mx-8} -178 Q${mx} -178 ${mx+8} -178 L${mx+7} -175 Q${mx} -174 ${mx-7} -175Z" fill="#fff"/><ellipse cx="${mx}" cy="-166" rx="5" ry="3" fill="${K.tongue}"/></g>
+  <g id="${pre}m_talk" style="display:none"><ellipse cx="${mx}" cy="-172" rx="7" ry="4" fill="${K.mouth}"/></g>`; }
+const NECKP=`<path d="M-8 -156 V-136 H16 V-156Z" fill="${K.skin}" stroke="${K.skinO}" stroke-width="2.2"/><path d="M-8 -154 Q4 -146 16 -154 V-148 Q4 -140 -8 -148Z" fill="${K.skinS}"/>`;
+E.princess.innerHTML=`
+  <path id="pHair" fill="${K.gH}" stroke="${K.gO}" stroke-width="1.2"/>
+  <path id="pRibbon" fill="#ff9fc7" stroke="#e46aa2" stroke-width=".8" opacity=".95"/>
+  <path d="M-14 -8 Q-22 20 -27 50 Q-8 58 12 54 Q30 52 36 42 Q24 18 16 -8Z" fill="url(#dressG)" stroke="${K.pinkO}" stroke-width="1.3"/>
+  <path d="M-27 50 q6 -6 10 2 q6 -6 10 2 q6 -6 10 2 q6 -6 10 1 q6 -6 9 -1 Q30 52 12 56 Q-8 60 -27 50Z" fill="${K.pinkL}" stroke="${K.pinkO}" stroke-width="1"/>
+  <path d="M-6 4 Q-12 28 -14 48 M8 4 Q8 28 10 50" stroke="${K.pinkS}" stroke-width="1.4" fill="none" opacity=".7"/>
+  <g transform="scale(.44) translate(0 80)">
+    <path d="M-24 -138 Q2 -144 28 -138 L24 -100 L-20 -100Z" fill="${K.pink}" stroke="${K.pinkO}" stroke-width="2.6"/>
+    <path d="M-16 -138 Q2 -128 22 -138" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <g transform="translate(2 -102)"><path d="M0 0 L-16 -9 Q-20 0 -16 9Z M0 0 L16 -9 Q20 0 16 9Z" fill="${K.pinkL}" stroke="${K.pinkO}" stroke-width="2"/><circle r="4.5" fill="${K.gold}" stroke="${K.goldO}" stroke-width="1.6"/></g>
+    <circle cx="-25" cy="-130" r="12" fill="${K.pinkL}" stroke="${K.pinkO}" stroke-width="2.4"/>
+    ${NECKP}
+    <g id="YHead">${cFace("Y","#8a62d6",true,K.gO,2.6)}
+      <path d="M-58 -214 C-60 -258 -24 -278 6 -276 C42 -274 66 -252 60 -212 C54 -228 42 -236 32 -238 C28 -224 16 -218 4 -216 C10 -226 8 -236 4 -240 C-6 -226 -22 -220 -38 -222 C-44 -218 -52 -214 -58 -214Z" fill="${K.gH}" stroke="${K.gO}" stroke-width="2.6"/>
+      <path d="M-58 -214 C-64 -190 -62 -166 -52 -148 C-50 -170 -50 -196 -46 -212Z M60 -212 C66 -190 64 -170 56 -154 C54 -174 52 -196 50 -210Z" fill="${K.gH}" stroke="${K.gO}" stroke-width="2.4"/>
+      <path d="M-30 -260 C-14 -268 10 -268 26 -262 C10 -263 -10 -261 -26 -254Z" fill="${K.gL}"/>
+      <path d="M-24 -262 L-18 -284 L-8 -270 L2 -292 L12 -270 L22 -284 L28 -262 Q2 -270 -24 -262Z" fill="${K.gold}" stroke="${K.goldO}" stroke-width="2.2" stroke-linejoin="round"/>
+      <circle cx="2" cy="-276" r="4" fill="#ff5fa2" stroke="#c23f86" stroke-width="1.4"/></g>
+  </g>`;
+E.prince.innerHTML=`
+  <path d="M-2 -4 L18 6 L15 36" stroke="#1d2547" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M-2 -4 L18 6 L15 36" stroke="${K.navy}" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8 32 H22 V40 Q28 40 30 46 H6Z" fill="${K.boot}" stroke="${K.bootO}" stroke-width="1.3" stroke-linejoin="round"/>
+  <g transform="scale(.44) translate(0 80)">
+    <path d="M-30 -140 Q2 -146 34 -140 L32 -76 L-28 -76Z" fill="${K.blue}" stroke="${K.blueO}" stroke-width="2.6"/>
+    <path d="M2 -142 V-78" stroke="${K.gold}" stroke-width="5"/>
+    <rect x="-29" y="-94" width="62" height="9" fill="#5a3a26" stroke="#3a2416" stroke-width="2"/><rect x="-3" y="-96" width="12" height="13" rx="2" fill="${K.gold}" stroke="${K.goldO}" stroke-width="1.8"/>
+    <path d="M-12 -142 L2 -128 L16 -142" stroke="#fff" stroke-width="5" fill="none" stroke-linejoin="round"/>
+    <ellipse cx="-30" cy="-136" rx="12" ry="7" fill="${K.gold}" stroke="${K.goldO}" stroke-width="2"/>
+    ${NECKP}
+    <g id="LHead">${cFace("L","#4f8fe0",false,K.bO,3.4)}
+      <path d="M-58 -210 C-62 -258 -26 -278 6 -276 C40 -274 64 -254 60 -214 C54 -224 48 -230 40 -232 L38 -216 C30 -226 22 -232 12 -234 L8 -218 C0 -228 -10 -232 -20 -232 L-24 -216 C-32 -224 -44 -224 -52 -218Z" fill="${K.bH}" stroke="${K.bO}" stroke-width="2.6" stroke-linejoin="round"/>
+      <path d="M-34 -262 C-18 -270 6 -270 22 -264 C6 -265 -14 -263 -30 -256Z" fill="${K.bL}"/>
+      <g transform="rotate(-8 2 -276)"><path d="M-18 -270 L-14 -290 L-5 -278 L2 -296 L9 -278 L18 -290 L22 -270Z" fill="${K.gold}" stroke="${K.goldO}" stroke-width="2.2" stroke-linejoin="round"/><circle cx="2" cy="-280" r="3.6" fill="#5bc0ff" stroke="#2b7fc0" stroke-width="1.2"/></g></g>
+  </g>`;
+Object.assign(E,Object.fromEntries([...H.querySelectorAll("[id]")].map(el=>[el.id,el])));
+const CH={L:{expr:"normal",talk:0,blink:false},Y:{expr:"normal",talk:0,blink:false}};
+function faceFrame(pre,t){ const c=CH[pre], x=c.expr, show=(id,on)=>{ E[pre+id].style.display=on?"":"none"; };
+  ["eyeF","eyeN"].forEach(id=>{ const g=E[pre+id], closed=x==="happy", eo=g.querySelector(".eo"), eh=g.querySelector(".eh"), cx=+g.dataset.cx;
+    eo.style.display=closed?"none":""; eh.style.display=closed?"":"none"; eo.setAttribute("transform",`translate(${cx} -202) scale(1 ${c.blink?.12:1}) translate(${-cx} 202)`); });
+  const talking=NOW<c.talk, open=talking&&Math.sin(t*18)>-.2;
+  show("m_smile",!open&&x!=="happy"); show("m_open",x==="happy"||(open&&Math.sin(t*7)>0)); show("m_talk",open&&!(Math.sin(t*7)>0)&&x!=="happy"); }
+function blinker(pre){ setTimeout(()=>{ CH[pre].blink=true; setTimeout(()=>{ CH[pre].blink=false; blinker(pre); },130); },2400+Math.random()*2800); }
+blinker("L"); blinker("Y");
+
+/* ===================== STATE ===================== */
+const GAITS={
+  walk:{A:15,lift:13,speed:36,bob:1.6,pitch:.8,off:{FN:.25,FF:.75,HN:0,HF:.5},wind:.6},
+  trot:{A:21,lift:20,speed:72,bob:3.2,pitch:1.2,off:{FN:0,FF:.5,HN:.5,HF:0},wind:1},
+  gallop:{A:30,lift:26,speed:128,bob:6,pitch:4,off:{FN:.55,FF:.65,HN:0,HF:.1},wind:1.6}};
+const J={l:RLEN*.05,playing:true,gait:"trot",ph:0,A:21,lift:20,speed:72,bob:3.2,pitch:1.2,wind:1,off:{...GAITS.trot.off},rb:0,head:0,toss:0,wave:0,fade:1,done:false};
+let night=0, NOW=performance.now();
+const TW=[]; const EASE={io:t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2,out:t=>1-Math.pow(1-t,3),in:t=>t*t*t};
+function tween(o,to,dur,e="io"){ return new Promise(res=>{ TW.forEach(tw=>{ if(tw.o===o) for(const k in to) delete tw.to[k]; }); const fr={}; for(const k in to) fr[k]=o[k]; TW.push({o,fr,to:{...to},dur,t0:NOW,e:EASE[e],res}); }); }
+const NightO={v:0};
+function stepTW(){ for(let i=TW.length-1;i>=0;i--){ const w=TW[i], k=clamp((NOW-w.t0)/w.dur), e=w.e(k); for(const key in w.to) w.o[key]=lerp(w.fr[key],w.to[key],e); if(k>=1){ TW.splice(i,1); w.res(); } } }
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* ===================== SOUND ===================== */
+let ac=null; function audio(){ try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)(); if(ac.state==="suspended") ac.resume(); }catch(e){} return ac; }
+const live=()=>ac&&ac.state==="running";
+function noise(dur,type,freq,q,vol,delay=0){ if(!live()) return; const a=ac,n=a.createBufferSource(),b=a.createBuffer(1,Math.max(1,a.sampleRate*dur),a.sampleRate),d=b.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2.2); n.buffer=b; const f=a.createBiquadFilter(); f.type=type; f.frequency.value=freq; f.Q.value=q; const g=a.createGain(); g.gain.value=vol; n.connect(f).connect(g).connect(a.destination); n.start(a.currentTime+delay); }
+function osc(type,f0,f1_,dur,vol,delay=0,filt,lfo){ if(!live()) return; const a=ac,o=a.createOscillator(),g=a.createGain(),t0=a.currentTime+delay; o.type=type; o.frequency.setValueAtTime(f0,t0);
+  if(Array.isArray(f1_)) f1_.forEach(([f,t])=>o.frequency.linearRampToValueAtTime(f,t0+t)); else o.frequency.exponentialRampToValueAtTime(f1_,t0+dur);
+  if(lfo){ const l=a.createOscillator(), lg=a.createGain(); l.frequency.value=lfo[0]; lg.gain.value=lfo[1]; l.connect(lg).connect(o.frequency); l.start(t0); l.stop(t0+dur); }
+  g.gain.setValueAtTime(.0001,t0); g.gain.exponentialRampToValueAtTime(vol,t0+.02); g.gain.exponentialRampToValueAtTime(.0008,t0+dur);
+  let node=o; if(filt){ const f=a.createBiquadFilter(); f.type=filt[0]; f.frequency.value=filt[1]; f.Q.value=filt[2]; o.connect(f); node=f; } node.connect(g).connect(a.destination); o.start(t0); o.stop(t0+dur+.05); }
+const sfx={
+  clop:v=>{ osc("triangle",1100,620,.05,.16*v,0,["bandpass",1400,2]); noise(.03,"highpass",2500,.7,.12*v); },
+  neigh:()=>{ osc("sawtooth",520,[[900,.12],[760,.35],[640,.6],[420,.9]],.95,.22,0,["bandpass",1150,1.8],[17,55]); osc("sawtooth",260,[[450,.12],[380,.35],[300,.9]],.95,.08,0,["bandpass",700,2],[17,30]); },
+  launch:()=>noise(.6,"bandpass",900,.8,.25),
+  boom:()=>{ noise(1.2,"lowpass",320,.7,.9); noise(.9,"highpass",3000,.6,.12,.15); },
+  chime:()=>[880,1108,1320].forEach((f,i)=>osc("sine",f,f*1.01,.6,.08,i*.08))
+};
+
+/* ===================== NARRATION ===================== */
+let sayId=0;
+function voice(){ try{ const vs=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang)); return vs.find(v=>/en-US/i.test(v.lang)&&/female|samantha|aria|jenny|zira|google us/i.test(v.name))||vs.find(v=>/en-US/i.test(v.lang))||vs[0]||null; }catch(e){ return null; } }
+try{ speechSynthesis.getVoices(); }catch(e){}
+function say(who,en,vi){ const tk=NOW+700+en.split(/\s+/).length*360; if(who==="Hoàng tử") CH.L.talk=tk; if(who==="Công chúa") CH.Y.talk=tk; $("#who").textContent=who; $("#en").textContent=en; $("#vi").textContent=vi;
+  try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(en), v=voice(); if(v){u.voice=v;u.lang=v.lang;} else u.lang="en-US"; u.rate=.9; u.pitch=1.15; speechSynthesis.speak(u); }catch(e){} }
+const BEATS=[[.0,"The prince and the princess ride to the castle.","Hoàng tử và công chúa cưỡi ngựa về lâu đài."],[.28,"Clip-clop, clip-clop! Go, horse, go!","Lộc cộc, lộc cộc! Chạy đi ngựa ơi!"],[.62,"Look! The castle is near.","Nhìn kìa! Lâu đài ở gần rồi."],[.985,"Welcome home!","Chào mừng về nhà!"]];
+let beat=-1;
+
+/* ===================== FX: sparkles, fireworks ===================== */
+const TR=[], FW=[];
+function sparkle(x,y,s){ const el=document.createElementNS(NS,"path"); const r=4+Math.random()*4; el.setAttribute("d",`M0 ${-r} L${r*.28} ${-r*.28} L${r} 0 L${r*.28} ${r*.28} L0 ${r} L${-r*.28} ${r*.28} L${-r} 0 L${-r*.28} ${-r*.28}Z`);
+  el.setAttribute("fill",Math.random()<.5?"#fff6c2":"#ffc2e2"); E.trail.appendChild(el); TR.push({el,x,y,vx:rnd(-12,12)*s,vy:rnd(-40,-18)*s,s,t0:NOW,dur:900}); }
+function firework(x,y,hue){ sfx.launch(); const rocket={x,y0:300,y1:y,t0:NOW,dur:700,el:document.createElementNS(NS,"circle")}; rocket.el.setAttribute("r","2.4"); rocket.el.setAttribute("fill","#fff3c4"); rocket.el.setAttribute("filter","url(#glow)"); E.fireworks.appendChild(rocket.el);
+  FW.push({type:"rocket",...rocket,hue}); }
+function burst(x,y,hue){ sfx.boom(); const cols=[`hsl(${hue} 95% 70%)`,`hsl(${(hue+40)%360} 95% 75%)`,"#fff6d0"];
+  for(let i=0;i<48;i++){ const a=i/48*Math.PI*2+rnd(-.05,.05), sp=rnd(70,140); const el=document.createElementNS(NS,"circle"); el.setAttribute("r",f1(rnd(1.6,2.8))); el.setAttribute("fill",cols[i%3]); el.setAttribute("filter","url(#glow)"); E.fireworks.appendChild(el);
+    FW.push({type:"p",el,x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,t0:NOW,dur:rnd(1300,1800)}); } }
+function show(){ [[690,90,330],[790,70,45],[880,110,200],[740,120,290]].forEach(([x,y,h],i)=>setTimeout(()=>firework(x,y,h),i*420)); }
+
+/* ===================== UPDATE + RENDER ===================== */
+let last=performance.now();
+function frame(now){ const dt=Math.min(.05,(now-last)/1000); last=now; NOW=now; const t=now/1000; stepTW();
+  // journey
+  const G=GAITS[J.gait]; ["A","lift","speed","bob","pitch","wind"].forEach(k=>J[k]=lerp(J[k],G[k],Math.min(1,dt*3))); for(const k in J.off) J.off[k]=lerp(J.off[k],G.off[k],Math.min(1,dt*3));
+  const p=RL.getPointAtLength(J.l), s=persp(p.y);
+  const moving=J.playing&&!J.done; const sp=moving?J.speed:0;
+  if(moving){ J.l=Math.min(RLEN,J.l+sp*s*dt); J.ph+=sp*dt/J.A; }
+  const u=J.l/RLEN;
+  for(let i=BEATS.length-1;i>=0;i--){ if(u>=BEATS[i][0]){ if(beat<i){ beat=i; say("Người kể",BEATS[i][1],BEATS[i][2]); if(i===BEATS.length-1) arrive(); } break; } }
+  if(u>.95) J.fade=clamp((1-u)/.05); else if(!J.done) J.fade=1;
+  const q=RL.getPointAtLength(Math.min(RLEN,J.l+2)), slope=Math.atan2(q.y-p.y,q.x-p.x)*57.3;
+  // body motion
+  const run=moving?1:0; J.run=lerp(J.run??0,run,Math.min(1,dt*4)); const R=J.run;
+  const bob = J.gait==="gallop" ? -J.bob*(.5+.5*Math.sin(J.ph))*R : -J.bob*(.5+.5*Math.cos(2*J.ph))*R;
+  const pitch=(J.gait==="gallop"?J.pitch*Math.cos(J.ph):J.pitch*Math.sin(2*J.ph))*R;
+  J.rb+=(bob-J.rb)*Math.min(1,dt*9);
+  E.horse.setAttribute("transform",`translate(${f1(p.x)} ${f1(p.y)}) rotate(${f1(slope*.25)}) scale(${s.toFixed(3)})`);
+  E.horse.setAttribute("opacity",J.fade.toFixed(2));
+  E.hBody.setAttribute("transform",`translate(0 ${f1(bob)}) rotate(${f1(pitch)} 0 -100)`);
+  E.hShadow.setAttribute("rx",f1(96-Math.abs(bob)*2));
+  // legs
+  const contacts=[];
+  for(const k in LEGS){ const L=LEGS[k], ph=J.ph+J.off[k]*Math.PI*2, hip=[L.hip[0],L.hip[1]+bob];
+    const fx=L.hip[0]+(L.front?4:-2)+J.A*Math.sin(ph)*R, fy=-J.lift*Math.pow(Math.max(0,Math.cos(ph)),1.3)*R;
+    const r=ik(hip,[fx,fy],42,41,L.front?1:-1);
+    L.up.setAttribute("d",`M${f1(hip[0])} ${f1(hip[1])} L${f1(r.E[0])} ${f1(r.E[1])}`); L.lo.setAttribute("d",`M${f1(r.E[0])} ${f1(r.E[1])} L${f1(r.W[0])} ${f1(r.W[1])}`); L.upO.setAttribute("d",L.up.getAttribute("d")); L.loO.setAttribute("d",L.lo.getAttribute("d"));
+    const ang=Math.atan2(r.W[1]-r.E[1],r.W[0]-r.E[0]), ca=Math.cos(ang), sa=Math.sin(ang), hx=r.W[0], hy=r.W[1];
+    L.tuft.setAttribute("cx",f1(hx-ca*6)); L.tuft.setAttribute("cy",f1(hy-sa*6));
+    const pt=(a,b)=>[hx+ca*a-sa*b, hy+sa*a+ca*b];
+    const h=[pt(-2,-7),pt(6,-8),pt(6,8),pt(-2,7)]; L.hoof.setAttribute("d","M"+h.map(v=>v.map(f1).join(" ")).join(" L")+"Z");
+    const st=Math.cos(ph)<0; if(L.st===false&&st&&R>.5){ contacts.push([hx,hy,L.far]); } L.st=st; }
+  contacts.forEach(([hx,hy,far])=>{ sfx.clop(s*(far?.6:1)); const wx=p.x+hx*s, wy=p.y+hy*s; if(Math.random()<.8) sparkle(wx,wy-3*s,s); });
+  // head, neck
+  const headBob=(J.gait==="gallop"?5*Math.sin(J.ph+1):3*Math.sin(2*J.ph))*R - J.toss*14;
+  E.hHead.setAttribute("transform",`translate(${f1(100-J.toss*4)} ${f1(-180-J.toss*10)}) rotate(${f1(headBob)}) scale(1.22)`);
+  E.neck.setAttribute("d",`M50 -112 Q66 -152 ${f1(92-J.toss*4)} ${f1(-178-J.toss*10)}`); E.neckO.setAttribute("d",E.neck.getAttribute("d"));
+  // mane, tail
+  const W=J.wind*(.4+.6*R)+.15;
+  E.mane.setAttribute("d",ribbon([96-J.toss*4,-198-J.toss*10],[64,-184],[30,-128],7,20,5*W,t,7+J.speed*.06,-1,9));
+  E.tail.setAttribute("d",ribbon([-76,-120],[-118,-112-14*W],[-100-24*W,-58+16*W],13,22,7*W,t,6+J.speed*.05,-1,10));
+  // riders (secondary motion: lag behind the body)
+  const lag=J.rb-bob;
+  E.prince.setAttribute("transform",`translate(14 ${f1(-132+lag*1.2)})`);
+  E.princess.setAttribute("transform",`translate(-26 ${f1(-134+lag*1.5)})`);
+  E.pHair.setAttribute("d",ribbon([-12,-74],[-36,-52],[-32-10*W,-2],13,18,4*W,t,6+J.speed*.05,1,9));
+  E.pRibbon.setAttribute("d",ribbon([-6,-86],[-40,-92],[-76-14*W,-70+8*W],3,8,6*W,t,9,1,9));
+  faceFrame("L",t); faceFrame("Y",t);
+  // arms: prince holds reins, princess holds prince or waves
+  const kS=[14+15,-132+lag*1.2-22], kT=[14+38,-132+lag*1.2-10], kr=ik(kS,kT,15,14,-1);
+  const kd=`M${f1(kS[0])} ${f1(kS[1])} L${f1(kr.E[0])} ${f1(kr.E[1])} L${f1(kr.W[0])} ${f1(kr.W[1])}`; E.kArm.setAttribute("d",kd); E.kArmO.setAttribute("d",kd);
+  E.kHand.setAttribute("cx",f1(kr.W[0])); E.kHand.setAttribute("cy",f1(kr.W[1])); E.kEp.setAttribute("cx",f1(kS[0])); E.kEp.setAttribute("cy",f1(kS[1]-1));
+  const pS=[-26+13,-134+lag*1.5-20], hold=[-26+28,-134+lag*1.5-8], wv=[-26+18+Math.sin(t*12)*6,-134+lag*1.5-62];
+  const pr=ik(pS,[lerp(hold[0],wv[0],J.wave),lerp(hold[1],wv[1],J.wave)],14,13,-1);
+  const pd=`M${f1(pS[0])} ${f1(pS[1])} L${f1(pr.E[0])} ${f1(pr.E[1])} L${f1(pr.W[0])} ${f1(pr.W[1])}`; E.pArm.setAttribute("d",pd); E.pArmO.setAttribute("d",pd);
+  E.pHand.setAttribute("cx",f1(pr.W[0])); E.pHand.setAttribute("cy",f1(pr.W[1])); E.pSleeve.setAttribute("cx",f1(pS[0])); E.pSleeve.setAttribute("cy",f1(pS[1]));
+  const hd=[100-J.toss*4+22,-180-J.toss*10+27];
+  E.reins.setAttribute("d",`M${f1(kr.W[0])} ${f1(kr.W[1])} Q${f1((kr.W[0]+hd[0])/2)} ${f1((kr.W[1]+hd[1])/2+10)} ${f1(hd[0])} ${f1(hd[1])}`);
+  // flags
+  FLAGS.forEach(([x,y,h],i)=>{ const L=h*1.1, pts=[]; for(let j=0;j<=6;j++){ const u=j/6; pts.push([x+u*L, y+Math.sin(t*5-u*4+i)*3*u]); }
+    const top=pts.map(p=>p.map(f1).join(" ")).join(" L"), bot=pts.slice().reverse().map(([px,py],j)=>`${f1(px)} ${f1(py+h*.55*(1-(6-j)/6*.5))}`).join(" L");
+    E["flag"+i].setAttribute("d",`M${top} L${bot}Z`); });
+  // clouds drift
+  ["c1","c2","c3","c4"].forEach((id,i)=>{ const el=E[id], x0=+el.dataset.x; const x=((x0+t*(4+i*1.5))%1200+1200)%1200-120; el.setAttribute("transform",`translate(${f1(x)} ${el.dataset.y})`); });
+  // night blend
+  const n=NightO.v; E.skyN.setAttribute("opacity",n.toFixed(3)); E.stars.setAttribute("opacity",(.12+n*.88).toFixed(2)); E.moon.setAttribute("opacity",n.toFixed(2));
+  E.sun.setAttribute("opacity",(1-n).toFixed(2)); E.sun.setAttribute("transform",`translate(0 ${f1(n*70)})`); E.nightOver.setAttribute("opacity",(n*.42).toFixed(3));
+  E.clouds.setAttribute("opacity",(1-n*.6).toFixed(2));
+  E.winGlow.querySelectorAll(".w").forEach((w,i)=>w.setAttribute("opacity",(.55+n*.45-(Math.sin(t*3+i*1.7)>.96?.25:0)).toFixed(2)));
+  E.stars.childNodes.forEach(c=>c.setAttribute("opacity",(.4+.6*Math.abs(Math.sin(t*1.3+ +c.dataset.p))).toFixed(2)));
+  FLIES.forEach(f=>{ const x=f.x+Math.sin(t*.4*f.s+f.p)*40, y=f.y+Math.sin(t*.7*f.s+f.p*2)*18; f.el.setAttribute("cx",f1(x)); f.el.setAttribute("cy",f1(y)); f.el.setAttribute("opacity",((.15+n*.75)*(.5+.5*Math.sin(t*2*f.s+f.p))).toFixed(2)); });
+  // sparkles
+  for(let i=TR.length-1;i>=0;i--){ const p_=TR[i], k=(NOW-p_.t0)/p_.dur; p_.x+=p_.vx*dt; p_.y+=p_.vy*dt; p_.el.setAttribute("transform",`translate(${f1(p_.x)} ${f1(p_.y)}) scale(${(p_.s*(1-k*.5)).toFixed(2)}) rotate(${f1(k*120)})`); p_.el.setAttribute("opacity",(1-k).toFixed(2)); if(k>=1){ p_.el.remove(); TR.splice(i,1); } }
+  // fireworks
+  for(let i=FW.length-1;i>=0;i--){ const f=FW[i], k=clamp((NOW-f.t0)/f.dur);
+    if(f.type==="rocket"){ const y=lerp(f.y0,f.y1,EASE.out(k)); f.el.setAttribute("cx",f1(f.x+Math.sin(k*9)*2)); f.el.setAttribute("cy",f1(y)); if(k>=1){ f.el.remove(); FW.splice(i,1); burst(f.x,f.y1,f.hue); } }
+    else { f.vy+=60*dt; f.vx*=Math.exp(-dt*1.2); f.vy*=Math.exp(-dt*.8); f.x+=f.vx*dt; f.y+=f.vy*dt; f.el.setAttribute("cx",f1(f.x)); f.el.setAttribute("cy",f1(f.y)); f.el.setAttribute("opacity",(1-k*k).toFixed(2)); if(k>=1){ f.el.remove(); FW.splice(i,1); } } }
+  requestAnimationFrame(frame); }
+
+/* ===================== STORY CONTROL ===================== */
+async function arrive(){ J.done=true; sfx.chime(); await tween(NightO,{v:1},2600); show(); setTimeout(show,2200); await wait(9000); if(J.done) reset(); }
+function reset(){ J.l=RLEN*.05; J.done=false; J.fade=1; beat=-1; tween(NightO,{v:0},1600); }
+function setGait(g){ J.gait=g; document.querySelectorAll("[data-g]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.g===g)));
+  if(g==="gallop") say("Hoàng tử","Faster, horse! Let's go!","Nhanh lên nào, ngựa ơi!"); else if(g==="walk") say("Công chúa","Slow down, please.","Đi chậm thôi nhé."); else say("Người kể","Clip-clop, clip-clop.","Lộc cộc, lộc cộc."); }
+document.querySelectorAll("[data-g]").forEach(b=>b.addEventListener("click",()=>{ audio(); setGait(b.dataset.g); }));
+$("#bPlay").addEventListener("click",e=>{ audio(); J.playing=!J.playing; e.currentTarget.setAttribute("aria-pressed",String(J.playing)); e.currentTarget.textContent=J.playing?"⏸ Tạm dừng":"▶ Tiếp tục"; });
+$("#bNight").addEventListener("click",e=>{ audio(); const to=NightO.v>.5?0:1; tween(NightO,{v:to},1800); e.currentTarget.textContent=to?"🌅 Hoàng hôn":"🌙 Ban đêm"; });
+$("#bFire").addEventListener("click",()=>{ audio(); show(); say("Người kể","Wow! Fireworks!","Ồ! Pháo hoa!"); });
+$("#bReset").addEventListener("click",()=>{ audio(); reset(); });
+E.castle.addEventListener("click",()=>{ audio(); show(); say("Người kể","Fireworks over the castle!","Pháo hoa trên lâu đài!"); });
+E.horse.addEventListener("click",async()=>{ audio(); sfx.neigh(); CH.L.expr="happy"; setTimeout(()=>{ CH.L.expr="normal"; },1600); say("Công chúa","Hello! Hello!","Xin chào! Xin chào!"); tween(J,{wave:1},250,"out");
+  await tween(J,{toss:1},220,"out"); await tween(J,{toss:-.3},260); await tween(J,{toss:0},300); await wait(900); tween(J,{wave:0},300); });
+setInterval(()=>{ if(NightO.v>.9){ CH.Y.expr="happy"; CH.L.expr="happy"; setTimeout(()=>{ CH.Y.expr="normal"; CH.L.expr="normal"; },1500); } },4000);
+
+requestAnimationFrame(frame);
+</script>

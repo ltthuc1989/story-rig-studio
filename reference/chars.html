@@ -1,0 +1,250 @@
+<title>Leo Và Lily</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Be+Vietnam+Pro:wght@400;500;600&display=swap">
+<style>
+/* Layout: sân khấu nhân vật 16:9 (bản cũ góc trái, bản mới ở giữa), hàng nút biểu cảm, rồi danh sách các nguyên tắc đã sửa. */
+:root{
+  --bg:#f8f4fb; --surface:#ffffff; --surface-2:#f7f1fb; --ink:#241b33; --muted:#665a78;
+  --line:#e6deee; --accent:#c23f86; --focus:#f2b82e;
+  --f-display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#130f1b; --surface:#1c1626; --surface-2:#241c31; --ink:#efe8f7; --muted:#ab9fbf; --line:#33294a; --accent:#f07bbd; --focus:#f6c84f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#130f1b; --surface:#1c1626; --surface-2:#241c31; --ink:#efe8f7; --muted:#ab9fbf; --line:#33294a; --accent:#f07bbd; --focus:#f6c84f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;padding-inline:16px;padding-block:24px 48px;margin:0}
+.wrap{max-width:1060px;margin:0 auto;display:grid;gap:18px}
+h1{font-family:var(--f-display);font-size:clamp(30px,5vw,46px);font-weight:800;line-height:1.1;margin:0}
+h2{font-family:var(--f-display);font-size:22px;font-weight:700;margin:0 0 6px}
+p{margin:0}
+.lede{color:var(--muted);max-width:74ch;margin-top:8px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:22px;overflow:hidden}
+.stage svg{display:block;width:100%;height:auto}
+.sub{padding:12px 20px;border-top:1px solid var(--line);min-height:64px}
+.en{font-family:var(--f-display);font-size:clamp(20px,3vw,26px);font-weight:600;line-height:1.25}
+.vi{color:var(--muted);font-size:14px}
+.ctrl{display:flex;flex-wrap:wrap;gap:8px;padding:12px 20px 18px;border-top:1px solid var(--line)}
+button{font:inherit;font-weight:600;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);padding:8px 15px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.fixes{padding:20px 22px}
+.fixes ol{margin:8px 0 0;padding-left:20px;display:grid;gap:6px}
+.fixes b{color:var(--ink)}
+.fixes li{color:var(--muted)}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Tối ưu nhân vật · vẫn 100% vector</div>
+    <h1>Leo Và Lily</h1>
+    <p class="lede">Vẽ lại hoàng tử và công chúa theo các nguyên tắc thiết kế nhân vật hoạt hình: tỉ lệ chibi, mắt to có điểm sáng, viền màu, đổ bóng hai tông, tóc có khối. Góc trái là bản cũ để so sánh. Bấm các nút để đổi biểu cảm, cho nhân vật nói hoặc vẫy tay; chạm vào nhân vật để nhân vật cười.</p>
+  </header>
+  <section class="card">
+    <div class="stage"><svg id="svg" viewBox="0 0 960 540" role="img" aria-label="Hoàng tử Leo và công chúa Lily, so sánh với bản cũ"></svg></div>
+    <div class="sub" aria-live="polite"><div class="en" id="en">Hi! I'm Leo. And I'm Lily!</div><div class="vi" id="vi">Chào bạn! Mình là Leo. Còn mình là Lily!</div></div>
+    <div class="ctrl">
+      <button data-x="happy">😊 Vui</button><button data-x="surprised">😮 Ngạc nhiên</button><button data-x="wink">😉 Nháy mắt</button>
+      <button data-x="talk">🗣️ Nói chuyện</button><button data-x="wave">👋 Vẫy tay</button><button data-x="normal">↺ Bình thường</button>
+    </div>
+  </section>
+  <section class="card fixes">
+    <h2>Vì sao bản cũ trông "như ma", và đã sửa gì</h2>
+    <ol>
+      <li><b>Không có viền:</b> da trắng nhạt lẫn vào nền nên nhân vật bị nhoà. Bản mới có viền màu đậm hơn màu tô (da viền nâu cam, tóc viền nâu vàng), mềm hơn viền đen.</li>
+      <li><b>Mắt chấm nhỏ, nhìn nghiêng hẳn:</b> mặt mất hồn. Bản mới dùng góc 3/4, mắt to chiếm khoảng 1/4 chiều rộng mặt, có tròng màu và 2 điểm sáng, công chúa có mi cong.</li>
+      <li><b>Tỉ lệ:</b> đầu tròn đều như quả bóng. Bản mới đầu to bằng khoảng 40% chiều cao, má phúng phính ở dưới, cằm nhỏ.</li>
+      <li><b>Màu phẳng một lớp:</b> bản mới đổ bóng hai tông (bóng dưới cằm, dưới tóc, nếp váy) và có vệt sáng trên tóc, nên có khối.</li>
+      <li><b>Chi tiết nhận diện:</b> tóc có mái và lọn, vương miện có đá quý, tay áo phồng, nơ eo, áo choàng, bốt. Đủ để trẻ nhớ nhân vật.</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+const $=s=>document.querySelector(s), svg=$("#svg"), NS="http://www.w3.org/2000/svg";
+const lerp=(a,b,k)=>a+(b-a)*k, clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)), f1=v=>(+v).toFixed(1);
+const K={skin:"#ffd9c2",skinS:"#f4b89c",skinO:"#cf8a70",blush:"#ff9fb2",mouth:"#b8325a",tongue:"#ff8fa8",
+  gH:"#ffcf5a",gS:"#f0a93a",gO:"#c58a2a",gL:"#fff2a6", bH:"#7a4a32",bS:"#5e3524",bO:"#45281a",bL:"#a8714f",
+  pink:"#ff86b5",pinkS:"#e9619a",pinkO:"#c94a82",pinkL:"#ffc3dc", blue:"#4b6ee0",blueS:"#3756be",blueO:"#283f94",
+  gold:"#ffcf3d",goldO:"#c9922b",red:"#e2505f",redS:"#bd3b4b",navy:"#2f3a6b",boot:"#80502f",bootO:"#4f2e1a"};
+const HEAD="M-54 -212 C-56 -250 -28 -270 4 -270 C38 -270 60 -250 58 -212 C58 -182 42 -152 8 -150 C-28 -150 -52 -178 -54 -212Z";
+
+function eyes(pre,iris,lash){ const E=(x,rx,ry,side)=>`
+  <g class="eo"><ellipse cx="${x}" cy="-202" rx="${rx}" ry="${ry}" fill="#33233f"/><ellipse cx="${x}" cy="${-202+ry*.38}" rx="${rx*.74}" ry="${ry*.42}" fill="${iris}" opacity=".85"/>
+  <circle cx="${x+rx*.3}" cy="${-202-ry*.36}" r="${rx*.4}" fill="#fff"/><circle cx="${x-rx*.36}" cy="${-202+ry*.36}" r="${rx*.18}" fill="#fff"/>
+  ${lash?`<path d="M${x-rx-1.5} ${-202-ry*.35} Q${x} ${-202-ry-4} ${x+rx+1.5} ${-202-ry*.35} l${side*5} -4" stroke="#33233f" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`:""}</g>
+  <path class="eh" d="M${x-rx} ${-200} Q${x} ${-200-ry*1.1} ${x+rx} ${-200}" stroke="#33233f" stroke-width="3.6" fill="none" stroke-linecap="round" style="display:none"/>`;
+  return `<g id="${pre}eyeF" data-cx="-14">${E(-14,8,11.5,-1)}</g><g id="${pre}eyeN" data-cx="27">${E(27,9,12.5,1)}</g>`; }
+function brows(pre,col,w){ return `<g id="${pre}brows"><path d="M-24 -224 Q-14 -230 -5 -225" stroke="${col}" stroke-width="${w}" fill="none" stroke-linecap="round"/><path d="M17 -226 Q28 -232 38 -225" stroke="${col}" stroke-width="${w}" fill="none" stroke-linecap="round"/></g>`; }
+function mouths(pre,mx){ return `<g id="${pre}m_smile"><path d="M${mx-10} -176 Q${mx} -165 ${mx+10} -176" stroke="${K.mouth}" stroke-width="2.8" fill="none" stroke-linecap="round"/></g>
+  <g id="${pre}m_open" style="display:none"><path d="M${mx-11} -178 Q${mx} -178 ${mx+11} -178 Q${mx+9} -163 ${mx} -162 Q${mx-9} -163 ${mx-11} -178Z" fill="${K.mouth}"/><path d="M${mx-8} -178 Q${mx} -178 ${mx+8} -178 L${mx+7} -175 Q${mx} -174 ${mx-7} -175Z" fill="#fff"/><ellipse cx="${mx}" cy="-166" rx="5" ry="3" fill="${K.tongue}"/></g>
+  <g id="${pre}m_o" style="display:none"><ellipse cx="${mx}" cy="-170" rx="5.5" ry="7" fill="${K.mouth}"/><ellipse cx="${mx}" cy="-166" rx="3" ry="2" fill="${K.tongue}"/></g>
+  <g id="${pre}m_talk" style="display:none"><ellipse cx="${mx}" cy="-172" rx="7" ry="4" fill="${K.mouth}"/></g>`; }
+function face(pre,iris,lash,browCol,browW){ return `
+  <path d="${HEAD}" fill="${K.skin}" stroke="${K.skinO}" stroke-width="2.6"/>
+  <path d="M-44 -176 Q-30 -156 8 -154 Q-26 -160 -40 -184Z" fill="${K.skinS}" opacity=".55"/>
+  <ellipse cx="-28" cy="-182" rx="10" ry="6" fill="${K.blush}" opacity=".55"/><ellipse cx="42" cy="-182" rx="10" ry="6" fill="${K.blush}" opacity=".55"/>
+  ${eyes(pre,iris,lash)}${brows(pre,browCol,browW)}
+  <path d="M8 -190 q3 4 -1 6" stroke="${K.skinO}" stroke-width="2" fill="none" stroke-linecap="round"/>
+  ${mouths(pre,10)}`; }
+const neck=`<path d="M-8 -156 V-136 H16 V-156Z" fill="${K.skin}" stroke="${K.skinO}" stroke-width="2.2"/><path d="M-8 -154 Q4 -146 16 -154 V-148 Q4 -140 -8 -148Z" fill="${K.skinS}"/>`;
+const arm=(id,col)=>`<g id="${id}"><path class="ao" fill="none" stroke="${K.skinO}" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/><path class="as" fill="none" stroke="${col}" stroke-width="9.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="hd" r="7" fill="${K.skin}" stroke="${K.skinO}" stroke-width="2.2"/></g>`;
+
+/* ---------- PRINCESS LILY (designed facing +x) ---------- */
+const LILY=`
+<g id="qBody">
+  <path id="qHairBack" d="M-62 -222 C-72 -272 -22 -292 6 -290 C50 -288 74 -258 68 -214 C72 -172 86 -140 76 -104 C70 -90 56 -94 52 -108 C48 -94 34 -94 32 -110 L-30 -110 C-32 -94 -50 -92 -54 -106 C-60 -92 -80 -98 -78 -114 C-86 -150 -68 -182 -62 -222Z" fill="${K.gH}" stroke="${K.gO}" stroke-width="2.6"/>
+  <path d="M-60 -150 C-66 -130 -64 -116 -56 -110 M66 -160 C72 -140 72 -122 64 -112" stroke="${K.gS}" stroke-width="5" fill="none" stroke-linecap="round"/>
+  ${arm("qArmF",K.skinS)}
+  <path d="M-22 -104 Q-62 -44 -72 -8 Q2 8 76 -8 Q66 -44 26 -104Z" fill="url(#skirtG)" stroke="${K.pinkO}" stroke-width="2.6"/>
+  <path d="M-8 -96 Q-24 -50 -30 -6 M14 -96 Q22 -50 30 -4" stroke="${K.pinkS}" stroke-width="2.4" fill="none" opacity=".7"/>
+  <path d="M-72 -8 q8 -10 16 0 q8 -10 16 0 q8 -10 16 0 q8 -10 16 0 q8 -10 16 0 q8 -10 16 0 q8 -10 16 0 q8 -10 16 0 q6 -8 12 0 Q2 10 -72 -8Z" fill="${K.pinkL}" stroke="${K.pinkO}" stroke-width="2"/>
+  <ellipse cx="-14" cy="-1" rx="11" ry="6" fill="${K.pinkS}" stroke="${K.pinkO}" stroke-width="2"/><ellipse cx="20" cy="-1" rx="11" ry="6" fill="${K.pinkS}" stroke="${K.pinkO}" stroke-width="2"/>
+  <path d="M-24 -138 Q2 -144 28 -138 L24 -102 L-20 -102Z" fill="${K.pink}" stroke="${K.pinkO}" stroke-width="2.6"/>
+  <path d="M-16 -138 Q2 -128 22 -138" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <g transform="translate(2 -104)"><path d="M0 0 L-16 -9 Q-20 0 -16 9Z M0 0 L16 -9 Q20 0 16 9Z" fill="${K.pinkL}" stroke="${K.pinkO}" stroke-width="2"/><circle r="4.5" fill="${K.gold}" stroke="${K.goldO}" stroke-width="1.6"/></g>
+  <circle cx="-25" cy="-130" r="12" fill="${K.pinkL}" stroke="${K.pinkO}" stroke-width="2.4"/>
+  ${neck}
+  <g id="qHead">
+    ${face("q","#8a62d6",true,K.gO,2.6)}
+    <path d="M-58 -214 C-60 -258 -24 -278 6 -276 C42 -274 66 -252 60 -212 C54 -228 42 -236 32 -238 C28 -224 16 -218 4 -216 C10 -226 8 -236 4 -240 C-6 -226 -22 -220 -38 -222 C-44 -218 -52 -214 -58 -214Z" fill="${K.gH}" stroke="${K.gO}" stroke-width="2.6"/>
+    <path d="M-58 -214 C-64 -190 -62 -166 -52 -148 C-50 -170 -50 -196 -46 -212Z M60 -212 C66 -190 64 -170 56 -154 C54 -174 52 -196 50 -210Z" fill="${K.gH}" stroke="${K.gO}" stroke-width="2.4"/>
+    <path d="M-30 -260 C-14 -268 10 -268 26 -262 C10 -263 -10 -261 -26 -254Z" fill="${K.gL}"/>
+    <path d="M-24 -262 L-18 -284 L-8 -270 L2 -292 L12 -270 L22 -284 L28 -262 Q2 -270 -24 -262Z" fill="${K.gold}" stroke="${K.goldO}" stroke-width="2.2" stroke-linejoin="round"/>
+    <circle cx="2" cy="-276" r="4" fill="#ff5fa2" stroke="#c23f86" stroke-width="1.4"/><circle cx="-14" cy="-268" r="2.4" fill="#7fd3ff"/><circle cx="18" cy="-268" r="2.4" fill="#7fd3ff"/>
+  </g>
+  ${arm("qArmN",K.skin)}
+  <circle cx="30" cy="-130" r="13" fill="${K.pinkL}" stroke="${K.pinkO}" stroke-width="2.4"/>
+</g>`;
+
+/* ---------- PRINCE LEO (designed facing +x) ---------- */
+const LEO=`
+<g id="pBody">
+  <path id="pCape" d="M-34 -140 Q-52 -80 -60 -22 Q2 -10 62 -22 Q56 -80 38 -140Z" fill="${K.redS}" stroke="#8f2a37" stroke-width="2.6"/>
+  ${arm("pArmF",K.skinS)}
+  <path d="M-20 -82 H0 V-24 H-20Z M6 -82 H26 V-24 H6Z" fill="${K.navy}" stroke="#1d2547" stroke-width="2.4"/>
+  <path d="M-24 -28 H0 V-6 Q10 -6 12 0 H-26Z" fill="${K.boot}" stroke="${K.bootO}" stroke-width="2.4" stroke-linejoin="round"/>
+  <path d="M4 -28 H28 V-6 Q38 -6 40 0 H2Z" fill="${K.boot}" stroke="${K.bootO}" stroke-width="2.4" stroke-linejoin="round"/>
+  <path d="M-26 -30 H2 V-24 H-26Z M2 -30 H30 V-24 H2Z" fill="#a8714f"/>
+  <path d="M-30 -140 Q2 -146 34 -140 L32 -78 L-28 -78Z" fill="${K.blue}" stroke="${K.blueO}" stroke-width="2.6"/>
+  <path d="M-28 -110 Q-14 -96 -26 -80 L-28 -80Z" fill="${K.blueS}" opacity=".7"/>
+  <path d="M2 -142 V-80" stroke="${K.gold}" stroke-width="5"/>
+  ${[-130,-118,-106].map(y=>`<circle cx="2" cy="${y}" r="2.6" fill="#fff6c8"/>`).join("")}
+  <rect x="-29" y="-94" width="62" height="9" fill="#5a3a26" stroke="#3a2416" stroke-width="2"/><rect x="-3" y="-96" width="12" height="13" rx="2" fill="${K.gold}" stroke="${K.goldO}" stroke-width="1.8"/>
+  <path d="M-12 -142 L2 -128 L16 -142" stroke="#fff" stroke-width="5" fill="none" stroke-linejoin="round"/>
+  <ellipse cx="-30" cy="-136" rx="12" ry="7" fill="${K.gold}" stroke="${K.goldO}" stroke-width="2"/>
+  ${neck}
+  <g id="pHead">
+    
+    ${face("p","#4f8fe0",false,K.bO,3.4)}
+    <path d="M-58 -210 C-62 -258 -26 -278 6 -276 C40 -274 64 -254 60 -214 C54 -224 48 -230 40 -232 L38 -216 C30 -226 22 -232 12 -234 L8 -218 C0 -228 -10 -232 -20 -232 L-24 -216 C-32 -224 -44 -224 -52 -218Z" fill="${K.bH}" stroke="${K.bO}" stroke-width="2.6" stroke-linejoin="round"/>
+    <path d="M-34 -262 C-18 -270 6 -270 22 -264 C6 -265 -14 -263 -30 -256Z" fill="${K.bL}"/>
+    <g transform="rotate(-8 2 -276)"><path d="M-18 -270 L-14 -290 L-5 -278 L2 -296 L9 -278 L18 -290 L22 -270Z" fill="${K.gold}" stroke="${K.goldO}" stroke-width="2.2" stroke-linejoin="round"/><circle cx="2" cy="-280" r="3.6" fill="#5bc0ff" stroke="#2b7fc0" stroke-width="1.2"/></g>
+  </g>
+  ${arm("pArmN",K.skin)}
+  <ellipse cx="34" cy="-136" rx="12" ry="7" fill="${K.gold}" stroke="${K.goldO}" stroke-width="2"/>
+</g>`;
+
+/* ---------- OLD VERSION (copied from the castle scene) for comparison ---------- */
+const OLD=`
+<g transform="translate(96 150) scale(1.15)">
+  <g transform="translate(-28 0)"><rect x="-3" y="-48" width="8" height="8" fill="#ffdcc8"/><path d="M-10 -40 Q2 -46 12 -40 Q14 -20 12 -4 L-10 -4 Q-12 -20 -10 -40Z" fill="#ef6fa5"/><circle cx="2" cy="-62" r="17" fill="#ffdcc8"/>
+    <path d="M-14 -66 Q-12 -82 4 -81 Q18 -80 19 -66 Q12 -74 4 -70 Q-4 -76 -8 -64 Q-12 -60 -14 -66Z" fill="#f6c85f"/><path d="M-6 -78 L-3 -88 L2 -81 L6 -90 L10 -80 L14 -86 L15 -76Z" fill="#f2c14e"/>
+    <ellipse cx="11" cy="-63" rx="2.6" ry="3.4" fill="#2b2240"/><path d="M13 -51 Q16 -48 19 -51" stroke="#c2456f" stroke-width="2" fill="none"/><circle cx="19" cy="-59" r="2.4" fill="#ffd2bd"/></g>
+  <g transform="translate(26 0)"><path d="M-12 -44 Q2 -50 14 -44 Q18 -20 14 0 L-12 0 Q-16 -20 -12 -44Z" fill="#3d5bbf"/><circle cx="6" cy="-66" r="18" fill="#f5c9a8"/>
+    <path d="M-12 -68 Q-14 -88 6 -88 Q24 -88 25 -72 Q14 -80 4 -77 Q-2 -72 -8 -60 Q-14 -62 -12 -68Z" fill="#4a2f22"/><path d="M-6 -84 L-4 -97 L2 -89 L7 -99 L12 -89 L18 -96 L19 -84Z" fill="#f2c14e"/>
+    <circle cx="16" cy="-68" r="2.6" fill="#2b2240"/><path d="M17 -57 Q20 -55 23 -58" stroke="#a5455f" stroke-width="2" fill="none"/><circle cx="24" cy="-64" r="3" fill="#f5c9a8"/></g>
+</g>`;
+
+svg.innerHTML=`
+<defs>
+  <linearGradient id="bgG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cdb8f0"/><stop offset=".6" stop-color="#f7c6dc"/><stop offset="1" stop-color="#ffe3cf"/></linearGradient>
+  <linearGradient id="skirtG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff86b5"/><stop offset="1" stop-color="#ffb3d1"/></linearGradient>
+  <radialGradient id="spot"><stop offset="0" stop-color="#fff" stop-opacity=".7"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="960" height="540" fill="url(#bgG)"/>
+<g opacity=".22" fill="#8e6ab8"><path d="M700 330 V230 h24 v-30 l14 -40 l14 40 v30 h20 v-60 l18 -52 l18 52 v60 h20 v-30 l14 -40 l14 40 v30 h24 V330Z"/></g>
+<ellipse cx="560" cy="300" rx="330" ry="230" fill="url(#spot)"/>
+<ellipse cx="560" cy="478" rx="300" ry="34" fill="#9fd07c"/><ellipse cx="560" cy="472" rx="290" ry="26" fill="#b6e08e"/>
+<g id="sparks"></g>
+<g><rect x="24" y="22" width="150" height="176" rx="16" fill="#fff" opacity=".55"/><text x="99" y="186" text-anchor="middle" font-family="Be Vietnam Pro, sans-serif" font-size="15" font-weight="600" fill="#665a78">Bản cũ</text>${OLD}</g>
+<path d="M186 110 h40 m-10 -9 l10 9 l-10 9" stroke="#8e6ab8" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/>
+<text x="600" y="512" text-anchor="middle" font-family="Be Vietnam Pro, sans-serif" font-size="15" font-weight="600" fill="#665a78">Bản mới · Leo &amp; Lily</text>
+<ellipse cx="440" cy="474" rx="70" ry="10" fill="#4f8a44" opacity=".25"/><ellipse cx="690" cy="474" rx="80" ry="10" fill="#4f8a44" opacity=".25"/>
+<g id="leo" transform="translate(440 472) scale(1.22)" style="cursor:pointer">${LEO}</g>
+<g id="lily" transform="translate(690 472) scale(-1.22 1.22)" style="cursor:pointer">${LILY}</g>`;
+const E={}; svg.querySelectorAll("[id]").forEach(el=>E[el.id]=el);
+
+/* sparkles */
+const SP=[]; for(let i=0;i<16;i++){ const p=document.createElementNS(NS,"path"); const r=3+Math.random()*4; p.setAttribute("d",`M0 ${-r} L${r*.3} ${-r*.3} L${r} 0 L${r*.3} ${r*.3} L0 ${r} L${-r*.3} ${r*.3} L${-r} 0 L${-r*.3} ${-r*.3}Z`); p.setAttribute("fill","#fff"); E.sparks.appendChild(p); SP.push({el:p,x:260+Math.random()*640,y:60+Math.random()*360,ph:Math.random()*6}); }
+
+/* ---------- RIG ---------- */
+function ik(S,T,l1,l2,outward){ const dx=T[0]-S[0], dy=T[1]-S[1], d=Math.hypot(dx,dy)||1, dd=clamp(d,Math.abs(l1-l2)+1,l1+l2-.5);
+  const ux=dx/d, uy=dy/d, a=Math.acos(clamp((l1*l1+dd*dd-l2*l2)/(2*l1*dd),-1,1));
+  const c=[a,-a].map(s=>[S[0]+l1*(ux*Math.cos(s)-uy*Math.sin(s)),S[1]+l1*(ux*Math.sin(s)+uy*Math.cos(s))]);
+  return {E:outward<0?(c[0][0]<c[1][0]?c[0]:c[1]):(c[0][0]>c[1][0]?c[0]:c[1]), W:[S[0]+ux*dd,S[1]+uy*dd]}; }
+function hose(S,Q,W){ const k=.45,p1=[S[0]+(Q[0]-S[0])*(1-k),S[1]+(Q[1]-S[1])*(1-k)],p2=[Q[0]+(W[0]-Q[0])*k,Q[1]+(W[1]-Q[1])*k];
+  return `M${f1(S[0])} ${f1(S[1])} L${f1(p1[0])} ${f1(p1[1])} Q${f1(Q[0])} ${f1(Q[1])} ${f1(p2[0])} ${f1(p2[1])} L${f1(W[0])} ${f1(W[1])}`; }
+function setArm(g,S,T,out){ const r=ik(S,T,28,26,out), d=hose(S,r.E,r.W); g.querySelector(".ao").setAttribute("d",d); g.querySelector(".as").setAttribute("d",d);
+  const h=g.querySelector(".hd"); h.setAttribute("cx",f1(r.W[0])); h.setAttribute("cy",f1(r.W[1])); }
+
+const C={p:{expr:"normal",wave:0,talk:false,blink:false,surp:0,tilt:0},q:{expr:"normal",wave:0,talk:false,blink:false,surp:0,tilt:0}};
+function setExpr(pre,x){ C[pre].expr=x; }
+function renderFace(pre,t){ const c=C[pre], x=c.expr;
+  const show=(id,on)=>{ E[pre+id].style.display=on?"":"none"; };
+  const happyEyes=x==="happy", wink=x==="wink";
+  [["eyeF",happyEyes],["eyeN",happyEyes||wink]].forEach(([id,closed])=>{ const g=E[pre+id]; const eo=g.querySelector(".eo"), eh=g.querySelector(".eh");
+    eo.style.display=closed?"none":""; eh.style.display=closed?"":"none";
+    const cx=+g.dataset.cx, sc=c.blink&&!closed?.12:(x==="surprised"?1.14:1);
+    eo.setAttribute("transform",`translate(${cx} -202) scale(${x==="surprised"?1.14:1} ${sc}) translate(${-cx} 202)`); });
+  E[pre+"brows"].setAttribute("transform",`translate(0 ${x==="surprised"?-6:(x==="happy"?-2:0)})`);
+  const talkOpen=c.talk&&Math.sin(t*18)>-.2;
+  show("m_smile",!talkOpen&&(x==="normal"||x==="wink")); show("m_open",x==="happy"||(talkOpen&&Math.sin(t*7)>0)); show("m_o",x==="surprised"&&!talkOpen); show("m_talk",talkOpen&&!(Math.sin(t*7)>0)&&x!=="happy");
+}
+function render(t){
+  // Leo
+  const pb=Math.sin(t*2.1)*.012, qb=Math.sin(t*2.1+1)*.012;
+  E.pBody.setAttribute("transform",`translate(0 0) scale(1 ${1+pb}) `);
+  E.qBody.setAttribute("transform",`scale(1 ${1+qb})`);
+  E.pHead.setAttribute("transform",`rotate(${f1(Math.sin(t*1.3)*2+C.p.tilt)} 4 -150)`);
+  E.qHead.setAttribute("transform",`rotate(${f1(Math.sin(t*1.2+2)*2+C.q.tilt)} 4 -150)`);
+  E.qHairBack.setAttribute("transform",`rotate(${f1(Math.sin(t*1.2+2)*1.6+C.q.tilt*.6)} 4 -240)`);
+  E.pCape.setAttribute("transform",`skewX(${f1(Math.sin(t*1.6)*3)})`);
+  const pw=C.p.wave, qw=C.q.wave, wv=Math.sin(t*11)*12;
+  setArm(E.pArmF,[-30,-130],[-34,-80],-1);
+  setArm(E.pArmN,[34,-130],[lerp(38,80+wv,pw),lerp(-80,-182,pw)],1);
+  setArm(E.qArmF,[-25,-126],[-30,-80],-1);
+  setArm(E.qArmN,[30,-126],[lerp(34,76+wv,qw),lerp(-80,-182,qw)],1);
+  renderFace("p",t); renderFace("q",t);
+  SP.forEach(s=>{ const k=.5+.5*Math.sin(t*1.8+s.ph); s.el.setAttribute("transform",`translate(${f1(s.x)} ${f1(s.y+Math.sin(t*.6+s.ph)*8)}) scale(${(.4+k*.7).toFixed(2)}) rotate(${f1(t*30+s.ph*40)})`); s.el.setAttribute("opacity",(k*.8).toFixed(2)); });
+}
+function loop(now){ render(now/1000); requestAnimationFrame(loop); }
+requestAnimationFrame(loop);
+function blinkLoop(pre){ setTimeout(()=>{ C[pre].blink=true; setTimeout(()=>{ C[pre].blink=false; blinkLoop(pre); },130); },2600+Math.random()*2600); }
+blinkLoop("p"); blinkLoop("q");
+
+/* ---------- actions ---------- */
+function voice(hint){ try{ const vs=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang)); return vs.find(v=>/en-US/i.test(v.lang)&&hint.test(v.name))||vs.find(v=>/en-US/i.test(v.lang))||vs[0]||null; }catch(e){ return null; } }
+try{ speechSynthesis.getVoices(); }catch(e){}
+function speak(pre,en,pitch){ return new Promise(res=>{ C[pre].talk=true; const est=700+en.split(/\s+/).length*380; let done=false; const fin=()=>{ if(done) return; done=true; C[pre].talk=false; res(); };
+  try{ const u=new SpeechSynthesisUtterance(en), v=voice(/female|samantha|aria|jenny|zira|google us/i); if(v){u.voice=v;u.lang=v.lang;} else u.lang="en-US"; u.pitch=pitch; u.rate=.95; let st=false;
+    u.onstart=()=>st=true; u.onend=fin; u.onerror=()=>setTimeout(fin,st?0:est); speechSynthesis.speak(u); setTimeout(()=>{ if(!st) setTimeout(fin,est); },900); }catch(e){ setTimeout(fin,est); }
+  setTimeout(fin,est+4000); }); }
+const sub=(en,vi)=>{ $("#en").textContent=en; $("#vi").textContent=vi; };
+const ACT={
+  happy(){ setExpr("p","happy"); setExpr("q","happy"); sub("Yay! We are happy!","Yeah! Tụi mình vui quá!"); },
+  surprised(){ setExpr("p","surprised"); setExpr("q","surprised"); C.p.tilt=-4; C.q.tilt=-4; sub("Oh! What's that?","Ồ! Cái gì thế?"); },
+  wink(){ setExpr("p","wink"); setExpr("q","wink"); sub("Hehe!","Hì hì!"); },
+  async talk(){ try{ speechSynthesis.cancel(); }catch(e){} setExpr("p","normal"); setExpr("q","normal");
+    sub("Hi! I'm Prince Leo.","Chào bạn! Mình là hoàng tử Leo."); await speak("p","Hi! I'm Prince Leo.",1.2);
+    sub("And I'm Princess Lily. Nice to meet you!","Còn mình là công chúa Lily. Rất vui được gặp bạn!"); await speak("q","And I'm Princess Lily. Nice to meet you!",1.6); },
+  async wave(){ sub("Hello! Hello!","Xin chào! Xin chào!"); setExpr("p","happy"); setExpr("q","happy"); C.p.wave=1; C.q.wave=1; await new Promise(r=>setTimeout(r,1800)); C.p.wave=0; C.q.wave=0; setExpr("p","normal"); setExpr("q","normal"); },
+  normal(){ setExpr("p","normal"); setExpr("q","normal"); C.p.tilt=0; C.q.tilt=0; C.p.wave=0; C.q.wave=0; sub("Hi! I'm Leo. And I'm Lily!","Chào bạn! Mình là Leo. Còn mình là Lily!"); }
+};
+document.querySelectorAll("[data-x]").forEach(b=>b.addEventListener("click",()=>{ C.p.tilt=0; C.q.tilt=0; ACT[b.dataset.x](); }));
+E.leo.addEventListener("click",()=>{ setExpr("p","happy"); sub("Ha ha!","Ha ha!"); setTimeout(()=>setExpr("p","normal"),1200); });
+E.lily.addEventListener("click",()=>{ setExpr("q","happy"); sub("Hee hee!","Hi hi!"); setTimeout(()=>setExpr("q","normal"),1200); });
+</script>

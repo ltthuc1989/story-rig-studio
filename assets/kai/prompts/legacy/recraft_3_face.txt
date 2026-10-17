@@ -1,0 +1,7 @@
+Face parts sheet for lip sync and expressions of the attached character, three-quarter view facing right, same style, colors and scale as the attached image. Square 1:1, 2048 x 2048 px.
+Each piece separate, with a large empty gap around it, on a plain solid #FF00FF background (or transparent background). No labels, no text.
+Mouths, all the same width and centered on the same point, 6 shapes: closed smile (M/B/P), slightly open (E/I), wide open happy (A), small round (O), open showing top teeth (S/T), big open-mouth smile.
+Eyes, as near+far pairs, dark-brown oval eyes with one small highlight: open, half closed, closed happy curve, wide surprised.
+Eyebrows, near+far pairs: neutral, raised, frowning.
+Art style: polished flat vector illustration for a modern educational app. Every form is built from simple geometric shapes (circles, rounded rectangles, soft triangles) joined with clean, smooth bezier curves. Absolutely no outlines. Bold saturated palette: tomato red #FF5A5F, cobalt blue #2E86DE, sunflower yellow #FFC83D, fresh green #3FBF6B, sky #CFEFFF. Shading is a single flat darker shape per form, no gradients, no texture. Simplified but appealing features: oval eyes with one small highlight, a simple open smile, hands as rounded mitten shapes with a thumb. Light comes from the upper right. Clean, balanced, professional.
+Use as few shapes as possible; each part should be a small number of closed filled paths.
