@@ -392,11 +392,12 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
 
     // Head (with hair and nose): erase the painted eyes, brows, mouth; what was found gives the face boxes.
     val head = pieceOf(img, headM)
-    val found = mapOf(
-        "eye_near_open" to eraseFeature(head, S.eyeNearArea, col.skin, S.featureContrast), "eye_far_open" to eraseFeature(head, S.eyeFarArea, col.skin, S.featureContrast),
-        "brow_near" to eraseFeature(head, S.browNearArea, col.skin, S.featureContrast), "brow_far" to eraseFeature(head, S.browFarArea, col.skin, S.featureContrast),
-        "mouth_smile" to eraseFeature(head, S.mouthArea, col.skin, S.featureContrast),
-    )
+    val found = LinkedHashMap<String, Pair<Box, Piece>>()
+    found["eye_near_open"] = eraseFeature(head, S.eyeNearArea, col.skin, S.featureContrast)
+    found["eye_far_open"] = eraseFeature(head, S.eyeFarArea, col.skin, S.featureContrast)
+    S.browNearArea?.let { found["brow_near"] = eraseFeature(head, it, col.skin, S.featureContrast) }
+    S.browFarArea?.let { found["brow_far"] = eraseFeature(head, it, col.skin, S.featureContrast) }
+    found["mouth_smile"] = eraseFeature(head, S.mouthArea, col.skin, S.featureContrast)
     for ((k, f) in found) println("  $k found at ${f.first.x0},${f.first.y0}-${f.first.x1},${f.first.y1}")
     parts["head"] = Part("head", "head", head)
     parts["hair"] = Part("hair", "hair", hairOf(head, S.seedHair, col.hair, col.hairEdge))

@@ -46,8 +46,9 @@ class RefSpec(
     /** Rough areas of the painted features to erase; the exact boxes come from what is found inside. */
     val eyeNearArea: Box,
     val eyeFarArea: Box,
-    val browNearArea: Box,
-    val browFarArea: Box,
+    /** Null when the brows cannot be told apart (hidden by a fringe, joined to the hair): they stay painted. */
+    val browNearArea: Box?,
+    val browFarArea: Box?,
     val mouthArea: Box,
     val colours: CutColours,
     /** How far (RGB L1) a painted feature's colour is from the skin. */

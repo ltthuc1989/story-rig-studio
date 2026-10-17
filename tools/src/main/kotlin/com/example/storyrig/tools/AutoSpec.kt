@@ -419,19 +419,31 @@ fun autoSpec(img: Img, template: RigTemplate = RigTemplate.load(TEMPLATE), debug
     val waist = Pt(bodyMidX, waistY)
     guess("root"); guess("waist")
 
-    // ---- Head: hair is the colour at the top of the head, skin the head's most common other colour.
+    // ---- Head. Skin: the most common colour low on the head (cheeks, chin), which no hairstyle covers in this
+    // pose. Hair: the colour at the top of the head, unless that is skin (a bald head), then the most common
+    // colour of the upper head far from the skin (hair on the sides), seeded at its pixel nearest the top.
     var hx0 = sil.w; var hx1 = 0
     for (y in sil.box.y0 until neckY) for (x in sil.box.x0 until sil.box.x1) if (sil.at(x, y)) { hx0 = min(hx0, x); hx1 = max(hx1, x) }
     val headMid = Pt((hx0 + hx1) / 2f, (sil.box.y0 + neckY) / 2f)
     val topY = (0 until sil.h).first { sil.at(headC.x.roundToInt(), it) }
-    val seedHair = Pt(headC.x.roundToInt().toFloat(), topY + (12 * s).roundToInt().toFloat())
-    val hairCol = img[seedHair.x.toInt(), seedHair.y.toInt()]
     val headPx = ArrayList<Int>()
     for (y in sil.box.y0 until neckY) for (x in sil.box.x0 until sil.box.x1) if (sil.at(x, y) && a(img[x, y]) > 230) headPx += y * sil.w + x
-    val skinCol = palette(img, headPx.filter { dist(img.px[it], hairCol) > 150 }, 0f).let { pal ->
-        // Most common 16-level bin.
-        val counts = pal.associateWith { c -> headPx.count { dist(img.px[it], c) < 24 } }
-        counts.maxBy { it.value }.key
+    fun mostCommon(px: List<Int>): Int {
+        val pal = palette(img, px, 0f)
+        return pal.maxBy { c -> px.count { dist(img.px[it], c) < 24 } }
+    }
+    val headH = neckY - topY
+    val skinCol = mostCommon(headPx.filter { val y = it / sil.w; y >= topY + .55f * headH && y <= topY + .85f * headH })
+    var seedHair = Pt(headC.x.roundToInt().toFloat(), topY + (12 * s).roundToInt().toFloat())
+    var hairCol = img[seedHair.x.toInt(), seedHair.y.toInt()]
+    if (dist(hairCol, skinCol) < 90) {
+        val upper = headPx.filter { it / sil.w < topY + .6f * headH && dist(img.px[it], skinCol) > 150 }
+        require(upper.isNotEmpty()) { "bald head with no hair at all: not supported yet" }
+        val c = mostCommon(upper)
+        val p0 = upper.filter { dist(img.px[it], c) < 24 }.minBy { it / sil.w }
+        seedHair = Pt((p0 % sil.w).toFloat(), (p0 / sil.w).toFloat())
+        hairCol = img.px[p0]
+        log("bald top of the head: hair taken from the sides")
     }
     val hairSkin = dist(hairCol, skinCol)
     val isHair = { c: Int -> a(c) > 100 && dist(c, hairCol) < hairSkin * 0.4f }
@@ -485,17 +497,32 @@ fun autoSpec(img: Img, template: RigTemplate = RigTemplate.load(TEMPLATE), debug
                 val nx = x + dx; val ny = y + dy
                 if (nx !in 0 until fw || ny !in 0 until fh) { open = true; continue }
                 val k = ny * fw + nx
-                // A feature is enclosed by skin: touching the background or the hair means an outline or a lock.
-                if (!sil.at(nx + fx0, ny + fy0) || hairMask[k]) open = true
+                // A feature sits on skin: touching the hair means a lock. Touching the face contour is fine (the far
+                // eye in a three-quarter view often does).
+                if (hairMask[k]) open = true
                 if (non[k] && !seen[k]) { seen[k] = true; st += k }
             }
         }
+        if (n >= 15 && debug) log("  face blob ${bx0 + fx0},${by0 + fy0}-${bx1 + fx0},${by1 + fy0} area $n${if (open) " OPEN (touches hair)" else ""}")
         if (!open && n >= 15) blobs += Blob(bx0 + fx0, by0 + fy0, bx1 + fx0, by1 + fy0, n)
     }
-    val eyes = blobs.filter { it.bh.toFloat() / it.bw in 0.6f..1.8f }.sortedByDescending { it.area }.take(2).sortedBy { it.cx }
+    // Eyes: the best pair of roundish blobs side by side at about the same height and of similar size (an ear
+    // crease or a cheek alone is never chosen).
+    val round = blobs.filter { it.bh.toFloat() / it.bw in 0.6f..1.8f }
+    var eyes: List<Blob> = emptyList()
+    var bestScore = 0
+    for (i in round.indices) for (j in round.indices) {
+        val a0 = round[i]; val b0 = round[j]
+        if (a0.cx >= b0.cx) continue
+        val h = max(a0.bh, b0.bh); val w = max(a0.bw, b0.bw)
+        if (abs(a0.cy - b0.cy) > .6f * h || b0.cx - a0.cx < 1.2f * w || b0.cx - a0.cx > 5f * w) continue
+        if (min(a0.area, b0.area) < .3f * max(a0.area, b0.area)) continue
+        val score = min(a0.area, b0.area)
+        if (score > bestScore) { bestScore = score; eyes = listOf(a0, b0) }
+    }
     require(eyes.size == 2) { "could not find two eyes" }
     fun browOf(e: Blob) = blobs.filter { it !== e && it.y1 < e.y0 && abs(it.cx - e.cx) < e.bw && it.bw > 1.5f * it.bh }.minByOrNull { e.y0 - it.y1 }
-        ?: error("no brow above the eye at ${e.cx},${e.cy}")
+        .also { if (it == null) log("WARNING no brow above the eye at ${e.cx},${e.cy}: brows stay painted on the head (not swappable)") }
     val browN = browOf(eyes[0]); val browF = browOf(eyes[1])
     val eyeBottom = eyes.maxOf { it.cy } + 0.6f * eyes.maxOf { it.bh }
     val mouth = blobs.filter { it.cy > eyeBottom && it.cx in eyes[0].cx..eyes[1].cx && it.bw > it.bh }.maxByOrNull { it.bw }
@@ -533,7 +560,7 @@ fun autoSpec(img: Img, template: RigTemplate = RigTemplate.load(TEMPLATE), debug
         seedThighNear = onPt(jNear.seedThigh.x, jNear.seedThigh.y), seedThighFar = onPt(jFar.seedThigh.x, jFar.seedThigh.y),
         seedLegNear = onPt(jNear.seedLeg.x, jNear.seedLeg.y, legAllow), seedLegFar = onPt(jFar.seedLeg.x, jFar.seedLeg.y, legAllow),
         eyeNearArea = area(eyes[0]), eyeFarArea = area(eyes[1]),
-        browNearArea = area(browN), browFarArea = area(browF), mouthArea = area(mouth),
+        browNearArea = browN?.let(::area), browFarArea = browF?.let(::area), mouthArea = area(mouth),
         colours = CutColours(arm = { true }, leg = legAllow, pelvis = isGarment, skin = isSkin, hair = isHair, hairEdge = isHairEdge),
         featureContrast = contrast,
     )
@@ -578,7 +605,7 @@ fun compareWithKai(auto: RefSpec, expected: RefSpec = KaiRefSpec.spec(), label: 
     println("armFarRadii          ${auto.armFarRadii.joinToString { "%.0f".format(it) }}   ${expected.armFarRadii.joinToString { "%.0f".format(it) }}")
     fun box(n: String, a: Box, m: Box) = println("%-20s %d,%d-%d,%d   %d,%d-%d,%d".format(n, a.x0, a.y0, a.x1, a.y1, m.x0, m.y0, m.x1, m.y1))
     box("eyeNearArea", auto.eyeNearArea, expected.eyeNearArea); box("eyeFarArea", auto.eyeFarArea, expected.eyeFarArea)
-    box("browNearArea", auto.browNearArea, expected.browNearArea); box("browFarArea", auto.browFarArea, expected.browFarArea)
+    auto.browNearArea?.let { box("browNearArea", it, expected.browNearArea!!) }; auto.browFarArea?.let { box("browFarArea", it, expected.browFarArea!!) }
     box("mouthArea", auto.mouthArea, expected.mouthArea)
 }
 
@@ -596,7 +623,7 @@ fun drawPoints(f: File, img: Img, res: AutoResult, expected: RefSpec? = null) {
             g.drawLine(sg.x1.roundToInt(), sg.y1.roundToInt(), sg.x2.roundToInt(), sg.y2.roundToInt())
         for (p in listOf(sp.elbowNear, sp.wristNear, sp.elbowFar, sp.wristFar, sp.kneeNear, sp.kneeFar, sp.ankleNear, sp.ankleFar, sp.root, sp.waist))
             g.drawOval(p.x.roundToInt() - 5, p.y.roundToInt() - 5, 10, 10)
-        for (b in listOf(sp.eyeNearArea, sp.eyeFarArea, sp.browNearArea, sp.browFarArea, sp.mouthArea)) g.drawRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0)
+        for (b in listOfNotNull(sp.eyeNearArea, sp.eyeFarArea, sp.browNearArea, sp.browFarArea, sp.mouthArea)) g.drawRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0)
     }
     if (expected != null) spec(expected, Color.RED)
     spec(res.spec, Color(0, 170, 0))

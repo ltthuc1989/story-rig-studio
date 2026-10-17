@@ -76,7 +76,7 @@ private fun moved(sp: RefSpec, v: Variant, w: Int, h: Int): RefSpec {
         FloatArray(3) { sp.armNearRadii[it] * k }, FloatArray(3) { sp.armFarRadii[it] * k }, p(Pt(0f, sp.legTop.toFloat())).y.roundToInt(),
         p(sp.root), p(sp.waist), p(sp.seedHead), p(sp.seedHair), p(sp.hairPivot), p(sp.seedTorso), p(sp.seedPelvis),
         p(sp.seedArmNear), p(sp.seedArmFar), p(sp.seedThighNear), p(sp.seedThighFar), p(sp.seedLegNear), p(sp.seedLegFar),
-        bx(sp.eyeNearArea), bx(sp.eyeFarArea), bx(sp.browNearArea), bx(sp.browFarArea), bx(sp.mouthArea), sp.colours,
+        bx(sp.eyeNearArea), bx(sp.eyeFarArea), sp.browNearArea?.let(::bx), sp.browFarArea?.let(::bx), bx(sp.mouthArea), sp.colours,
     )
 }
 

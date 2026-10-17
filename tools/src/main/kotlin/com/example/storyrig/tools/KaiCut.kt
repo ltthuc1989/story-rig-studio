@@ -202,6 +202,10 @@ private fun build(dir: File, outDir: File, previewDir: File) {
  * character's skin colour for the shape checks of auto detection (null: no checks, face_map.csv is required).
  */
 internal fun addFaceParts(dir: File, parts: HashMap<String, Part>, boxes: Map<String, Box>, skin: Int?) {
+    if (!File(dir, "face.png").exists() && !File(dir, "face_map.csv").exists()) {
+        println("  no face sheet in $dir: only ref.png's own eyes and mouth (the app falls back to them)")
+        return
+    }
     val (picks, sheets) = if (skin != null) facePicks(dir, skin) else {
         val sh = HashMap<String, Sheet>()
         val fs = readFaceMap(dir) { n -> sh.getOrPut(n) { Sheet(File(dir, "$n.png")) } } ?: error("no face_map.csv in $dir")
@@ -217,6 +221,10 @@ internal fun addFaceParts(dir: File, parts: HashMap<String, Part>, boxes: Map<St
             .also { println("${fp.sheet} sheet ($baseName) -> ref scale ${"%.3f".format(it)}") }
     }
     for (fp in picks) {
+        if (faceScaleBase(fp.name) !in boxes) {
+            println("  ${fp.name}: skipped, ref.png has no ${faceScaleBase(fp.name)} to size it by")
+            continue
+        }
         val p = sheets.getValue(fp.sheet).piece(fp.ids).scaledToRef(scaleOf(fp))
         val box = boxes[fp.name]
         val cx: Int; val cy: Int
@@ -341,7 +349,7 @@ internal fun renderPreviews(dir: File, ref: Img, bones: List<Bone>, parts: Map<S
         "hip_far" to -15.0, "knee_far" to 20.0,
     )
     ImageIO.write(
-        renderPose(ref, bones, parts, relax(dance), swap = mapOf("mouth_smile" to "mouth_laugh", "eye_near_open" to "eye_near_happy", "eye_far_open" to "eye_far_happy")),
+        renderPose(ref, bones, parts, relax(dance), swap = mapOf("mouth_smile" to "mouth_laugh", "eye_near_open" to "eye_near_happy", "eye_far_open" to "eye_far_happy").filterValues { it in parts }),
         "png", File(dir, "pose_dance.png"),
     )
     val bend = mapOf(
@@ -350,5 +358,5 @@ internal fun renderPreviews(dir: File, ref: Img, bones: List<Bone>, parts: Map<S
         "hip_near" to -45.0, "knee_near" to 60.0, "ankle_near" to -20.0,
         "hip_far" to 30.0, "knee_far" to 45.0, "ankle_far" to 20.0,
     )
-    ImageIO.write(renderPose(ref, bones, parts, relax(bend), swap = mapOf("mouth_smile" to "mouth_o", "eye_near_open" to "eye_near_wide", "eye_far_open" to "eye_far_wide")), "png", File(dir, "pose_bend.png"))
+    ImageIO.write(renderPose(ref, bones, parts, relax(bend), swap = mapOf("mouth_smile" to "mouth_o", "eye_near_open" to "eye_near_wide", "eye_far_open" to "eye_far_wide").filterValues { it in parts }), "png", File(dir, "pose_bend.png"))
 }
