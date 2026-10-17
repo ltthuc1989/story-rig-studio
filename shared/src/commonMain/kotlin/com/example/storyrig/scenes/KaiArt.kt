@@ -42,6 +42,8 @@ class KaiAssets(
     val meshAtlas: Atlas?,
     /** Read + decode + atlas packing (+ limb images and meshes). */
     val loadMs: Float,
+    /** Real height relative to Kai (character.csv `heightScale`): ref.png always fills the frame, people don't. */
+    val heightScale: Float = 1f,
 ) {
     /** Rest pose, from the data (ref.png pixels): root pivot to the soles, and hair top to the soles. */
     val rootToSole: Float
@@ -127,7 +129,10 @@ class KaiAssets(
                 }
                 meshAtlas = ma
             }
-            return KaiAssets(atlas, names, parent, px, py, parts, meshes, meshAtlas, (uptimeMillis() - t0).toFloat())
+            val facts = runCatching { csv(Res.readBytes("$dir/character.csv").decodeToString()) }.getOrNull().orEmpty()
+                .associate { it[0] to it.getOrElse(1) { "" } }
+            val heightScale = facts["heightScale"]?.toFloatOrNull() ?: 1f
+            return KaiAssets(atlas, names, parent, px, py, parts, meshes, meshAtlas, (uptimeMillis() - t0).toFloat(), heightScale)
         }
 
         /** [firstPart]: the group's part drawn first (parts.csv order); the mesh is drawn in its place. */

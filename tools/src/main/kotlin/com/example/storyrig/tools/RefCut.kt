@@ -375,14 +375,17 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
         "far" to listOf(thighFarM, legFarM, S.hipFar, S.kneeFar, S.ankleFar),
     )) {
         val hip = data[2] as Seg; val kn = data[3] as Pt; val an = data[4] as Pt
-        val thigh = capInto(pieceOf(img, data[0] as BooleanArray), jointOn(hip, S.seedPelvis.x, S.seedPelvis.y))
+        val pivotY = S.hipPivotY ?: mid(hip).y
+        // Under a skirt the thigh reaches up, hidden, to the real hip, so lifting the leg shows no gap at the hem.
+        val thigh = if (S.hipPivotY != null) extendUp(pieceOf(img, data[0] as BooleanArray), (mid(hip).y - pivotY).roundToInt().coerceAtLeast(0))
+            else capInto(pieceOf(img, data[0] as BooleanArray), jointOn(hip, S.seedPelvis.x, S.seedPelvis.y))
         var leg = pieceOf(img, data[1] as BooleanArray)
         // Shin top hides under the shorts cuff: cap it upward.
         val knee = jointAcross(leg, kn.x, leg.oy + 4f, 0f, 1f)
         leg = capInto(leg, Joint(knee.x, leg.oy + 2f, 0f, -1f, knee.radius))
         val ankle = jointAcross(leg, an.x, an.y, an.x - kn.x, an.y - kn.y)
         val (shin, shoe) = cutAt(leg, ankle, capAfter = false)
-        bones += Bone("hip_$side", "root", mid(hip).x, mid(hip).y)
+        bones += Bone("hip_$side", "root", mid(hip).x, pivotY)
         bones += Bone("knee_$side", "hip_$side", knee.x, kn.y)
         bones += Bone("ankle_$side", "knee_$side", ankle.x, ankle.y)
         parts["thigh_$side"] = Part("thigh_$side", "hip_$side", thigh)
@@ -411,6 +414,8 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
     for ((k, f) in found) parts[k] = Part(k, "head", f.second)
 
     writeOut(outDir, bones, parts)
+    // Character facts for the app (height), kept next to the character's prompts.
+    File(dir.parentFile, "character.csv").takeIf { it.exists() }?.copyTo(File(outDir, "character.csv"), overwrite = true)
     writeMesh(outDir, bones, parts, BodyMeasure(torsoHalf, hemY, elbowHalf.average().toFloat()))
     renderPreviews(previewDir, ref, bones, parts)
 }

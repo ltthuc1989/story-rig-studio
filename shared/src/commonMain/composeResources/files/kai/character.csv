@@ -1,0 +1,3 @@
+# key,value: data for the app about this character (copied by cutauto/cutref next to bones.csv)
+# heightScale: real height relative to Kai (a 7-year-old) = 1.0; ref.png always fills ~90% of the frame
+heightScale,1.0

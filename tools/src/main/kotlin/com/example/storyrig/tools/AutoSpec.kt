@@ -362,13 +362,13 @@ fun autoSpec(img: Img, template: RigTemplate = RigTemplate.load(TEMPLATE), debug
     // Knee: a thigh garment that ends above the knee (shorts, a skirt) shows as a step in leg width; the shin starts
     // below it. With no step the knee is halfway down and cut straight across.
     class LegJoints(val knee: Pt, val ankle: Pt, val step: Int?, val seedThigh: Pt, val seedLeg: Pt)
-    fun joints(leg: Leg, side: String): LegJoints {
+    fun joints(leg: Leg, side: String, ignoreStep: Boolean = false, thighTop: Int = hipY): LegJoints {
         val ws = leg.widths
         val bottom = sil.box.y1 - 1
         val shinFrom = apexY + (15 * s).roundToInt(); val shinTo = (if (feetTouch) gapBottom else guesses.getValue("ankle_$side").y.roundToInt()) - (25 * s).roundToInt()
         val shin = (shinFrom..shinTo).map { ws.getValue(it) }.filter { it > 0 }.sorted()
         val shinW = shin[shin.size / 2]
-        val step = (hipY..(hipY + bottom) / 2).lastOrNull { ws.getValue(it) > shinW * 1.3f }
+        val step = if (ignoreStep) null else (hipY..(hipY + bottom) / 2).lastOrNull { ws.getValue(it) > shinW * 1.3f }
         val kneeY = if (step != null) step + 1 + (7 * s).roundToInt() else (hipY + guesses.getValue("ankle_$side").y.roundToInt()) / 2
         // Ankle: below the narrowest part of the shin, the first row where the foot makes the leg clearly wider.
         val lowFrom = kneeY + ((bottom - kneeY) * 0.3f).roundToInt()
@@ -376,19 +376,28 @@ fun autoSpec(img: Img, template: RigTemplate = RigTemplate.load(TEMPLATE), debug
         val minW = ws.getValue(narrow)
         val ankleY = (narrow..bottom).first { ws.getValue(it) > minW * 1.25f }
         fun centre(y: Int) = legRun(y, side == "near", leg.x(y))!!.let { (it.first + it.last) / 2f }
-        val thighY = if (step != null) (hipY + step) / 2 else (hipY + kneeY) / 2
+        val thighY = if (step != null) (hipY + step) / 2 else (thighTop + kneeY) / 2
         log("leg $side: shin ${shinW}px, step ${step ?: "none"}, knee y=$kneeY, narrowest $minW px at y=$narrow, ankle y=$ankleY")
         return LegJoints(
             Pt(centre(kneeY), kneeY.toFloat()), Pt(centre(ankleY), ankleY.toFloat()), step,
             Pt(centre(thighY), thighY.toFloat()), Pt(centre((kneeY + ankleY) / 2), ((kneeY + ankleY) / 2).toFloat()),
         )
     }
-    val jNear = joints(legNear, "near")
-    val jFar = joints(legFar, "far")
+    var jNear = joints(legNear, "near")
+    var jFar = joints(legFar, "far")
     val steps = listOfNotNull(jNear.step, jFar.step)
     val cuffs = steps.size == 2
+    // A skirt: the gap between the legs starts right at the garment's hem (shorts end well below the crotch).
+    // The whole skirt then stays on the pelvis, the thighs are the skin below it, and the knees come from the
+    // template's proportions since the hem says nothing about them.
+    val skirt = cuffs && apexY >= steps.min() - (4 * s).roundToInt()
+    if (skirt) {
+        log("skirt: the gap starts at the hem y=$apexY; hips turn at y=$hipY, cut at the hem")
+        jNear = joints(legNear, "near", ignoreStep = true, thighTop = apexY)
+        jFar = joints(legFar, "far", ignoreStep = true, thighTop = apexY)
+    }
     // Shins start where the thigh garment ends (the leg colour test keeps the rest of it out).
-    val legTop = if (cuffs) steps.average().roundToInt() else min(jNear.knee.y, jFar.knee.y).roundToInt()
+    val legTop = if (cuffs && !skirt) steps.average().roundToInt() else min(jNear.knee.y, jFar.knee.y).roundToInt()
 
     // Garment over the thighs (and the pelvis): its colours, sampled on both thighs from just above the hip line down
     // to where it ends.
@@ -404,9 +413,10 @@ fun autoSpec(img: Img, template: RigTemplate = RigTemplate.load(TEMPLATE), debug
     log("thigh garment colours: " + garment.joinToString(" ") { "%06x".format(it and 0xFFFFFF) })
 
     // Hip lines: across each thigh at the crotch, meeting at the seam.
-    val seamAtHip = seam.x1 + (seam.x2 - seam.x1) * (hipY - seam.y1) / (seam.y2 - seam.y1)
-    val hipNear = Seg(legRun(hipY, true, legNear.x(hipY))!!.first - 8f, hipY.toFloat(), seamAtHip + 4f, hipY.toFloat())
-    val hipFar = Seg(seamAtHip - 2f, hipY.toFloat(), legRun(hipY, false, legFar.x(hipY))!!.last + 8f, hipY.toFloat())
+    val cutY = if (skirt) apexY else hipY
+    val seamAtHip = seam.x1 + (seam.x2 - seam.x1) * (cutY - seam.y1) / (seam.y2 - seam.y1)
+    val hipNear = Seg(legRun(cutY, true, legNear.x(cutY))!!.first - 8f, cutY.toFloat(), seamAtHip + 4f, cutY.toFloat())
+    val hipFar = Seg(seamAtHip - 2f, cutY.toFloat(), legRun(cutY, false, legFar.x(cutY))!!.last + 8f, cutY.toFloat())
 
     // Pivots of the pelvis and the torso: the template's, measured up from the hip line, on the body's centre.
     // Torso length varies (big heads push the shoulders down), so they keep the template's share of neck-to-hip.
@@ -563,6 +573,7 @@ fun autoSpec(img: Img, template: RigTemplate = RigTemplate.load(TEMPLATE), debug
         browNearArea = browN?.let(::area), browFarArea = browF?.let(::area), mouthArea = area(mouth),
         colours = CutColours(arm = { true }, leg = legAllow, pelvis = isGarment, skin = isSkin, hair = isHair, hairEdge = isHairEdge),
         featureContrast = contrast,
+        hipPivotY = if (skirt) hipY.toFloat() else null,
     )
     return AutoResult(spec, guesses, sil)
 }

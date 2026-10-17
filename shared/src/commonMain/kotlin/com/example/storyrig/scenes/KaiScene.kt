@@ -50,6 +50,8 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
     private val background: Array<Shape>
     private val shadow: Array<Shape>
     private val scale: Float
+    /** Per character: [scale] times its real height (character.csv), so a grown-up stands taller than the kids. */
+    private val kaiScale = FloatArray(cfg.count.coerceIn(1, 12))
     /** Root pivot height above the ground line per character, in character px (from the cut data). */
     private val rootY = FloatArray(cfg.count.coerceIn(1, 12)) { cast[it % cast.size].rootToSole + SOLE_LIFT }
     private val homeX = FloatArray(n)
@@ -90,7 +92,10 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
 
         // Fit n Kais across the safe area (arms spread ~520 ref px), never taller than ~62% of it.
         val slot = Stage.SAFE_W / n
-        scale = scaleFor(n)
+        // Shrink everyone only if the tallest would leave the top ~10% of the safe area.
+        val tallest = cast.maxOf { it.heightScale }
+        scale = min(scaleFor(n), .9f * Stage.SAFE_H / (KaiRig.HEIGHT * tallest))
+        for (i in 0 until n) kaiScale[i] = scale * cast[i % cast.size].heightScale
         for (i in 0 until n) {
             homeX[i] = slot * (i + .5f)
             nextMouth[i] = rng.range(0f, 120f)
@@ -131,7 +136,7 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
             val b = beat - i * .04f
             val bar = (b / SWITCH_BEATS).toInt().coerceAtLeast(0)
             k.player.play((i + bar) % DanceClips.ALL.size, bar * SWITCH_BEATS, fadeBeats = .5f)
-            k.reset(homeX[i], GROUND_Y - rootY[i] * scale, scale)
+            k.reset(homeX[i], GROUND_Y - rootY[i] * kaiScale[i], kaiScale[i])
             feetNear[i].captureGround(); feetFar[i].captureGround()
             k.player.apply(b)
         } else {
@@ -153,7 +158,7 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
         val ph = (beat + i * .15f) * PI.toFloat()
         val s = sin(ph)
         val bounce = abs(s)
-        k.reset(homeX[i], GROUND_Y - rootY[i] * scale - 22f * bounce, scale)
+        k.reset(homeX[i], GROUND_Y - rootY[i] * kaiScale[i] - 22f * bounce, kaiScale[i])
         k.rot(k.torso, 4f * sin(ph * .5f))
         k.rot(k.head, 6f * sin(ph + .6f))
         when (i % 3) {
@@ -201,7 +206,7 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
         for (i in 0 until n) {
             canvas.save()
             canvas.translate(homeX[i], GROUND_Y)
-            canvas.scale(scale * 1.4f, scale * 1.4f)
+            canvas.scale(kaiScale[i] * 1.4f, kaiScale[i] * 1.4f)
             shadow.drawAll(canvas, 1f, stats)
             canvas.restore()
             kais[i].rig.draw(canvas, 1f, m, stats)

@@ -53,6 +53,11 @@ class RefSpec(
     val colours: CutColours,
     /** How far (RGB L1) a painted feature's colour is from the skin. */
     val featureContrast: Int = 110,
+    /**
+     * Skirt: the hip lines are cut at the hem (the whole skirt stays on the pelvis) but the hips turn at this height
+     * (the real hip joints, hidden under the skirt). Null: the hips turn on their cut lines.
+     */
+    val hipPivotY: Float? = null,
 )
 
 /** Colour tests used where parts touch with no cut line between them. */
