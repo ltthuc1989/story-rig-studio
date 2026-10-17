@@ -108,7 +108,9 @@ def cmd_gen(a):
     parts = []
     for f in a.attach or []:
         parts.append({"inline_data": {"mime_type": "image/png", "data": base64.b64encode(Path(f).read_bytes()).decode()}})
-    parts.append({"text": Path(a.prompt).read_text()})
+    # Lines starting with # are notes for people (see assets/templates/prompts), not sent.
+    text = "\n".join(l for l in Path(a.prompt).read_text().splitlines() if not l.startswith("#"))
+    parts.append({"text": text})
 
     res = None
     for attempt in range(1, MAX_RETRIES + 1):
