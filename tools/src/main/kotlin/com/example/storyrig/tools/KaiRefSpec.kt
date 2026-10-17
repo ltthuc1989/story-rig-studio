@@ -3,13 +3,10 @@ package com.example.storyrig.tools
 /**
  * Cutting Kai straight from ref.png (`cutref`): a dozen points measured on ref.png on a 10 px grid
  * (ref.png = the rig-pose image made with prompts/1_rig_pose.txt and the mannequin template).
- * Later the Studio will let a person click these; everything else is automatic.
+ * `cutauto` measures the same points by itself (AutoSpec.kt); these stay as the reference it is checked against.
  * Kai faces right in three-quarter view, so his near side is the viewer's left.
  */
 object KaiRefSpec {
-    class Seg(val x1: Float, val y1: Float, val x2: Float, val y2: Float)
-    class Pt(val x: Float, val y: Float)
-
     // Cut lines between parts (each spans the full width of the joint, a few px past both edges).
     val neck = Seg(478f, 392f, 552f, 392f)
     val shoulderNear = Seg(370f, 416f, 432f, 510f)
@@ -34,6 +31,9 @@ object KaiRefSpec {
     val armNearRadii = floatArrayOf(44f, 32f, 52f)
     val armFarRadii = floatArrayOf(44f, 32f, 52f)
 
+    /** Shins start just above the shorts cuffs. */
+    const val LEG_TOP = 745
+
     // Bone pivots that are not on a cut midpoint.
     val root = Pt(515f, 660f)
     val waist = Pt(515f, 615f)
@@ -56,4 +56,27 @@ object KaiRefSpec {
     val browNearArea = Box(472, 219, 524, 246)
     val browFarArea = Box(584, 219, 627, 245)
     val mouthArea = Box(518, 320, 588, 346)
+
+    // Kai's palette: light tan skin, red shirt, blue shorts, near-black hair.
+    private fun isSkin(c: Int) = r(c) > 195 && g(c) in 130..205 && b(c) in 95..175 && r(c) - b(c) > 55
+    private fun isRed(c: Int) = r(c) > 120 && g(c) < 110 && b(c) < 110 && r(c) - g(c) > 70
+    private fun isBlue(c: Int) = b(c) > r(c) + 40 && b(c) > g(c) + 10
+
+    val colours = CutColours(
+        arm = { isSkin(it) || isRed(it) },
+        leg = { !isBlue(it) },
+        pelvis = { isBlue(it) },
+        skin = ::isSkin,
+        hair = { a(it) > 100 && r(it) + g(it) + b(it) < 240 },
+        hairEdge = { r(it) + g(it) + b(it) < 520 },
+    )
+
+    fun spec() = RefSpec(
+        neck, shoulderNear, shoulderFar, hipNear, hipFar, seam, shoes,
+        elbowNear, wristNear, elbowFar, wristFar, kneeNear, kneeFar, ankleNear, ankleFar,
+        armNearRadii, armFarRadii, LEG_TOP, root, waist,
+        seedHead, seedHair, hairPivot, seedTorso, seedPelvis, seedArmNear, seedArmFar,
+        seedThighNear, seedThighFar, seedLegNear, seedLegFar,
+        eyeNearArea, eyeFarArea, browNearArea, browFarArea, mouthArea, colours,
+    )
 }

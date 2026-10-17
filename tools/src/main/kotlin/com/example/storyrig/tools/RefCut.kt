@@ -1,7 +1,5 @@
 package com.example.storyrig.tools
 
-import com.example.storyrig.tools.KaiRefSpec.Pt
-import com.example.storyrig.tools.KaiRefSpec.Seg
 import java.io.File
 import kotlin.math.abs
 import kotlin.math.hypot
@@ -17,11 +15,10 @@ import kotlin.math.roundToInt
  * 2. Flood-fill each part from a seed, stopped by cut lines and, where parts touch, by colour.
  * 3. Split limbs at elbow/wrist/knee/ankle and add round caps (smeared from the cut line) so joints never gap.
  * 4. Erase the painted eyes, brows and mouth from the head; their boxes place the swappable face parts.
+ *
+ * Where the points and colour tests come from is up to the [RefSpec]: hand-measured (KaiRefSpec, `cutref`) or
+ * measured from the mannequin template and the character's shape (AutoSpec.kt, `cutauto`).
  */
-
-private fun isSkin(c: Int) = r(c) > 195 && g(c) in 130..205 && b(c) in 95..175 && r(c) - b(c) > 55
-private fun isRed(c: Int) = r(c) > 120 && g(c) < 110 && b(c) < 110 && r(c) - g(c) > 70
-private fun isBlue(c: Int) = b(c) > r(c) + 40 && b(c) > g(c) + 10
 
 private class Canvas(val w: Int, val h: Int) {
     val blocked = BooleanArray(w * h)
@@ -165,9 +162,8 @@ private fun fillBehind(p: Piece, hole: BooleanArray, w: Int, depth: Int): Piece 
  * The hair as its own piece (dark pixels connected to [seed], plus their anti-aliased edge). The head keeps its
  * own copy underneath, so the hair piece can sway a little without opening a hole.
  */
-private fun hairOf(head: Piece, seed: Pt): Piece {
+private fun hairOf(head: Piece, seed: Pt, dark: (Int) -> Boolean, edge: (Int) -> Boolean): Piece {
     val w = head.w; val h = head.h
-    val dark = { c: Int -> a(c) > 100 && r(c) + g(c) + b(c) < 240 }
     val mask = BooleanArray(w * h)
     val sx = seed.x.roundToInt() - head.ox; val sy = seed.y.roundToInt() - head.oy
     require(head.img.inside(sx, sy) && dark(head.img[sx, sy])) { "hair seed is not on hair" }
@@ -187,7 +183,7 @@ private fun hairOf(head: Piece, seed: Pt): Piece {
         if (a(c) == 0) continue
         if (mask[y * w + x]) { out[x, y] = c; continue }
         // Edge pixels between hair and skin/background: keep them when a hair pixel touches them.
-        if (r(c) + g(c) + b(c) < 520) {
+        if (edge(c)) {
             var touch = false
             for (dy in -1..1) for (dx in -1..1) {
                 val nx = x + dx; val ny = y + dy
@@ -203,7 +199,7 @@ private fun hairOf(head: Piece, seed: Pt): Piece {
  * Erases painted features (non-skin blobs not touching the area border) and returns their exact box plus the
  * feature itself cut out before erasing (it becomes the default sprite, so the rest pose is exactly ref.png).
  */
-private fun eraseFeature(p: Piece, area: Box): Pair<Box, Piece> {
+private fun eraseFeature(p: Piece, area: Box, isSkin: (Int) -> Boolean, contrast: Int): Pair<Box, Piece> {
     val skinR = ArrayList<Int>(); val skinG = ArrayList<Int>(); val skinB = ArrayList<Int>()
     for (y in area.y0 until area.y1) for (x in area.x0 until area.x1) {
         val c = p.colourAt(x, y)
@@ -214,7 +210,7 @@ private fun eraseFeature(p: Piece, area: Box): Pair<Box, Piece> {
     val w = area.x1 - area.x0; val h = area.y1 - area.y0
     val non = BooleanArray(w * h) { i ->
         val c = p.colourAt(area.x0 + i % w, area.y0 + i / w)
-        a(c) > 100 && abs(r(c) - r(skin)) + abs(g(c) - g(skin)) + abs(b(c) - b(skin)) >= 110
+        a(c) > 100 && abs(r(c) - r(skin)) + abs(g(c) - g(skin)) + abs(b(c) - b(skin)) >= contrast
     }
     val seen = BooleanArray(w * h)
     var bx0 = Int.MAX_VALUE; var by0 = Int.MAX_VALUE; var bx1 = -1; var by1 = -1
@@ -246,7 +242,7 @@ private fun eraseFeature(p: Piece, area: Box): Pair<Box, Piece> {
         val c = p.colourAt(bx0 - 2 + x, by0 - 2 + y)
         // Keep the feature's own pixels; skin around it becomes transparent, its anti-aliased ring half so.
         val d = abs(r(c) - r(skin)) + abs(g(c) - g(skin)) + abs(b(c) - b(skin))
-        val al = ((d - 25) / 85f).coerceIn(0f, 1f) * a(c)
+        val al = ((d - contrast * 25f / 110) / (contrast * 85f / 110)).coerceIn(0f, 1f) * a(c)
         feature[x, y] = (c and 0xFFFFFF) or (al.roundToInt() shl 24)
     }
     // Erase the box plus a 2 px ring (anti-aliased edge) with flat skin.
@@ -259,8 +255,10 @@ private fun eraseFeature(p: Piece, area: Box): Pair<Box, Piece> {
     return Box(bx0, by0, bx1 + 1, by1 + 1) to Piece(feature, bx0 - 2, by0 - 2)
 }
 
-internal fun cutRef(dir: File, outDir: File, previewDir: File) {
-    val S = KaiRefSpec
+internal fun cutRef(dir: File, outDir: File, previewDir: File) = cutWith(dir, outDir, previewDir, KaiRefSpec.spec())
+
+internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
+    val col = S.colours
     val ref = Img.load(File(dir, "ref.png"))
     val img = defringe(keyMagenta(ref))
     val cv = Canvas(img.w, img.h)
@@ -275,21 +273,19 @@ internal fun cutRef(dir: File, outDir: File, previewDir: File) {
         masks += m
         return m
     }
-    val armColours = { c: Int -> isSkin(c) || isRed(c) }
     val headM = reg(S.seedHead, clip = Box(0, 0, img.w, S.neck.y1.toInt() + 1))
     fun armCapsule(sh: Seg, el: Pt, wr: Pt, radii: FloatArray): Capsule {
         val s = Pt((sh.x1 + sh.x2) / 2, (sh.y1 + sh.y2) / 2)
         val hand = Pt(wr.x + (wr.x - el.x) * .9f, wr.y + (wr.y - el.y) * .9f)
         return Capsule(listOf(s, el, wr, hand), radii)
     }
-    val armNearM = reg(S.seedArmNear, within = armCapsule(S.shoulderNear, S.elbowNear, S.wristNear, S.armNearRadii), allow = armColours)
-    val armFarM = reg(S.seedArmFar, within = armCapsule(S.shoulderFar, S.elbowFar, S.wristFar, S.armFarRadii), allow = armColours)
-    val notBlue = { c: Int -> !isBlue(c) }
-    val legNearM = reg(S.seedLegNear, clip = Box(0, 745, img.w, img.h), allow = notBlue)
-    val legFarM = reg(S.seedLegFar, clip = Box(0, 745, img.w, img.h), allow = notBlue)
+    val armNearM = reg(S.seedArmNear, within = armCapsule(S.shoulderNear, S.elbowNear, S.wristNear, S.armNearRadii), allow = col.arm)
+    val armFarM = reg(S.seedArmFar, within = armCapsule(S.shoulderFar, S.elbowFar, S.wristFar, S.armFarRadii), allow = col.arm)
+    val legNearM = reg(S.seedLegNear, clip = Box(0, S.legTop, img.w, img.h), allow = col.leg)
+    val legFarM = reg(S.seedLegFar, clip = Box(0, S.legTop, img.w, img.h), allow = col.leg)
     val thighNearM = reg(S.seedThighNear, clip = Box(0, S.hipNear.y1.toInt(), img.w, img.h))
     val thighFarM = reg(S.seedThighFar, clip = Box(0, S.hipFar.y1.toInt(), img.w, img.h))
-    val pelvisM = reg(S.seedPelvis, allow = { isBlue(it) })
+    val pelvisM = reg(S.seedPelvis, allow = col.pelvis)
     val torsoM = reg(S.seedTorso)
     // Islands no seed reached (finger lines, bits boxed in by an arm and a cut line) join the region they touch most.
     var islands = 0
@@ -390,13 +386,13 @@ internal fun cutRef(dir: File, outDir: File, previewDir: File) {
     // Head (with hair and nose): erase the painted eyes, brows, mouth; what was found gives the face boxes.
     val head = pieceOf(img, headM)
     val found = mapOf(
-        "eye_near_open" to eraseFeature(head, S.eyeNearArea), "eye_far_open" to eraseFeature(head, S.eyeFarArea),
-        "brow_near" to eraseFeature(head, S.browNearArea), "brow_far" to eraseFeature(head, S.browFarArea),
-        "mouth_smile" to eraseFeature(head, S.mouthArea),
+        "eye_near_open" to eraseFeature(head, S.eyeNearArea, col.skin, S.featureContrast), "eye_far_open" to eraseFeature(head, S.eyeFarArea, col.skin, S.featureContrast),
+        "brow_near" to eraseFeature(head, S.browNearArea, col.skin, S.featureContrast), "brow_far" to eraseFeature(head, S.browFarArea, col.skin, S.featureContrast),
+        "mouth_smile" to eraseFeature(head, S.mouthArea, col.skin, S.featureContrast),
     )
     for ((k, f) in found) println("  $k found at ${f.first.x0},${f.first.y0}-${f.first.x1},${f.first.y1}")
     parts["head"] = Part("head", "head", head)
-    parts["hair"] = Part("hair", "hair", hairOf(head, S.seedHair))
+    parts["hair"] = Part("hair", "hair", hairOf(head, S.seedHair, col.hair, col.hairEdge))
     bones += Bone("hair", "head", S.hairPivot.x, S.hairPivot.y)
     addFaceParts(dir, parts, found.mapValues { it.value.first })
     // Default sprites are ref.png's own features; the sheets only add the other expressions.
