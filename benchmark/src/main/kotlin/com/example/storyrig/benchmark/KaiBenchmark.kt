@@ -27,8 +27,14 @@ class KaiBenchmark {
     @Test
     fun kai_12() = run(12)
 
+    @Test
+    fun kai_5_mesh() = run(5, "mesh")
+
+    @Test
+    fun kai_12_mesh() = run(12, "mesh")
+
     @OptIn(ExperimentalMetricApi::class)
-    private fun run(count: Int) = rule.measureRepeated(
+    private fun run(count: Int, art: String = "bitmap") = rule.measureRepeated(
         packageName = PKG,
         metrics = listOf(FrameTimingMetric()),
         compilationMode = CompilationMode.None(),
@@ -42,6 +48,7 @@ class KaiBenchmark {
             device.executeShellCommand("wm dismiss-keyguard")
             val intent = Intent().setClassName(PKG, "$PKG.MainActivity")
                 .putExtra("scene", "kai").putExtra("count", count.toString()).putExtra("hud", "0")
+                .putExtra("art", art)
             startActivityAndWait(intent)
             device.wait(Until.hasObject(By.res("stage")), 5_000)
             Thread.sleep(2_000) // SPIKE.md: judged after the first 2 s
