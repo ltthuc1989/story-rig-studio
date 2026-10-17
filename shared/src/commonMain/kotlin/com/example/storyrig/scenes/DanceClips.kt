@@ -15,6 +15,7 @@ import kotlin.math.sin
 object DanceClips {
     val WAVE = Clip.build("wave", 4f) {
         groove(4, 34f)
+        sway(4f, 5f)
         nod(4)
         rot("torso") { at(0f, 3f); at(2f, -3f) }
         // Raised near arm, waving from the elbow; the wrist trails the elbow by a tenth of a beat.
@@ -28,6 +29,7 @@ object DanceClips {
     /** Arms fling out (overshoot, hold), pump in, up in a V, pump in; a small squeeze before each fling. */
     val PUMP = Clip.build("pump", 4f) {
         groove(4, 30f)
+        sway(4f, 4f)
         nod(4)
         rot("torso") { at(0f, 0f); at(2.3f, -4f); at(3.25f, 2f) }
         armHits("shoulder_near", 1f)
@@ -52,7 +54,23 @@ object DanceClips {
         rot("elbow_far") { at(0f, -48f); at(1f, -10f) }
     }
 
-    val ALL = arrayOf(WAVE, PUMP, MARCH)
+    /**
+     * Standing still, for any scene: slow weight shift from foot to foot (the feet stay planted by FootLock,
+     * so the legs lean), the torso leaning against it, the head turning to look one way, holding, then the
+     * other way; arms hanging loose. Breathing comes from AutoLayers.
+     */
+    val IDLE = Clip.build("idle", 8f) {
+        tx("root") { at(0f, -7f); at(4f, 7f) }
+        ty("root") { at(0f, 0f); at(2f, 3f); at(4f, 0f); at(6f, 3f) }
+        rot("torso") { at(0f, 1.5f); at(4f, -1.5f) }
+        rot("head") { at(0f, 2f); at(1.2f, -6f); at(3.4f, -6f); at(4.6f, 4f); at(6.8f, 4f) }
+        rot("shoulder_near") { at(0f, 5f); at(4f, 8f) }
+        rot("elbow_near") { at(0f, -8f); at(4f, -14f) }
+        rot("shoulder_far") { at(0f, -8f); at(4f, -5f) }
+        rot("elbow_far") { at(0f, -14f); at(4f, -8f) }
+    }
+
+    val ALL = arrayOf(WAVE, PUMP, MARCH, IDLE)
 
     /** Thigh and shin in the cut (ref.png px): used to keep the feet on the ground while the knees bend. */
     private const val THIGH = 62f
@@ -74,6 +92,11 @@ object DanceClips {
             rot("knee_$side") { for (b in 0 until beats) { at(b + 0f, knee, Ease.OUT); at(b + .5f, 0f, Ease.IN) } }
             rot("ankle_$side") { for (b in 0 until beats) { at(b + 0f, ankle, Ease.OUT); at(b + .5f, 0f, Ease.IN) } }
         }
+    }
+
+    /** Hips shift side to side over [period] beats: weight from one foot to the other (FootLock keeps the feet). */
+    private fun Clip.Builder.sway(period: Float, px: Float) {
+        tx("root") { at(0f, -px); at(period / 2f, px) }
     }
 
     /** Head dips just after each beat (follows the body, doesn't lead it). */
