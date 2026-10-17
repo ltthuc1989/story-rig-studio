@@ -16,7 +16,10 @@ import com.example.storyrig.engine.Shape
 import com.example.storyrig.engine.Stage
 import com.example.storyrig.engine.Viewport
 import com.example.storyrig.engine.drawAll
+import com.example.storyrig.engine.MeshPart
 import com.example.storyrig.engine.hex
+import com.example.storyrig.engine.logInfo
+import com.example.storyrig.engine.meshDrawSupported
 import com.example.storyrig.engine.uptimeMillis
 import kotlin.math.PI
 import kotlin.math.abs
@@ -28,7 +31,9 @@ import kotlin.math.sin
  * or confetti). [SceneConfig.count] Kais dance to a 120 BPM beat, swap mouths every 80-120 ms and blink.
  */
 class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, private val assets: KaiAssets) : Scene {
-    override val name = "kai bitmap_dance (preview)"
+    /** `--es art mesh`: arms, legs, torso and pelvis as skinned meshes; anything else: rigid bitmap parts. */
+    private val mesh = cfg.art == "mesh" && assets.meshes.isNotEmpty() && meshDrawSupported()
+    override val name = if (mesh) "kai mesh_dance (preview)" else "kai bitmap_dance (preview)"
     override val stats = RenderStats()
     override val layerCount = 0
     override var layers: Array<GraphicsLayer>? = null
@@ -57,7 +62,8 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
 
     init {
         val start = uptimeMillis()
-        kais = Array(n) { KaiRig(assets, cfg.antiAlias, phase = it * .7f) }
+        if (cfg.art == "mesh" && !mesh) logInfo("art=mesh unavailable (drawVertices needs API 29+), drawing bitmap parts")
+        kais = Array(n) { KaiRig(assets, cfg.antiAlias, phase = it * .7f, useMeshes = mesh) }
         val art = ArtBuilder(PathCache(), cfg.antiAlias)
         val l = -Stage.BLEED_W / 2f + Stage.SAFE_W / 2f
         val t = -Stage.BLEED_H / 2f + Stage.SAFE_H / 2f
@@ -84,7 +90,14 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
 
     override fun complexity(): String {
         val img = assets.atlas.image
-        return "kais=$n bitmap parts/kai=${kais[0].rig.items.size} atlas=${img.width}x${img.height} " +
+        val r = kais[0].rig
+        val ma = assets.meshAtlas
+        val meshInfo = if (!mesh || ma == null) "" else
+            "meshes/kai=${r.items.count { it is MeshPart }} mesh verts/kai=${r.meshVertCount} tris/kai=${r.meshTriangleCount} " +
+                "(${assets.meshes.joinToString(" ") { "${it.group.name}=${it.data.vertexCount}v/${it.data.triangleCount}t" }}) " +
+                "mesh atlas=${ma.image.width}x${ma.image.height} (${(ma.bytes / 1024f / 1024f).toString().take(4)} MB) "
+        return "kais=$n art=${if (mesh) "mesh" else "bitmap"} items/kai=${r.items.size} $meshInfo" +
+            "atlas=${img.width}x${img.height} " +
             "(${assets.atlas.regionCount} regions, ${(assets.atlas.bytes / 1024f / 1024f).toString().take(4)} MB) " +
             "assets load=${assets.loadMs.toInt()} ms scale=${scale.toString().take(4)}"
     }

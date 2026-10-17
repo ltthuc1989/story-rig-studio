@@ -7,7 +7,11 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.Shader
+import androidx.compose.ui.graphics.asSkiaBitmap
+import androidx.compose.ui.graphics.nativeCanvas
 
 // Desktop is only for looking at the picture while writing code; no numbers come from here.
 
@@ -26,6 +30,33 @@ actual fun Canvas.drawPointsBatch(points: FloatArray, count: Int, paint: Paint) 
     val r = paint.strokeWidth / 2f
     for (i in 0 until count) drawCircle(Offset(points[i * 2], points[i * 2 + 1]), r, paint)
 }
+
+actual fun Canvas.drawMeshBatch(
+    positions: FloatArray,
+    texCoords: FloatArray,
+    vertexCount: Int,
+    indices: ShortArray,
+    indexCount: Int,
+    paint: Paint,
+) {
+    // Skia takes whole arrays; copies only when a caller passes a prefix (desktop is for looking, not numbers).
+    val n = vertexCount * 2
+    nativeCanvas.drawVertices(
+        org.jetbrains.skia.VertexMode.TRIANGLES,
+        if (positions.size == n) positions else positions.copyOf(n),
+        null,
+        if (texCoords.size == n) texCoords else texCoords.copyOf(n),
+        if (indices.size == indexCount) indices else indices.copyOf(indexCount),
+        org.jetbrains.skia.BlendMode.MODULATE,
+        paint.asFrameworkPaint(),
+    )
+}
+
+actual fun meshDrawSupported(): Boolean = true
+
+actual fun meshShader(image: ImageBitmap): Shader = image.asSkiaBitmap().makeShader(
+    org.jetbrains.skia.FilterTileMode.CLAMP, org.jetbrains.skia.FilterTileMode.CLAMP, org.jetbrains.skia.SamplingMode.LINEAR, null,
+)
 
 @Composable
 actual fun FrameLoop(onFrame: (Long) -> Unit) {

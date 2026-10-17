@@ -23,12 +23,16 @@ fun main(args: Array<String>) {
         var t = 0L
         // Let asset loading (Dispatchers.IO) finish before counting frames.
         repeat(200) { scene.render(t); Thread.sleep(5); t += 16_666_667L }
-        // frames=<n>: every frame as frame_0000.png.. for ffmpeg
+        // frames=<n>: every frame as frame_0000.png.. for ffmpeg; pick=109,293: only those frames
         val seq = map["frames"]?.toInt()
+        val pick = map["pick"]?.split(',')?.map { it.trim().toInt() }?.toSet()
         if (seq != null) {
             repeat(seq) { i ->
-                val data = scene.render(t).encodeToData() ?: error("encode failed")
-                File(out, "frame_%04d.png".format(i)).writeBytes(data.bytes)
+                val img = scene.render(t)
+                if (pick == null || i in pick) {
+                    val data = img.encodeToData() ?: error("encode failed")
+                    File(out, "frame_%04d.png".format(i)).writeBytes(data.bytes)
+                }
                 t += 16_666_667L
             }
             println("snapshots in $out")

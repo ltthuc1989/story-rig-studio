@@ -22,18 +22,21 @@ class RenderStats {
     var particles = 0
     var layersDrawn = 0
     var images = 0
+    /** Mesh vertices deformed this frame ([SoftMesh]). */
+    var meshVerts = 0
 
     fun reset() {
-        draws = 0; strokes = 0; softPoints = 0; saveLayers = 0; particles = 0; layersDrawn = 0; images = 0
+        draws = 0; strokes = 0; softPoints = 0; saveLayers = 0; particles = 0; layersDrawn = 0; images = 0; meshVerts = 0
     }
 
     // Values of the last completed frame, for the HUD (the live counters are mid-frame most of the time).
     var lastDraws = 0; var lastStrokes = 0; var lastSoftPoints = 0
-    var lastSaveLayers = 0; var lastParticles = 0; var lastLayersDrawn = 0; var lastImages = 0
+    var lastSaveLayers = 0; var lastParticles = 0; var lastLayersDrawn = 0; var lastImages = 0; var lastMeshVerts = 0
 
     fun commit() {
         lastDraws = draws; lastStrokes = strokes; lastSoftPoints = softPoints
         lastSaveLayers = saveLayers; lastParticles = particles; lastLayersDrawn = layersDrawn; lastImages = images
+        lastMeshVerts = meshVerts
     }
 }
 
