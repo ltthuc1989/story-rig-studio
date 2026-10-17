@@ -100,7 +100,12 @@ class KaiAssets(
         /** Joint blend width in ref.png pixels. */
         const val BLEND = 30f
 
-        suspend fun load(mesh: Boolean = false): KaiAssets {
+        /**
+         * [screenScale]: ref.png pixels to stage units for this scene; with [cellPx] > 0 the mesh cell is chosen so
+         * it is about [cellPx] stage units on screen (never finer than the group's own cell). [block]: see
+         * [MeshData.grid].
+         */
+        suspend fun load(mesh: Boolean = false, screenScale: Float = 1f, cellPx: Float = 0f, block: Int = 1): KaiAssets {
             val t0 = uptimeMillis()
             val boneRows = csv(Res.readBytes("files/kai/bones.csv").decodeToString())
             val partRows = csv(Res.readBytes("files/kai/parts.csv").decodeToString())
@@ -117,7 +122,10 @@ class KaiAssets(
                 val byName = images.toMap()
                 val limbs = MESH_GROUPS.map { g -> limbImage(g, parts, byName) }
                 val ma = Atlas.pack(limbs.map { it.group.name to it.image })
-                meshes = limbs.map { buildMesh(it, ma, parts, names, parent, px, py) }
+                meshes = limbs.map {
+                    val cell = if (cellPx > 0f) maxOf(it.group.cell, cellPx / screenScale) else it.group.cell
+                    buildMesh(it, ma, parts, names, parent, px, py, cell, block)
+                }
                 meshAtlas = ma
             }
             return KaiAssets(atlas, names, parent, px, py, parts, meshes, meshAtlas, (uptimeMillis() - t0).toFloat())
@@ -144,6 +152,7 @@ class KaiAssets(
          */
         private fun buildMesh(
             limb: Limb, atlas: Atlas, parts: List<PartRow>, names: List<String>, parent: IntArray, px: FloatArray, py: FloatArray,
+            cell: Float, block: Int,
         ): Mesh {
             val g = limb.group
             val root = parent.indexOfFirst { it < 0 }
@@ -169,7 +178,7 @@ class KaiAssets(
                 )
             }
             val r = atlas[g.name]
-            val data = MeshData.grid(atlas.image, r.x, r.y, r.w, r.h, limb.x - bx, limb.y - by, g.cell, influences)
+            val data = MeshData.grid(atlas.image, r.x, r.y, r.w, r.h, limb.x - bx, limb.y - by, cell, influences, block)
             val first = parts.first { it.name in g.parts }.name
             return Mesh(g, g.parts.toSet(), first, data)
         }

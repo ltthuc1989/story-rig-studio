@@ -79,7 +79,7 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
 
         // Fit n Kais across the safe area (arms spread ~520 ref px), never taller than ~62% of it.
         val slot = Stage.SAFE_W / n
-        scale = min(.62f * Stage.SAFE_H / KaiRig.HEIGHT, .95f * slot / 520f)
+        scale = scaleFor(n)
         for (i in 0 until n) {
             homeX[i] = slot * (i + .5f)
             nextMouth[i] = rng.range(0f, 120f)
@@ -198,11 +198,14 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
     override fun pointerMove(px: Float, py: Float) {}
     override fun pointerUp(px: Float, py: Float) {}
 
-    private companion object {
-        const val BEAT_MS = 500f
-        const val SWITCH_BEATS = 8f
-        const val GROUND_Y = 960f
+    companion object {
+        /** Fit n Kais across the safe area (arms spread ~520 ref px), never taller than ~62% of it. */
+        fun scaleFor(n: Int) = min(.62f * Stage.SAFE_H / KaiRig.HEIGHT, .95f * (Stage.SAFE_W / n) / 520f)
+
+        private const val BEAT_MS = 500f
+        private const val SWITCH_BEATS = 8f
+        private const val GROUND_Y = 960f
         /** ref.png: pelvis centre (root pivot) to the soles. */
-        const val ROOT_TO_SOLE = 291f
+        private const val ROOT_TO_SOLE = 291f
     }
 }

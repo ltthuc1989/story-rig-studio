@@ -15,6 +15,10 @@ class SceneConfig(private val args: Map<String, String>) {
     val antiAlias = flag("aa", true)
     /** Character art in scenes that have a choice (`kai`): "bitmap" (rigid parts) or "mesh" (skinned limbs). */
     val art = args["art"] ?: "bitmap"
+    /** Mesh grid (`art=mesh`): "adaptive" (big quads where only one bone pulls) or "uniform" (to compare). */
+    val meshGrid = args["meshGrid"] ?: "adaptive"
+    /** Target mesh cell size in screen px for the character's on-screen size; 0 = fixed cell in art pixels. */
+    val meshPx = args["meshPx"]?.toFloatOrNull() ?: 6f
     val autoplay = flag("auto", true)
     val hud = flag("hud", true)
     val seed = args["seed"]?.toLongOrNull() ?: 7L
@@ -37,7 +41,7 @@ class SceneConfig(private val args: Map<String, String>) {
     }
 
     override fun toString() =
-        "scene=$scene cache=$cacheStatic water=$waterMode drops=$particleMode aa=$antiAlias art=$art auto=$autoplay seed=$seed start=$start count=$count"
+        "scene=$scene cache=$cacheStatic water=$waterMode drops=$particleMode aa=$antiAlias art=$art meshGrid=$meshGrid meshPx=$meshPx auto=$autoplay seed=$seed start=$start count=$count"
 }
 
 /**

@@ -55,7 +55,12 @@ fun createScene(cfg: SceneConfig, perf: PerfStats, assets: Any?): Scene = when (
 
 /** Assets a scene needs before it can be built (image decoding is suspend). Vector scenes need none. */
 suspend fun loadSceneAssets(cfg: SceneConfig): Any? = when (cfg.scene) {
-    "kai" -> KaiAssets.load(mesh = cfg.art == "mesh")
+    "kai" -> KaiAssets.load(
+        mesh = cfg.art == "mesh",
+        screenScale = KaiScene.scaleFor(cfg.count),
+        cellPx = cfg.meshPx,
+        block = if (cfg.meshGrid == "uniform") 1 else 4,
+    )
     else -> null
 }
 
