@@ -87,7 +87,7 @@ internal fun autoTest(dir: File, outRoot: File) {
         val vDir = File(outRoot, v.name)
         val gem = File(vDir, "gemini").apply { mkdirs() }
         render(src, v).save(File(gem, "ref.png"))
-        for (sheet in listOf("face.png", "face_extra.png")) File(dir, sheet).copyTo(File(gem, sheet), overwrite = true)
+        for (f in listOf("face.png", "face_extra.png", "face_map.csv")) File(dir, f).takeIf { it.exists() }?.copyTo(File(gem, f), overwrite = true)
         val img = defringe(keyMagenta(Img.load(File(gem, "ref.png"))))
         val res = autoSpec(img)
         val expected = moved(KaiRefSpec.spec(), v, src.w, src.h)
@@ -96,4 +96,52 @@ internal fun autoTest(dir: File, outRoot: File) {
         drawPoints(File(prev, "points.png"), img, res, expected)
         cutWith(gem, File(vDir, "out"), prev, res.spec)
     }
+    faceLayoutTest(dir, outRoot)
+}
+
+/**
+ * A face sheet in the fixed layout of prompts/2_face_sheet.txt, made from Kai's own pieces (face_map.csv plus the
+ * frown and sad brows of face.png), read back without face_map.csv: every name must come back from its own cell.
+ */
+internal fun faceLayoutTest(dir: File, outRoot: File) {
+    println("=== face layout")
+    val gem = File(outRoot, "facelayout/gemini").apply { mkdirs() }
+    val sheets = HashMap<String, Sheet>()
+    fun sheet(n: String) = sheets.getOrPut(n) { Sheet(File(dir, "$n.png")) }
+    val src = (readFaceMap(dir, ::sheet) ?: error("no face_map.csv in $dir")).associateBy { it.name }.toMutableMap()
+    for ((n, x, y) in listOf(Triple("brow_near_frown", 453, 916), Triple("brow_far_frown", 600, 916), Triple("brow_near_sad", 766, 917), Triple("brow_far_sad", 902, 917)))
+        src[n] = FacePick(n, "face", sheet("face").ids(listOf(KaiSpec.Pt(x, y))))
+    val size = 1024
+    val cellW = size / 4; val cellH = size / LAYOUT.size
+    val out = Img(size, size)
+    java.util.Arrays.fill(out.px, 0xFFFF00FF.toInt())
+    val centre = HashMap<String, Pair<Int, Int>>()
+    for ((row, names) in LAYOUT.withIndex()) for ((col, n) in names.withIndex()) {
+        val fp = src.getValue(n)
+        var p = sheet(fp.sheet).piece(fp.ids)
+        // face_extra.png is drawn about 2.2x bigger than face.png.
+        if (fp.sheet != "face") p = Piece(scaleImg(p.img, 0.45f), 0, 0)
+        val cx = col * cellW + cellW / 2; val cy = row * cellH + cellH / 2
+        centre[n] = cx to cy
+        for (y in 0 until p.h) for (x in 0 until p.w) {
+            val c = p.img[x, y]; val al = a(c) / 255f
+            val ox = cx - p.w / 2 + x; val oy = cy - p.h / 2 + y
+            if (!out.inside(ox, oy)) continue
+            out[ox, oy] = argb(255, (r(c) * al + 255 * (1 - al)).roundToInt(), (g(c) * al).roundToInt(), (b(c) * al + 255 * (1 - al)).roundToInt())
+        }
+    }
+    out.save(File(gem, "face.png"))
+    val skinPx = keyMagenta(Img.load(File(dir, "ref.png"))).px.filter { a(it) > 200 && KaiRefSpec.colours.skin(it) }
+    fun med(f: (Int) -> Int) = skinPx.map(f).sorted()[skinPx.size / 2]
+    val (picks, read) = facePicks(gem, argb(255, med(::r), med(::g), med(::b)))
+    var ok = 0
+    for (n in LAYOUT.flatten()) {
+        val pk = picks.firstOrNull { it.name == n }
+        val hit = pk != null && read.getValue("face").piece(pk.ids).let { p ->
+            val (cx, cy) = centre.getValue(n)
+            cx in p.ox until p.ox + p.w && cy in p.oy until p.oy + p.h
+        }
+        if (hit) ok++ else println("  face layout: $n not read back from its cell")
+    }
+    println("face layout: $ok/${LAYOUT.flatten().size} names read back from their cells")
 }

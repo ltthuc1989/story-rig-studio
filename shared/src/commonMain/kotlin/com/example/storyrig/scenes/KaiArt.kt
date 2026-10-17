@@ -26,7 +26,8 @@ import storyrig.shared.generated.resources.Res
 
 /**
  * Kai as bitmap parts. Data comes from `composeResources/files/kai/` written by `:tools` (KaiCut):
- * bones.csv (bone, parent, rest pivot) and parts.csv (part, bone, top-left, size, drawn), all in ref.png pixels.
+ * bones.csv (bone, parent, rest pivot), parts.csv (part, bone, top-left, size, drawn) and mesh.csv (skinned mesh
+ * groups and bone influences, for `art=mesh`), all in ref.png pixels. Nothing here is specific to one character.
  */
 class KaiAssets(
     val atlas: Atlas,
@@ -35,32 +36,44 @@ class KaiAssets(
     val pivotX: FloatArray,
     val pivotY: FloatArray,
     val parts: List<PartRow>,
-    /** Skinned meshes ([MESH_GROUPS]), built only for `art=mesh` (empty otherwise). */
+    /** Skinned meshes (mesh.csv), built only for `art=mesh` (empty otherwise, or without mesh.csv). */
     val meshes: List<Mesh>,
     /** Texture of [meshes] (one combined image per limb), null without meshes. */
     val meshAtlas: Atlas?,
     /** Read + decode + atlas packing (+ limb images and meshes). */
     val loadMs: Float,
 ) {
+    /** Rest pose, from the data (ref.png pixels): root pivot to the soles, and hair top to the soles. */
+    val rootToSole: Float
+    val height: Float
+
+    init {
+        val drawn = parts.filter { it.drawn }
+        val sole = drawn.maxOf { it.y + it.h }.toFloat()
+        rootToSole = sole - pivotY[boneParent.indexOfFirst { it < 0 }]
+        height = sole - drawn.minOf { it.y }
+    }
+
     class PartRow(val name: String, val bone: Int, val x: Int, val y: Int, val w: Int, val h: Int, val drawn: Boolean)
 
     /**
      * Cut parts that become one skinned mesh (drawn once into one image at load), the bones it follows and its
-     * grid cell in ref.png pixels.
+     * grid cell in ref.png pixels. A `group` row of mesh.csv.
      */
     class MeshGroup(val name: String, val parts: List<String>, val bones: List<String>, val cell: Float)
 
     /**
-     * Where a bone pulls on mesh vertices ([MeshInfluence]), in ref.png pixels. [seg] is (x0, y0, x1, y1); null
-     * means from the bone's pivot to its child's pivot, or to the centre of its parts when it has no child.
-     * [attachTo]: the bone's start stays on that parent across the joint, blended over [band].
+     * Where a bone pulls on mesh vertices ([MeshInfluence]), in ref.png pixels: the capsule [seg] (x0, y0, x1, y1)
+     * plus [radius], another bone fading in over [blend]. [attachTo]: the bone's start stays on that parent across
+     * the joint, blended over [band]. An `influence` row of mesh.csv.
      */
     class Influence(
         val bone: String,
-        val radius: Float = 0f,
-        val seg: FloatArray? = null,
-        val attachTo: String? = null,
-        val band: Float = 0f,
+        val seg: FloatArray,
+        val radius: Float,
+        val blend: Float,
+        val attachTo: String?,
+        val band: Float,
     )
 
     /** A built [MeshGroup]: it replaces [parts] in the draw list, drawn where the first of them was. */
@@ -71,35 +84,6 @@ class KaiAssets(
     fun part(name: String) = parts.first { it.name == name }
 
     companion object {
-        /**
-         * Limbs, torso and pelvis as meshes, all weighted from the one [INFLUENCES] table so that a sleeve and the
-         * shirt under it (a shorts leg and the pelvis) get the same weights where they overlap and bend as one
-         * cloth. Shoulders and hips are attached across the joint: the top of a sleeve stays on the shirt and the
-         * top of a shorts leg on the pelvis, the cloth in between stretches. The torso also follows the pelvis at
-         * the hem. The shoes stay rigid bitmaps on the ankles (they sit over the shin's lower end).
-         */
-        val MESH_GROUPS = listOf(
-            MeshGroup("arm_far", listOf("arm_upper_far", "arm_fore_far", "hand_far"), listOf("shoulder_far", "elbow_far", "wrist_far"), 8f),
-            MeshGroup("leg_far", listOf("shin_far", "thigh_far"), listOf("hip_far", "knee_far", "ankle_far"), 8f),
-            MeshGroup("leg_near", listOf("shin_near", "thigh_near"), listOf("hip_near", "knee_near", "ankle_near"), 8f),
-            MeshGroup("pelvis", listOf("pelvis"), listOf("root", "hip_near", "hip_far"), 8f),
-            MeshGroup("torso", listOf("torso"), listOf("torso", "shoulder_near", "shoulder_far", "root"), 8f),
-            MeshGroup("arm_near", listOf("arm_upper_near", "arm_fore_near", "hand_near"), listOf("shoulder_near", "elbow_near", "wrist_near"), 8f),
-        )
-
-        /** Torso and pelvis are fat capsules (about the body's half width); limb bones are plain segments. */
-        val INFLUENCES = listOf(
-            Influence("torso", 80f, floatArrayOf(515f, 450f, 515f, 590f)),
-            Influence("root", 45f, floatArrayOf(490f, 640f, 540f, 640f)),
-            Influence("shoulder_near", attachTo = "torso", band = 40f), Influence("elbow_near"), Influence("wrist_near"),
-            Influence("shoulder_far", attachTo = "torso", band = 40f), Influence("elbow_far"), Influence("wrist_far"),
-            Influence("hip_near", attachTo = "root", band = 40f), Influence("knee_near"), Influence("ankle_near"),
-            Influence("hip_far", attachTo = "root", band = 40f), Influence("knee_far"), Influence("ankle_far"),
-        )
-
-        /** Joint blend width in ref.png pixels. */
-        const val BLEND = 30f
-
         /**
          * [screenScale]: ref.png pixels to stage units for this scene; with [cellPx] > 0 the mesh cell is chosen so
          * it is about [cellPx] stage units on screen (never finer than the group's own cell). [block]: see
@@ -118,20 +102,35 @@ class KaiAssets(
             val atlas = Atlas.pack(images)
             var meshes = emptyList<Mesh>()
             var meshAtlas: Atlas? = null
-            if (mesh) {
+            // Limbs, torso and pelvis as meshes, all weighted from the one influence table so that a sleeve and the
+            // shirt under it (a shorts leg and the pelvis) get the same weights where they overlap and bend as one
+            // cloth. Without mesh.csv the rig keeps its rigid parts.
+            val meshRows = if (mesh) runCatching { csv(Res.readBytes("files/kai/mesh.csv").decodeToString()) }.getOrNull() else null
+            if (mesh && meshRows == null) println("StoryRig: no files/kai/mesh.csv, drawing rigid parts")
+            if (meshRows != null) {
+                val groups = meshRows.filter { it[0] == "group" }.map {
+                    MeshGroup(it[1], it[3].split(';'), it[4].split(';'), it[2].toFloat())
+                }
+                val influences = meshRows.filter { it[0] == "influence" }.associate {
+                    it[1] to Influence(
+                        it[1], FloatArray(4) { k -> it[2 + k].toFloat() }, it[6].toFloat(), it[7].toFloat(),
+                        it[8].ifEmpty { null }, it[9].toFloat(),
+                    )
+                }
                 val byName = images.toMap()
-                val limbs = MESH_GROUPS.map { g -> limbImage(g, parts, byName) }
+                val limbs = groups.map { g -> limbImage(g, parts, byName) }
                 val ma = Atlas.pack(limbs.map { it.group.name to it.image })
                 meshes = limbs.map {
                     val cell = if (cellPx > 0f) maxOf(it.group.cell, cellPx / screenScale) else it.group.cell
-                    buildMesh(it, ma, parts, names, parent, px, py, cell, block)
+                    buildMesh(it, ma, influences, names, parent, px, py, cell, block)
                 }
                 meshAtlas = ma
             }
             return KaiAssets(atlas, names, parent, px, py, parts, meshes, meshAtlas, (uptimeMillis() - t0).toFloat())
         }
 
-        private class Limb(val group: MeshGroup, val image: ImageBitmap, val x: Int, val y: Int)
+        /** [firstPart]: the group's part drawn first (parts.csv order); the mesh is drawn in its place. */
+        private class Limb(val group: MeshGroup, val image: ImageBitmap, val x: Int, val y: Int, val firstPart: String)
 
         /** The group's parts drawn once at their rest positions (parts.csv order) into one image. */
         private fun limbImage(g: MeshGroup, parts: List<PartRow>, images: Map<String, ImageBitmap>): Limb {
@@ -143,7 +142,7 @@ class KaiAssets(
             val canvas = Canvas(out)
             val paint = Paint()
             for (r in rows) canvas.drawImage(images.getValue(r.name), Offset((r.x - x0).toFloat(), (r.y - y0).toFloat()), paint)
-            return Limb(g, out, x0, y0)
+            return Limb(g, out, x0, y0, rows.first().name)
         }
 
         /**
@@ -151,36 +150,24 @@ class KaiAssets(
          * is at p - rootPivot.
          */
         private fun buildMesh(
-            limb: Limb, atlas: Atlas, parts: List<PartRow>, names: List<String>, parent: IntArray, px: FloatArray, py: FloatArray,
-            cell: Float, block: Int,
+            limb: Limb, atlas: Atlas, table: Map<String, Influence>, names: List<String>, parent: IntArray,
+            px: FloatArray, py: FloatArray, cell: Float, block: Int,
         ): Mesh {
             val g = limb.group
             val root = parent.indexOfFirst { it < 0 }
             val bx = px[root]; val by = py[root]
             fun boneIndex(name: String) = names.indexOf(name).also { require(it >= 0) { "no bone $name" } }
             val influences = g.bones.map { name ->
-                val inf = INFLUENCES.firstOrNull { it.bone == name } ?: error("no influence for $name")
-                val b = boneIndex(name)
+                val inf = table[name] ?: error("mesh.csv: no influence for $name")
                 val s = inf.seg
-                val x0: Float; val y0: Float; val x1: Float; val y1: Float
-                if (s != null) {
-                    x0 = s[0]; y0 = s[1]; x1 = s[2]; y1 = s[3]
-                } else {
-                    x0 = px[b]; y0 = py[b]
-                    val child = parent.indexOfFirst { it == b }
-                    val own = parts.filter { it.drawn && it.bone == b }
-                    x1 = if (child >= 0) px[child] else if (own.isEmpty()) px[b] else own.sumOf { it.x + it.w / 2.0 }.toFloat() / own.size
-                    y1 = if (child >= 0) py[child] else if (own.isEmpty()) py[b] else own.sumOf { it.y + it.h / 2.0 }.toFloat() / own.size
-                }
                 MeshInfluence(
-                    b, x0 - bx, y0 - by, x1 - bx, y1 - by, inf.radius, BLEND,
+                    boneIndex(name), s[0] - bx, s[1] - by, s[2] - bx, s[3] - by, inf.radius, inf.blend,
                     parent = inf.attachTo?.let { boneIndex(it) } ?: -1, attachBand = inf.band,
                 )
             }
             val r = atlas[g.name]
             val data = MeshData.grid(atlas.image, r.x, r.y, r.w, r.h, limb.x - bx, limb.y - by, cell, influences, block)
-            val first = parts.first { it.name in g.parts }.name
-            return Mesh(g, g.parts.toSet(), first, data)
+            return Mesh(g, g.parts.toSet(), limb.firstPart, data)
         }
 
         private fun csv(text: String) = text.lineSequence()

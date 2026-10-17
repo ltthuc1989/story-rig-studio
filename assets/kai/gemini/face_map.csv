@@ -1,0 +1,24 @@
+# Kai's face sheets predate the fixed layout of prompts/2_face_sheet.txt, so which piece is which is written here.
+# part,sheet,x,y[,x,y..]: a point inside (or nearest) each piece of <sheet>.png; several points join several pieces.
+# Point numbers: `./gradlew :tools:run --args="scan assets/kai/gemini/face.png <dir>"` (overview with every piece boxed).
+# Eyes and brows from face.png, columns 3 (near) and 4 (far, narrower).
+eye_near_open,face,763,165
+eye_far_open,face,904,161
+eye_near_half,face,764,338
+eye_far_half,face,904,336
+eye_near_happy,face,765,502
+eye_far_happy,face,903,503
+eye_near_wide,face,764,659
+eye_far_wide,face,904,658
+brow_near,face,761,97
+brow_far,face,906,98
+brow_near_raised,face,759,790
+brow_far_raised,face,905,786
+# Mouths from face_extra.png (no skin patch around them); the small pink bit under some is their lower lip.
+mouth_smile,face_extra,181,95,183,139
+mouth_e,face_extra,181,238
+mouth_a,face_extra,180,390,181,454
+mouth_o,face_extra,180,553,181,596
+mouth_s,face_extra,184,713,185,778
+mouth_laugh,face_extra,185,900
+mouth_sad,face_extra,512,931

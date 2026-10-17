@@ -327,6 +327,12 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
     debugMasks(previewDir, img, cv, masks)
     println("cutref: $islands island pixels joined a neighbouring region")
 
+    // For mesh.csv: the shirt's hem on the centre line and its narrowest width below the shoulders.
+    val hemY = (0 until img.h).last { torsoM[it * img.w + S.waist.x.roundToInt()] } + 1f
+    val shoulderY = ((S.shoulderNear.y1 + S.shoulderNear.y2 + S.shoulderFar.y1 + S.shoulderFar.y2) / 4 + 8f).roundToInt()
+    val torsoHalf = (shoulderY until hemY.toInt() - 10).minOf { y -> (0 until img.w).count { torsoM[y * img.w + it] } } / 2f
+    val elbowHalf = ArrayList<Float>()
+
     val bones = ArrayList<Bone>()
     val parts = HashMap<String, Part>()
     fun mid(s: Seg) = Pt((s.x1 + s.x2) / 2, (s.y1 + s.y2) / 2)
@@ -355,6 +361,7 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
         val (upper, rest) = cutAt(arm, elbow)
         val wrist = jointAcross(rest, wr.x, wr.y, wr.x - el.x, wr.y - el.y)
         val (fore, hand) = cutAt(rest, wrist)
+        elbowHalf += elbow.radius
         bones += Bone("shoulder_$side", "torso", shoulder.x, shoulder.y + 8f)
         bones += Bone("elbow_$side", "shoulder_$side", elbow.x, elbow.y)
         bones += Bone("wrist_$side", "elbow_$side", wrist.x, wrist.y)
@@ -394,11 +401,16 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
     parts["head"] = Part("head", "head", head)
     parts["hair"] = Part("hair", "hair", hairOf(head, S.seedHair, col.hair, col.hairEdge))
     bones += Bone("hair", "head", S.hairPivot.x, S.hairPivot.y)
-    addFaceParts(dir, parts, found.mapValues { it.value.first })
+    // Skin colour (median of the head's skin pixels) for the face sheets' shape checks.
+    val skinPx = head.img.px.filter { a(it) > 200 && col.skin(it) }
+    require(skinPx.isNotEmpty()) { "no skin on the head" }
+    fun med(f: (Int) -> Int) = skinPx.map(f).sorted()[skinPx.size / 2]
+    addFaceParts(dir, parts, found.mapValues { it.value.first }, skin = argb(255, med(::r), med(::g), med(::b)))
     // Default sprites are ref.png's own features; the sheets only add the other expressions.
     for ((k, f) in found) parts[k] = Part(k, "head", f.second)
 
     writeOut(outDir, bones, parts)
+    writeMesh(outDir, bones, parts, BodyMeasure(torsoHalf, hemY, elbowHalf.average().toFloat()))
     renderPreviews(previewDir, ref, bones, parts)
 }
 
