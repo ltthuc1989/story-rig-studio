@@ -172,7 +172,7 @@ private fun Hud(scene: Scene, perf: PerfStats, cfg: SceneConfig, modifier: Modif
                 "draws ${s.lastDraws}  images ${s.lastImages}  strokes ${s.lastStrokes}  soft pts ${s.lastSoftPoints}  mesh verts ${s.lastMeshVerts}  layers ${s.lastLayersDrawn}  saveLayer ${s.lastSaveLayers}  particles ${s.lastParticles}\n" +
                 "tap→react P50 ${perf.latencyPercentile(.5f).f1()}  max ${perf.latencyMax().f1()} ms (n=${perf.latencyCount})\n" +
                 "load ${perf.loadMs.f1()} ms  alloc ${if (alloc < 0) "n/a" else alloc.f1() + " KB/s"}\n" +
-                "cache=${cfg.cacheStatic} water=${cfg.waterMode} drops=${cfg.particleMode} aa=${cfg.antiAlias} art=${cfg.art}"
+                "cache=${cfg.cacheStatic} water=${cfg.waterMode} drops=${cfg.particleMode} aa=${if (cfg.aaBigOff) "big0" else cfg.antiAlias} outline=${cfg.outline} art=${cfg.art}"
         }
     }
     Column(modifier) {

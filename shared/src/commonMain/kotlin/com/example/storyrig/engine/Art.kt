@@ -101,9 +101,23 @@ class PathCache {
 /**
  * Builds shape arrays from SVG-like calls. A translate/scale/rotate "group transform" can be set
  * and is baked into the geometry at load, so the hot path never sees it.
+ *
+ * Plan B item 2 (SPIKE.md §7), both decided here at load so the draw loop is unchanged:
+ * [outlineFill] turns path strokes into fills of their precomputed outline ([StrokeOutline]);
+ * [aaRule] turns anti-aliasing off for big plain fills ([AaRule]).
  */
-class ArtBuilder(private val cache: PathCache, private val antiAlias: Boolean) {
+class ArtBuilder(
+    private val cache: PathCache,
+    private val antiAlias: Boolean,
+    val outlineFill: Boolean = false,
+    private val aaRule: AaRule? = null,
+) {
     private val out = ArrayList<Shape>()
+    /** Load report: strokes drawn as outline fills, fills with anti-aliasing turned off by [aaRule]. */
+    var outlines = 0
+        private set
+    var aaOff = 0
+        private set
     private var tx = 0f
     private var ty = 0f
     private var sc = 1f
@@ -133,8 +147,8 @@ class ArtBuilder(private val cache: PathCache, private val antiAlias: Boolean) {
         return m
     }
 
-    private fun paint(color: Color, stroke: Float, cap: StrokeCap, shader: Shader?): Paint = Paint().apply {
-        isAntiAlias = antiAlias
+    private fun paint(color: Color, stroke: Float, cap: StrokeCap, shader: Shader?, aa: Boolean = antiAlias): Paint = Paint().apply {
+        isAntiAlias = aa
         this.color = color
         if (shader != null) this.shader = shader
         if (stroke > 0f) {
@@ -147,7 +161,23 @@ class ArtBuilder(private val cache: PathCache, private val antiAlias: Boolean) {
 
     private fun addPathShape(src: Path, color: Color, alpha: Float, stroke: Float, cap: StrokeCap, shader: Shader?) {
         val p = if (identity) src else Path().apply { addPath(src); transform(bakeMatrix()) }
-        out += Shape(Shape.PATH, p, 0f, 0f, 0f, 0f, 0f, paint(color, stroke, cap, shader), alpha)
+        // A single butt-capped line stays a stroke: Skia already draws it as a rectangle.
+        if (stroke > 0f && outlineFill && !(cap == StrokeCap.Butt && StrokeOutline.isSingleLine(p))) {
+            val o = StrokeOutline.of(p, stroke * abs(sc), round = cap == StrokeCap.Round)
+            if (o != null) {
+                outlines++
+                out += Shape(Shape.PATH, o, 0f, 0f, 0f, 0f, 0f, paint(color, 0f, cap, shader), alpha)
+                return
+            }
+        }
+        val aa = if (stroke > 0f) antiAlias else fillAa(p)
+        out += Shape(Shape.PATH, p, 0f, 0f, 0f, 0f, 0f, paint(color, stroke, cap, shader, aa), alpha)
+    }
+
+    private fun fillAa(p: Path): Boolean {
+        if (!antiAlias || aaRule == null || aaRule.keepAa(p)) return antiAlias
+        aaOff++
+        return false
     }
 
     fun path(d: String, color: Color, alpha: Float = 1f, shader: Shader? = null) =
@@ -172,7 +202,9 @@ class ArtBuilder(private val cache: PathCache, private val antiAlias: Boolean) {
 
     fun rect(x: Float, y: Float, w: Float, h: Float, color: Color, alpha: Float = 1f, rx: Float = 0f, shader: Shader? = null) {
         require(rotDeg == 0f)
-        out += Shape(Shape.RECT, null, tx + x * sc, ty + y * sc, w * sc, h * sc, rx * sc, paint(color, 0f, StrokeCap.Butt, shader), alpha)
+        val aa = antiAlias && (aaRule == null || aaRule.keepAaRect(w * sc, h * sc))
+        if (antiAlias && !aa) aaOff++
+        out += Shape(Shape.RECT, null, tx + x * sc, ty + y * sc, w * sc, h * sc, rx * sc, paint(color, 0f, StrokeCap.Butt, shader, aa), alpha)
     }
 
     fun build(): Array<Shape> {

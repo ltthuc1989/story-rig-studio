@@ -36,6 +36,22 @@ class LakeBenchmark {
     @Test
     fun p3_saveLayer() = run("water" to "layer")
 
+    /** Plan B item 2: strokes drawn as the fill of their outline (rigid: built at load; soft: each frame). */
+    @Test
+    fun p3_outlineFill() = run("outline" to "fill")
+
+    /** Plan B item 2: no anti-aliasing on big plain fills (sky, hills, lake, ground, path, mountain reflection). */
+    @Test
+    fun p3_aaBig0() = run("aa" to "big0")
+
+    /** Plan B item 2: both of the above. */
+    @Test
+    fun p3_both() = run("outline" to "fill", "aa" to "big0")
+
+    /** Lake clip as a rectangle (analytic) instead of the lake path (AA path clip mask). */
+    @Test
+    fun p3_waterClipRect() = run("waterclip" to "rect")
+
     @OptIn(ExperimentalMetricApi::class)
     private fun run(vararg extra: Pair<String, String>) = rule.measureRepeated(
         packageName = PKG,

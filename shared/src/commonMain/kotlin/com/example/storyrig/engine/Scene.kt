@@ -12,7 +12,13 @@ class SceneConfig(private val args: Map<String, String>) {
     val waterMode = args["water"] ?: "alpha"
     /** "circle": drawCircle per particle; "points": one batched points call. */
     val particleMode = args["drops"] ?: "circle"
-    val antiAlias = flag("aa", true)
+    /** "big0" keeps anti-aliasing on except for big plain fills (plan B item 2, [AaRule]); 0/1 switch it everywhere. */
+    val aaBigOff = args["aa"]?.lowercase() == "big0"
+    val antiAlias = aaBigOff || flag("aa", true)
+    /** "stroke": paths stroked as drawn; "fill": strokes drawn as the fill of their outline (plan B item 2). */
+    val outline = args["outline"] ?: "stroke"
+    /** P3 water clip: "path" (the lake shape) or "rect" (a rectangle under the shoreline, analytic clip). */
+    val waterClip = args["waterclip"] ?: "path"
     /** Character art in scenes that have a choice (`kai`): "bitmap" (rigid parts) or "mesh" (skinned limbs). */
     val art = args["art"] ?: "bitmap"
     /** Mesh grid (`art=mesh`): "adaptive" (big quads where only one bone pulls) or "uniform" (to compare). */
@@ -41,7 +47,7 @@ class SceneConfig(private val args: Map<String, String>) {
     }
 
     override fun toString() =
-        "scene=$scene cache=$cacheStatic water=$waterMode drops=$particleMode aa=$antiAlias art=$art meshGrid=$meshGrid meshPx=$meshPx auto=$autoplay seed=$seed start=$start count=$count"
+        "scene=$scene cache=$cacheStatic water=$waterMode drops=$particleMode aa=${if (aaBigOff) "big0" else antiAlias} outline=$outline waterclip=$waterClip art=$art meshGrid=$meshGrid meshPx=$meshPx auto=$autoplay seed=$seed start=$start count=$count"
 }
 
 /**

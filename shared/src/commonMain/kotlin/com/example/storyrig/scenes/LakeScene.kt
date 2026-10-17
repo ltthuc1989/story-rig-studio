@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.unit.IntSize
+import com.example.storyrig.engine.AaRule
 import com.example.storyrig.engine.Anim
 import com.example.storyrig.engine.ArtBuilder
 import com.example.storyrig.engine.DEG
@@ -29,7 +30,9 @@ import com.example.storyrig.engine.SeqHost
 import com.example.storyrig.engine.SeqPlayer
 import com.example.storyrig.engine.Shape
 import com.example.storyrig.engine.Springs
+import com.example.storyrig.engine.SoftPath
 import com.example.storyrig.engine.Stage
+import com.example.storyrig.engine.StrokeOutline
 import com.example.storyrig.engine.Viewport
 import com.example.storyrig.engine.clamp
 import com.example.storyrig.engine.drawAll
@@ -75,6 +78,7 @@ import com.example.storyrig.scenes.LakeArt.F_NEAR_FOOT
 import com.example.storyrig.scenes.LakeArt.F_NEAR_S
 import com.example.storyrig.scenes.LakeArt.F_NEAR_T
 import com.example.storyrig.scenes.LakeArt.F_SAC
+import com.example.storyrig.scenes.LakeArt.LAKE_CLIP_RECT
 import com.example.storyrig.scenes.LakeArt.PADS
 import com.example.storyrig.scenes.LakeArt.REEDS
 import kotlin.math.PI
@@ -102,6 +106,8 @@ class LakeScene(private val cfg: SceneConfig, private val perf: PerfStats) : Sce
 
     private val aa = cfg.antiAlias
     private val alphaWater = cfg.waterMode != "layer"
+    private val outlineFill = cfg.outline == "fill"
+    private val rectWaterClip = cfg.waterClip == "rect"
     private val rng = Rng(cfg.seed)
     /** Demo units (960x540 safe area) = half of the 1920x1080 frame. */
     private val vp = Viewport(Stage(unitsPerFrame = .5f))
@@ -114,6 +120,8 @@ class LakeScene(private val cfg: SceneConfig, private val perf: PerfStats) : Sce
     private val sun: Array<Shape>
     private val cloud: Array<Shape>
     private val mountains: Array<Shape>
+    /** Same shapes as [mountains]; under `aa big0` built without anti-aliasing (drawn at 0.28 opacity). */
+    private val reflection: Array<Shape>
     private val hills: Array<Shape>
     private val lakeBody: Array<Shape>
     private val shoreline: Array<Shape>
@@ -129,10 +137,16 @@ class LakeScene(private val cfg: SceneConfig, private val perf: PerfStats) : Sce
     private val boy: LakeArt.BoyRig
     private val lakeClip: Path
     private val staticShapeCount: Int
+    private val outlineCount: Int
+    private val aaOffCount: Int
     val loadMs: Float
 
     private val birdPath = arrayOf(Path(), Path())
     private val birdPaint = arrayOf(strokePaint(2.5f), strokePaint(2.2f))
+    // outline fill: bird stroke as M Q Q points, outlined into birdPath each frame
+    private val birdVerbs = byteArrayOf(SoftPath.M, SoftPath.Q, SoftPath.Q)
+    private val birdPts = FloatArray(10)
+    private val birdOutline = StrokeOutline(5, 3)
     private val shimmerPaint = Paint().apply { isAntiAlias = aa; color = androidx.compose.ui.graphics.Color.White }
     private val layerPaint = Paint()
     private val ripples = Ripples(48, aa)
@@ -228,11 +242,14 @@ class LakeScene(private val cfg: SceneConfig, private val perf: PerfStats) : Sce
     init {
         traceBegin("P3_load")
         val start = uptimeMillis()
-        val b = ArtBuilder(pathCache, aa)
+        val b = ArtBuilder(pathCache, aa, outlineFill, if (cfg.aaBigOff) AaRule(BIG_AA) else null)
         sky = LakeArt.sky(b)
         sun = LakeArt.sun(b)
         cloud = LakeArt.cloud(b)
         mountains = LakeArt.mountains(b)
+        // the reflection is a 0.28-opacity copy: its big shapes lose AA under big0 whatever their edges
+        reflection = if (cfg.aaBigOff) LakeArt.mountains(ArtBuilder(pathCache, aa, aaRule = AaRule(BIG_AA, maxSlanted = 1f)))
+        else mountains
         hills = LakeArt.hills(b)
         lakeBody = LakeArt.lakeBody(b)
         shoreline = LakeArt.shoreline(b)
@@ -319,10 +336,12 @@ class LakeScene(private val cfg: SceneConfig, private val perf: PerfStats) : Sce
         seqRibbit = Seq.build {
             repeat(2) { tween(F_SAC_V, 1f, 100f, Ease.OUT); wait(100f); tween(F_SAC_V, 0f, 110f, Ease.IN); wait(110f) }
         }
+        outlineCount = b.outlines
+        aaOffCount = b.aaOff + (if (reflection !== mountains) reflection.count { !it.paint.isAntiAlias } else 0)
         loadMs = (uptimeMillis() - start).toFloat()
         traceEnd()
         perf.loadMs = loadMs
-        logInfo("P3 load ${loadMs}ms paths parsed=${pathCache.parseCount} config=$cfg")
+        logInfo("P3 load ${loadMs}ms paths parsed=${pathCache.parseCount} outlines=$outlineCount aaOff=$aaOffCount config=$cfg")
     }
 
     private fun Seq.Builder.standBody() {
@@ -339,6 +358,8 @@ class LakeScene(private val cfg: SceneConfig, private val perf: PerfStats) : Sce
         standOps(); event(E_TURN_TO_GOAL); event(E_START_WALK); until(C_ARRIVED)
     }
 
+    private val birdFill = Paint().apply { isAntiAlias = aa; color = hex(0x3a4a5a) }
+
     private fun strokePaint(w: Float) = Paint().apply {
         isAntiAlias = aa
         color = hex(0x3a4a5a)
@@ -350,7 +371,7 @@ class LakeScene(private val cfg: SceneConfig, private val perf: PerfStats) : Sce
     override fun complexity(): String {
         val soft = reeds.softPointCount + boy.rig.softPointCount + frog.rig.softPointCount
         return "static shapes=$staticShapeCount paths parsed=${pathCache.parseCount} soft pts/frame≈$soft " +
-            "reeds=${REEDS.size} hit regions=$HIT_COUNT layers=6 parallax"
+            "reeds=${REEDS.size} hit regions=$HIT_COUNT layers=6 parallax rigid outlines=$outlineCount aa-off shapes=$aaOffCount"
     }
 
     // ================================================================= SeqHost
@@ -916,7 +937,8 @@ class LakeScene(private val cfg: SceneConfig, private val perf: PerfStats) : Sce
         canvas.save(); canvas.translate(parallax(14f), 0f)
         staticLayer(scope, canvas, L_LAKE, 0f, cached)
         canvas.save()
-        canvas.clipPath(lakeClip)
+        if (rectWaterClip) canvas.clipRect(LAKE_CLIP_RECT[0], LAKE_CLIP_RECT[1], LAKE_CLIP_RECT[2], LAKE_CLIP_RECT[3])
+        else canvas.clipPath(lakeClip)
         staticLayer(scope, canvas, L_REFL, sin(t * .9f) * 2.5f, cached)
         drawShimmer(canvas, t)
         canvas.restore()
@@ -991,6 +1013,16 @@ class LakeScene(private val cfg: SceneConfig, private val perf: PerfStats) : Sce
             val x = (u % 1f) * 1260f - 150f
             val fl = sin(t * 7f + y) * 7f * s
             val p = birdPath[i]
+            if (outlineFill) {
+                val q = birdPts
+                q[0] = x - 12f * s; q[1] = y - fl
+                q[2] = x - 5f * s; q[3] = y - 4f * s; q[4] = x; q[5] = y
+                q[6] = x + 5f * s; q[7] = y - 4f * s; q[8] = x + 12f * s; q[9] = y - fl
+                birdOutline.build(birdVerbs, 3, q, birdPaint[i].strokeWidth, true, p)
+                canvas.drawPath(p, birdFill)
+                stats.draws++
+                continue
+            }
             p.reset()
             p.moveTo(x - 12f * s, y - fl)
             p.quadraticTo(x - 5f * s, y - 4f * s, x, y)
@@ -1082,7 +1114,7 @@ class LakeScene(private val cfg: SceneConfig, private val perf: PerfStats) : Sce
             L_REFL -> {
                 canvas.save()
                 canvas.translate(0f, 628f); canvas.scale(1f, -1f)
-                groupAlpha(canvas, mountains, .28f, reflRectFlipped)
+                groupAlpha(canvas, reflection, .28f, reflRectFlipped)
                 canvas.restore()
             }
             L_GROUND -> groundStatic.drawAll(canvas, 1f, stats)
@@ -1116,6 +1148,8 @@ class LakeScene(private val cfg: SceneConfig, private val perf: PerfStats) : Sce
         const val HAT_HOME_Y = 478f
         const val PAD_X = 180f // >= stage bleed + parallax margin
         const val PAD_Y = 110f
+        /** `aa big0`: a fill this long (demo units; 800 frame px, 42% of the safe width) counts as big. */
+        const val BIG_AA = 400f
 
         const val L_SKY = 0; const val L_MTN = 1; const val L_HILLS = 2; const val L_LAKE = 3
         const val L_REFL = 4; const val L_GROUND = 5; const val L_FG = 6
