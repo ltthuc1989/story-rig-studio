@@ -216,14 +216,14 @@ object LakeArt {
                 SoftPath.Builder(sk, b0)
                     .moveTo(0f, 0f, i0)
                     .cubicTo(2f, -h / 3f, i01, HALF, 2f, -2f * h / 3f, i12, HALF, 0f, -h, i2)
-                    .build(stemCol, 3f, aa, round = false)
+                    .build(stemCol, 3f, aa, round = false, outlineFill = b.outlineFill)
             )
             // leaf: "M0 -.4h Q14 -.7h 18 -.9h"
             items += SoftItem(
                 SoftPath.Builder(sk, b0)
                     .moveTo(0f, -.4f * h, i1)
                     .quadTo(14f, -.7f * h, i12, HALF, 18f, -.9f * h, i2)
-                    .build(leafCol, 3f, aa, round = false)
+                    .build(leafCol, 3f, aa, round = false, outlineFill = b.outlineFill)
             )
             // head + spike are rigid on the top bone (top bone origin is at -2h/3)
             b.group(ty = 2f * h / 3f) {
@@ -295,7 +295,7 @@ object LakeArt {
                 .moveTo(0f, 0f, intArrayOf(t))
                 .lineTo(1f, 0f, intArrayOf(t, s), HALF)
                 .lineTo(2f, 0f, intArrayOf(s))
-                .build(col, w, aa)
+                .build(col, w, aa, outlineFill = b.outlineFill)
         )
 
         // sit pose
@@ -394,7 +394,7 @@ object LakeArt {
                 .lineTo(l1 * .55f, 0f, intArrayOf(upper))
                 .quadTo(l1, 0f, intArrayOf(upper, lower), HALF, l1 + l2 * .45f, 0f, intArrayOf(lower))
                 .lineTo(l1 + l2, 0f, intArrayOf(lower))
-                .build(col, w, aa)
+                .build(col, w, aa, outlineFill = b.outlineFill)
         )
 
         val items = ArrayList<DrawItem>()
@@ -462,4 +462,10 @@ object LakeArt {
     }
 
     fun lakeClip(cache: PathCache): Path = cache.get(LAKE)
+
+    /**
+     * `--es waterclip rect`: the lake clip as a rectangle. The shoreline curve runs between y 309.5 (crest) and 314
+     * (ends); y 312 leaves at most ~1 unit of reflection off or over the bank next to the 3-unit shoreline stroke.
+     */
+    val LAKE_CLIP_RECT = floatArrayOf(360f, 312f, 1140f, 650f)
 }

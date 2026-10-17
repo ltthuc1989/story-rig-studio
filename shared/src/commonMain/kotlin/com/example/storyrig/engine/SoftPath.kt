@@ -20,10 +20,14 @@ class SoftPath private constructor(
     private val weights: FloatArray,
     val paint: Paint,
     val alpha: Float,
+    /** > 0: a stroke of this width drawn as the fill of its outline (plan B item 2, `--es outline fill`). */
+    private val outlineWidth: Float,
+    private val outlineRound: Boolean,
 ) {
     val pointCount = bind.size / 2
     private val pts = FloatArray(bind.size)
     private val path = Path()
+    private val outline = if (outlineWidth > 0f) StrokeOutline(pointCount, verbs.size) else null
     private val shape = Shape(Shape.PATH, path, 0f, 0f, 0f, 0f, 0f, paint, alpha)
 
     fun deform(sk: Skeleton, stats: RenderStats) {
@@ -43,6 +47,10 @@ class SoftPath private constructor(
             pts[i * 2 + 1] = oy
         }
         stats.softPoints += pointCount
+        if (outline != null) {
+            outline.build(verbs, verbs.size, pts, outlineWidth, outlineRound, path)
+            return
+        }
         path.reset()
         var p = 0
         for (v in verbs) {
@@ -95,18 +103,26 @@ class SoftPath private constructor(
 
         fun close() = apply { verbs += Z }
 
-        fun build(color: Color, strokeWidth: Float, antiAlias: Boolean, alpha: Float = 1f, round: Boolean = true): SoftPath {
+        /** [outlineFill]: a stroke is drawn as the fill of its outline, rebuilt from the skinned points each frame. */
+        fun build(
+            color: Color, strokeWidth: Float, antiAlias: Boolean, alpha: Float = 1f, round: Boolean = true,
+            outlineFill: Boolean = false,
+        ): SoftPath {
+            val asOutline = outlineFill && strokeWidth > 0f && Z !in verbs
             val paint = Paint().apply {
                 isAntiAlias = antiAlias
                 this.color = color
-                if (strokeWidth > 0f) {
+                if (strokeWidth > 0f && !asOutline) {
                     style = PaintingStyle.Stroke
                     this.strokeWidth = strokeWidth
                     strokeCap = if (round) StrokeCap.Round else StrokeCap.Butt
                     strokeJoin = StrokeJoin.Round
                 }
             }
-            return SoftPath(verbs.toByteArray(), bind.toFloatArray(), bones.toIntArray(), weights.toFloatArray(), paint, alpha)
+            return SoftPath(
+                verbs.toByteArray(), bind.toFloatArray(), bones.toIntArray(), weights.toFloatArray(), paint, alpha,
+                if (asOutline) strokeWidth else 0f, round,
+            )
         }
     }
 
