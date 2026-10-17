@@ -1,6 +1,14 @@
 package com.example.storyrig.scenes
 
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Paint
 import com.example.storyrig.engine.Atlas
+import com.example.storyrig.engine.MeshData
+import com.example.storyrig.engine.MeshInfluence
+import com.example.storyrig.engine.MeshPart
+import com.example.storyrig.engine.SoftMesh
 import com.example.storyrig.engine.Clip
 import com.example.storyrig.engine.ClipPlayer
 import com.example.storyrig.engine.AutoLayers
@@ -27,17 +35,72 @@ class KaiAssets(
     val pivotX: FloatArray,
     val pivotY: FloatArray,
     val parts: List<PartRow>,
-    /** Read + decode + atlas packing. */
+    /** Skinned meshes ([MESH_GROUPS]), built only for `art=mesh` (empty otherwise). */
+    val meshes: List<Mesh>,
+    /** Texture of [meshes] (one combined image per limb), null without meshes. */
+    val meshAtlas: Atlas?,
+    /** Read + decode + atlas packing (+ limb images and meshes). */
     val loadMs: Float,
 ) {
     class PartRow(val name: String, val bone: Int, val x: Int, val y: Int, val w: Int, val h: Int, val drawn: Boolean)
+
+    /**
+     * Cut parts that become one skinned mesh (drawn once into one image at load), the bones it follows and its
+     * grid cell in ref.png pixels.
+     */
+    class MeshGroup(val name: String, val parts: List<String>, val bones: List<String>, val cell: Float)
+
+    /**
+     * Where a bone pulls on mesh vertices ([MeshInfluence]), in ref.png pixels. [seg] is (x0, y0, x1, y1); null
+     * means from the bone's pivot to its child's pivot, or to the centre of its parts when it has no child.
+     * [attachTo]: the bone's start stays on that parent across the joint, blended over [band].
+     */
+    class Influence(
+        val bone: String,
+        val radius: Float = 0f,
+        val seg: FloatArray? = null,
+        val attachTo: String? = null,
+        val band: Float = 0f,
+    )
+
+    /** A built [MeshGroup]: it replaces [parts] in the draw list, drawn where the first of them was. */
+    class Mesh(val group: MeshGroup, val parts: Set<String>, val firstPart: String, val data: MeshData)
 
     fun bone(name: String) = boneNames.indexOf(name).also { require(it >= 0) { "no bone $name" } }
     fun boneOrNull(name: String) = boneNames.indexOf(name)
     fun part(name: String) = parts.first { it.name == name }
 
     companion object {
-        suspend fun load(): KaiAssets {
+        /**
+         * Limbs, torso and pelvis as meshes, all weighted from the one [INFLUENCES] table so that a sleeve and the
+         * shirt under it (a shorts leg and the pelvis) get the same weights where they overlap and bend as one
+         * cloth. Shoulders and hips are attached across the joint: the top of a sleeve stays on the shirt and the
+         * top of a shorts leg on the pelvis, the cloth in between stretches. The torso also follows the pelvis at
+         * the hem. The shoes stay rigid bitmaps on the ankles (they sit over the shin's lower end).
+         */
+        val MESH_GROUPS = listOf(
+            MeshGroup("arm_far", listOf("arm_upper_far", "arm_fore_far", "hand_far"), listOf("shoulder_far", "elbow_far", "wrist_far"), 8f),
+            MeshGroup("leg_far", listOf("shin_far", "thigh_far"), listOf("hip_far", "knee_far", "ankle_far"), 8f),
+            MeshGroup("leg_near", listOf("shin_near", "thigh_near"), listOf("hip_near", "knee_near", "ankle_near"), 8f),
+            MeshGroup("pelvis", listOf("pelvis"), listOf("root", "hip_near", "hip_far"), 8f),
+            MeshGroup("torso", listOf("torso"), listOf("torso", "shoulder_near", "shoulder_far", "root"), 8f),
+            MeshGroup("arm_near", listOf("arm_upper_near", "arm_fore_near", "hand_near"), listOf("shoulder_near", "elbow_near", "wrist_near"), 8f),
+        )
+
+        /** Torso and pelvis are fat capsules (about the body's half width); limb bones are plain segments. */
+        val INFLUENCES = listOf(
+            Influence("torso", 80f, floatArrayOf(515f, 450f, 515f, 590f)),
+            Influence("root", 45f, floatArrayOf(490f, 640f, 540f, 640f)),
+            Influence("shoulder_near", attachTo = "torso", band = 40f), Influence("elbow_near"), Influence("wrist_near"),
+            Influence("shoulder_far", attachTo = "torso", band = 40f), Influence("elbow_far"), Influence("wrist_far"),
+            Influence("hip_near", attachTo = "root", band = 40f), Influence("knee_near"), Influence("ankle_near"),
+            Influence("hip_far", attachTo = "root", band = 40f), Influence("knee_far"), Influence("ankle_far"),
+        )
+
+        /** Joint blend width in ref.png pixels. */
+        const val BLEND = 30f
+
+        suspend fun load(mesh: Boolean = false): KaiAssets {
             val t0 = uptimeMillis()
             val boneRows = csv(Res.readBytes("files/kai/bones.csv").decodeToString())
             val partRows = csv(Res.readBytes("files/kai/parts.csv").decodeToString())
@@ -48,7 +111,67 @@ class KaiAssets(
             val parts = partRows.map { PartRow(it[0], names.indexOf(it[1]), it[2].toInt(), it[3].toInt(), it[4].toInt(), it[5].toInt(), it[6] == "1") }
             val images = parts.map { it.name to Res.readBytes("files/kai/parts/${it.name}.png").decodeToImageBitmap() }
             val atlas = Atlas.pack(images)
-            return KaiAssets(atlas, names, parent, px, py, parts, (uptimeMillis() - t0).toFloat())
+            var meshes = emptyList<Mesh>()
+            var meshAtlas: Atlas? = null
+            if (mesh) {
+                val byName = images.toMap()
+                val limbs = MESH_GROUPS.map { g -> limbImage(g, parts, byName) }
+                val ma = Atlas.pack(limbs.map { it.group.name to it.image })
+                meshes = limbs.map { buildMesh(it, ma, parts, names, parent, px, py) }
+                meshAtlas = ma
+            }
+            return KaiAssets(atlas, names, parent, px, py, parts, meshes, meshAtlas, (uptimeMillis() - t0).toFloat())
+        }
+
+        private class Limb(val group: MeshGroup, val image: ImageBitmap, val x: Int, val y: Int)
+
+        /** The group's parts drawn once at their rest positions (parts.csv order) into one image. */
+        private fun limbImage(g: MeshGroup, parts: List<PartRow>, images: Map<String, ImageBitmap>): Limb {
+            val rows = parts.filter { it.name in g.parts }
+            require(rows.size == g.parts.size) { "mesh ${g.name}: missing parts" }
+            val x0 = rows.minOf { it.x }; val y0 = rows.minOf { it.y }
+            val x1 = rows.maxOf { it.x + it.w }; val y1 = rows.maxOf { it.y + it.h }
+            val out = ImageBitmap(x1 - x0, y1 - y0)
+            val canvas = Canvas(out)
+            val paint = Paint()
+            for (r in rows) canvas.drawImage(images.getValue(r.name), Offset((r.x - x0).toFloat(), (r.y - y0).toFloat()), paint)
+            return Limb(g, out, x0, y0)
+        }
+
+        /**
+         * Bind space is the rest pose with the root at the origin (what [KaiRig] captures), so a ref.png pixel p
+         * is at p - rootPivot.
+         */
+        private fun buildMesh(
+            limb: Limb, atlas: Atlas, parts: List<PartRow>, names: List<String>, parent: IntArray, px: FloatArray, py: FloatArray,
+        ): Mesh {
+            val g = limb.group
+            val root = parent.indexOfFirst { it < 0 }
+            val bx = px[root]; val by = py[root]
+            fun boneIndex(name: String) = names.indexOf(name).also { require(it >= 0) { "no bone $name" } }
+            val influences = g.bones.map { name ->
+                val inf = INFLUENCES.firstOrNull { it.bone == name } ?: error("no influence for $name")
+                val b = boneIndex(name)
+                val s = inf.seg
+                val x0: Float; val y0: Float; val x1: Float; val y1: Float
+                if (s != null) {
+                    x0 = s[0]; y0 = s[1]; x1 = s[2]; y1 = s[3]
+                } else {
+                    x0 = px[b]; y0 = py[b]
+                    val child = parent.indexOfFirst { it == b }
+                    val own = parts.filter { it.drawn && it.bone == b }
+                    x1 = if (child >= 0) px[child] else if (own.isEmpty()) px[b] else own.sumOf { it.x + it.w / 2.0 }.toFloat() / own.size
+                    y1 = if (child >= 0) py[child] else if (own.isEmpty()) py[b] else own.sumOf { it.y + it.h / 2.0 }.toFloat() / own.size
+                }
+                MeshInfluence(
+                    b, x0 - bx, y0 - by, x1 - bx, y1 - by, inf.radius, BLEND,
+                    parent = inf.attachTo?.let { boneIndex(it) } ?: -1, attachBand = inf.band,
+                )
+            }
+            val r = atlas[g.name]
+            val data = MeshData.grid(atlas.image, r.x, r.y, r.w, r.h, limb.x - bx, limb.y - by, g.cell, influences)
+            val first = parts.first { it.name in g.parts }.name
+            return Mesh(g, g.parts.toSet(), first, data)
         }
 
         private fun csv(text: String) = text.lineSequence()
@@ -63,7 +186,14 @@ class KaiAssets(
  * One Kai: own skeleton and draw list over the shared atlas. Bone locals are rest pivots relative to the parent,
  * so a pose is just angles; the root's position and scale place him in the scene.
  */
-class KaiRig(private val a: KaiAssets, antiAlias: Boolean, phase: Float = 0f, clips: Array<Clip> = DanceClips.ALL) {
+class KaiRig(
+    private val a: KaiAssets,
+    antiAlias: Boolean,
+    phase: Float = 0f,
+    clips: Array<Clip> = DanceClips.ALL,
+    /** Draw [KaiAssets.meshes] (skinned limbs, torso, pelvis) instead of their rigid parts. */
+    useMeshes: Boolean = false,
+) {
     val sk = Skeleton(a.boneNames.size)
     private val restX = FloatArray(sk.size)
     private val restY = FloatArray(sk.size)
@@ -102,9 +232,17 @@ class KaiRig(private val a: KaiAssets, antiAlias: Boolean, phase: Float = 0f, cl
             restY[i] = if (p < 0) 0f else a.pivotY[i] - a.pivotY[p]
             sk.set(i, restX[i], restY[i])
         }
+        // Rest pose with the root at the origin: the bind pose of the meshes.
+        sk.captureBind()
         val items = ArrayList<DrawItem>()
         val byName = HashMap<String, BitmapPart>()
+        val meshes = if (useMeshes) a.meshes else emptyList()
         for (row in a.parts) if (row.drawn) {
+            val mesh = meshes.firstOrNull { row.name in it.parts }
+            if (mesh != null) {
+                if (row.name == mesh.firstPart) items += MeshPart(SoftMesh(mesh.data), a.meshAtlas!!, antiAlias)
+                continue
+            }
             val bp = BitmapPart(row.bone, a.atlas, sprite(row.name), antiAlias)
             byName[row.name] = bp
             items += bp

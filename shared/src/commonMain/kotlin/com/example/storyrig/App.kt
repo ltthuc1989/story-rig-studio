@@ -55,7 +55,7 @@ fun createScene(cfg: SceneConfig, perf: PerfStats, assets: Any?): Scene = when (
 
 /** Assets a scene needs before it can be built (image decoding is suspend). Vector scenes need none. */
 suspend fun loadSceneAssets(cfg: SceneConfig): Any? = when (cfg.scene) {
-    "kai" -> KaiAssets.load()
+    "kai" -> KaiAssets.load(mesh = cfg.art == "mesh")
     else -> null
 }
 
@@ -164,10 +164,10 @@ private fun Hud(scene: Scene, perf: PerfStats, cfg: SceneConfig, modifier: Modif
             text = "${scene.name}  ${perf.refreshHz.toInt()} Hz\n" +
                 "frame P50 ${perf.recentPercentile(.5f).f1()}  P90 ${perf.recentPercentile(.9f).f1()}  P99 ${perf.recentPercentile(.99f).f1()} ms\n" +
                 "late ${late.f1()}%  jank ${perf.jankFrames}/${perf.frames}  worst ${perf.worstMs.f1()} ms (after 2 s)\n" +
-                "draws ${s.lastDraws}  images ${s.lastImages}  strokes ${s.lastStrokes}  soft pts ${s.lastSoftPoints}  layers ${s.lastLayersDrawn}  saveLayer ${s.lastSaveLayers}  particles ${s.lastParticles}\n" +
+                "draws ${s.lastDraws}  images ${s.lastImages}  strokes ${s.lastStrokes}  soft pts ${s.lastSoftPoints}  mesh verts ${s.lastMeshVerts}  layers ${s.lastLayersDrawn}  saveLayer ${s.lastSaveLayers}  particles ${s.lastParticles}\n" +
                 "tap→react P50 ${perf.latencyPercentile(.5f).f1()}  max ${perf.latencyMax().f1()} ms (n=${perf.latencyCount})\n" +
                 "load ${perf.loadMs.f1()} ms  alloc ${if (alloc < 0) "n/a" else alloc.f1() + " KB/s"}\n" +
-                "cache=${cfg.cacheStatic} water=${cfg.waterMode} drops=${cfg.particleMode} aa=${cfg.antiAlias}"
+                "cache=${cfg.cacheStatic} water=${cfg.waterMode} drops=${cfg.particleMode} aa=${cfg.antiAlias} art=${cfg.art}"
         }
     }
     Column(modifier) {
@@ -205,7 +205,7 @@ private fun StatsLogger(scene: Scene, perf: PerfStats) {
                 "STATS frames=${perf.frames} late%=${late.f1()} jank=${perf.jankFrames} worst=${perf.worstMs.f1()} " +
                     "recentP50=${perf.recentPercentile(.5f).f1()} recentP90=${perf.recentPercentile(.9f).f1()} " +
                     "tapP50=${perf.latencyPercentile(.5f).f1()} tapMax=${perf.latencyMax().f1()} taps=${perf.latencyCount} " +
-                    "allocKBs(last5s)=${alloc.f1()} draws=${s.lastDraws} images=${s.lastImages} strokes=${s.lastStrokes} soft=${s.lastSoftPoints} " +
+                    "allocKBs(last5s)=${alloc.f1()} draws=${s.lastDraws} images=${s.lastImages} strokes=${s.lastStrokes} soft=${s.lastSoftPoints} meshVerts=${s.lastMeshVerts} " +
                     "layers=${s.lastLayersDrawn} saveLayer=${s.lastSaveLayers} particles=${s.lastParticles}",
             )
         }

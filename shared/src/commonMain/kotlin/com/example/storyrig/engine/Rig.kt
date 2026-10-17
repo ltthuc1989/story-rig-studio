@@ -43,19 +43,44 @@ class BitmapPart(val bone: Int, val atlas: Atlas, var sprite: Sprite, antiAlias:
     }
 }
 
+/**
+ * Textured triangle mesh skinned to several bones, so a limb bends smoothly at its joints instead of two rigid
+ * pieces meeting at a hinge. Vertices are in rig space after [SoftMesh.deform]; drawn in one call.
+ */
+class MeshPart(val mesh: SoftMesh, val atlas: Atlas, antiAlias: Boolean) : DrawItem() {
+    val paint = Paint().apply {
+        isAntiAlias = antiAlias
+        filterQuality = FilterQuality.Low
+        shader = atlas.shader
+    }
+    private var lastAlpha = 1f
+
+    fun draw(canvas: Canvas, alphaMul: Float, stats: RenderStats) {
+        if (alphaMul <= 0.003f) return
+        if (alphaMul != lastAlpha) { paint.alpha = alphaMul; lastAlpha = alphaMul }
+        val d = mesh.data
+        canvas.drawMeshBatch(mesh.positions, d.tex, d.vertexCount, d.indices, d.indices.size, paint)
+        stats.draws++
+    }
+}
+
 /** A skeleton plus its draw list. Draw code is shared by every character and prop. */
 class Rig(val sk: Skeleton, val items: Array<DrawItem>) {
     val softPointCount: Int = items.sumOf { if (it is SoftItem) it.soft.pointCount else 0 }
+    val meshVertCount: Int = items.sumOf { if (it is MeshPart) it.mesh.data.vertexCount else 0 }
+    val meshTriangleCount: Int = items.sumOf { if (it is MeshPart) it.mesh.data.triangleCount else 0 }
     val shapeCount: Int = items.sumOf { if (it is Part) it.shapes.size else 1 }
 
-    /** World matrices + skin matrices + soft path rebuild. Call once per frame after posing. */
+    /** World matrices + skin matrices + soft path / mesh deform. Call once per frame after posing. */
     fun pose(stats: RenderStats) {
         sk.updateWorld()
-        if (softPointCount == 0) return
+        if (softPointCount == 0 && meshVertCount == 0) return
         sk.updateSkin()
         for (i in items.indices) {
             val it = items[i]
-            if (it is SoftItem && it.visible) it.soft.deform(sk, stats)
+            if (!it.visible) continue
+            if (it is SoftItem) it.soft.deform(sk, stats)
+            else if (it is MeshPart) it.mesh.deform(sk, stats)
         }
     }
 
@@ -74,6 +99,8 @@ class Rig(val sk: Skeleton, val items: Array<DrawItem>) {
                 it.soft.draw(canvas, alphaMul, stats)
             } else if (it is BitmapPart) {
                 it.draw(canvas, sk, alphaMul, stats)
+            } else if (it is MeshPart) {
+                it.draw(canvas, alphaMul, stats)
             }
         }
     }

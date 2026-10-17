@@ -3,7 +3,9 @@ package com.example.storyrig.engine
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.Shader
 
 /** Same time base as PointerInputChange.uptimeMillis. */
 expect fun uptimeMillis(): Long
@@ -23,6 +25,29 @@ expect fun traceEndAsync(name: String, cookie: Int)
  * Compose's Canvas.drawRawPoints always draws the whole array, so the engine goes through this.
  */
 expect fun Canvas.drawPointsBatch(points: FloatArray, count: Int, paint: Paint)
+
+/**
+ * Draws a textured triangle list in one call: [vertexCount] x,y pairs from [positions] and u,v pairs from
+ * [texCoords] (pixels of the paint's image shader), triangles from the first [indexCount] entries of [indices].
+ * Compose's drawVertices takes a Vertices object built from lists, so the engine goes through this.
+ */
+expect fun Canvas.drawMeshBatch(
+    positions: FloatArray,
+    texCoords: FloatArray,
+    vertexCount: Int,
+    indices: ShortArray,
+    indexCount: Int,
+    paint: Paint,
+)
+
+/**
+ * Bilinear-filtered texture shader for [drawMeshBatch]. Android: ImageShader (the paint's filterQuality applies).
+ * Desktop: Skia samples image shaders by the shader's own sampling mode, so it is set here.
+ */
+expect fun meshShader(image: ImageBitmap): Shader
+
+/** False where [drawMeshBatch] would draw nothing (Android before API 29: no drawVertices on a hardware canvas). */
+expect fun meshDrawSupported(): Boolean
 
 /**
  * Frame callback with a primitive parameter: a `(Long) -> Unit` lambda is a Function1 and boxes the Long on

@@ -14,7 +14,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.ImageShader
 import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.Shader
 import androidx.compose.ui.graphics.nativeCanvas
 
 actual fun uptimeMillis(): Long = SystemClock.uptimeMillis()
@@ -40,6 +43,24 @@ actual fun traceEndAsync(name: String, cookie: Int) {
 actual fun Canvas.drawPointsBatch(points: FloatArray, count: Int, paint: Paint) {
     nativeCanvas.drawPoints(points, 0, count * 2, paint.asFrameworkPaint())
 }
+
+actual fun Canvas.drawMeshBatch(
+    positions: FloatArray,
+    texCoords: FloatArray,
+    vertexCount: Int,
+    indices: ShortArray,
+    indexCount: Int,
+    paint: Paint,
+) {
+    nativeCanvas.drawVertices(
+        android.graphics.Canvas.VertexMode.TRIANGLES, vertexCount * 2, positions, 0, texCoords, 0,
+        null, 0, indices, 0, indexCount, paint.asFrameworkPaint(),
+    )
+}
+
+actual fun meshDrawSupported(): Boolean = Build.VERSION.SDK_INT >= 29
+
+actual fun meshShader(image: ImageBitmap): Shader = ImageShader(image)
 
 /** Choreographer callback re-posted every frame: no coroutine or lambda allocation per frame. */
 @Composable

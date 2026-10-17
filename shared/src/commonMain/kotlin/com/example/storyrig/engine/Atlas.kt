@@ -16,6 +16,8 @@ class Atlas(val image: ImageBitmap, private val regions: HashMap<String, AtlasRe
     /** Decoded size in memory (ARGB_8888). */
     val bytes: Long get() = image.width.toLong() * image.height * 4
     val regionCount get() = regions.size
+    /** Texture for meshes ([MeshPart]); created once, shared by every paint that draws from this atlas. */
+    val shader by lazy { meshShader(image) }
 
     operator fun get(name: String): AtlasRegion = regions[name] ?: error("no atlas region '$name'")
 

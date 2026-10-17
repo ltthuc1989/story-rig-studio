@@ -13,6 +13,8 @@ class SceneConfig(private val args: Map<String, String>) {
     /** "circle": drawCircle per particle; "points": one batched points call. */
     val particleMode = args["drops"] ?: "circle"
     val antiAlias = flag("aa", true)
+    /** Character art in scenes that have a choice (`kai`): "bitmap" (rigid parts) or "mesh" (skinned limbs). */
+    val art = args["art"] ?: "bitmap"
     val autoplay = flag("auto", true)
     val hud = flag("hud", true)
     val seed = args["seed"]?.toLongOrNull() ?: 7L
@@ -35,7 +37,7 @@ class SceneConfig(private val args: Map<String, String>) {
     }
 
     override fun toString() =
-        "scene=$scene cache=$cacheStatic water=$waterMode drops=$particleMode aa=$antiAlias auto=$autoplay seed=$seed start=$start count=$count"
+        "scene=$scene cache=$cacheStatic water=$waterMode drops=$particleMode aa=$antiAlias art=$art auto=$autoplay seed=$seed start=$start count=$count"
 }
 
 /**

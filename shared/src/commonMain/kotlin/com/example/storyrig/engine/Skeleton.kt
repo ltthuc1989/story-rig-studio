@@ -3,6 +3,7 @@ package com.example.storyrig.engine
 import androidx.compose.ui.graphics.Canvas
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 /**
  * Bone tree stored in flat arrays. Parents must come before children.
@@ -15,6 +16,8 @@ class Skeleton(val size: Int) {
     val world = FloatArray(size * 6)
     private val bindInv = FloatArray(size * 6)
     private val skin = FloatArray(size * 6)
+    /** Per-bone dual-quaternion skin data, [DQ] floats per bone; valid after [updateSkin]. Read only. */
+    val dq = FloatArray(size * DQ)
 
     init {
         for (i in 0 until size) {
@@ -102,7 +105,41 @@ class Skeleton(val size: Int) {
             skin[w + 3] = pb * lc + pd * ld
             skin[w + 4] = pa * le + pc * lf + pe
             skin[w + 5] = pb * le + pd * lf + pf
+            dualSkin(i)
         }
+    }
+
+    /**
+     * Each skin matrix split for dual-quaternion blending ([SoftMesh]): skin = T * R(theta) * S, stored per bone as
+     * [cos(theta/2), sin(theta/2), dualX, dualY, S00, S01, S11] (S10 is 0). The planar dual quaternion is
+     * real = (cos, sin about z), dual = translation * real / 2.
+     */
+    private fun dualSkin(i: Int) {
+        val w = i * 6
+        val a = skin[w]; val b = skin[w + 1]; val c = skin[w + 2]; val d = skin[w + 3]
+        val tx = skin[w + 4]; val ty = skin[w + 5]
+        val len = sqrt(a * a + b * b)
+        val o = i * DQ
+        if (len == 0f) {
+            dq[o] = 1f; dq[o + 1] = 0f; dq[o + 2] = .5f * tx; dq[o + 3] = .5f * ty
+            dq[o + 4] = 0f; dq[o + 5] = 0f; dq[o + 6] = 0f
+            return
+        }
+        val cosT = a / len
+        val sinT = b / len
+        val hc = sqrt(((1f + cosT) * .5f).coerceAtLeast(0f))
+        val hs = sqrt(((1f - cosT) * .5f).coerceAtLeast(0f)).let { if (sinT < 0f) -it else it }
+        dq[o] = hc
+        dq[o + 1] = hs
+        dq[o + 2] = .5f * (tx * hc + ty * hs)
+        dq[o + 3] = .5f * (-tx * hs + ty * hc)
+        dq[o + 4] = len
+        dq[o + 5] = (a * c + b * d) / len
+        dq[o + 6] = (a * d - b * c) / len
+    }
+
+    companion object {
+        const val DQ = 7
     }
 
     fun skinX(bone: Int, x: Float, y: Float): Float {
