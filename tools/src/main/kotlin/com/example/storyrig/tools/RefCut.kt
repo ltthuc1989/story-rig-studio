@@ -213,6 +213,8 @@ private fun eraseFeature(p: Piece, area: Box, isSkin: (Int) -> Boolean, contrast
         a(c) > 100 && abs(r(c) - r(skin)) + abs(g(c) - g(skin)) + abs(b(c) - b(skin)) >= contrast
     }
     val seen = BooleanArray(w * h)
+    // The feature's own blobs; anything else in the box (a hair edge, a cheek line) is left alone.
+    val keep = BooleanArray(w * h)
     var bx0 = Int.MAX_VALUE; var by0 = Int.MAX_VALUE; var bx1 = -1; var by1 = -1
     for (s in non.indices) {
         if (!non[s] || seen[s]) continue
@@ -231,24 +233,33 @@ private fun eraseFeature(p: Piece, area: Box, isSkin: (Int) -> Boolean, contrast
             }
         }
         if (border || comp.size < 8) continue
+        for (q in comp) keep[q] = true
         for (q in comp) {
             val x = q % w + area.x0; val y = q / w + area.y0
             bx0 = min(bx0, x); by0 = min(by0, y); bx1 = max(bx1, x); by1 = max(by1, y)
         }
     }
     require(bx1 >= 0) { "nothing to erase in ${area.x0},${area.y0}" }
+    /** Within 2 px of a kept blob (its anti-aliased ring). */
+    fun mine(x: Int, y: Int): Boolean {
+        for (dy in -2..2) for (dx in -2..2) {
+            val lx = x + dx - area.x0; val ly = y + dy - area.y0
+            if (lx in 0 until w && ly in 0 until h && keep[ly * w + lx]) return true
+        }
+        return false
+    }
     val feature = Img(bx1 - bx0 + 5, by1 - by0 + 5)
     for (y in 0 until feature.h) for (x in 0 until feature.w) {
         val c = p.colourAt(bx0 - 2 + x, by0 - 2 + y)
         // Keep the feature's own pixels; skin around it becomes transparent, its anti-aliased ring half so.
         val d = abs(r(c) - r(skin)) + abs(g(c) - g(skin)) + abs(b(c) - b(skin))
-        val al = ((d - contrast * 25f / 110) / (contrast * 85f / 110)).coerceIn(0f, 1f) * a(c)
+        val al = if (!mine(bx0 - 2 + x, by0 - 2 + y)) 0f else ((d - contrast * 25f / 110) / (contrast * 85f / 110)).coerceIn(0f, 1f) * a(c)
         feature[x, y] = (c and 0xFFFFFF) or (al.roundToInt() shl 24)
     }
     // Erase the box plus a 2 px ring (anti-aliased edge) with flat skin.
     for (y in by0 - 2..by1 + 2) for (x in bx0 - 2..bx1 + 2) {
         val lx = x - p.ox; val ly = y - p.oy
-        if (!p.img.inside(lx, ly) || a(p.img[lx, ly]) == 0) continue
+        if (!p.img.inside(lx, ly) || a(p.img[lx, ly]) == 0 || !mine(x, y)) continue
         if (isSkin(p.img[lx, ly]) && abs(r(p.img[lx, ly]) - r(skin)) < 12) continue
         p.img[lx, ly] = (skin and 0xFFFFFF) or (a(p.img[lx, ly]) shl 24)
     }
@@ -382,7 +393,8 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
         var leg = pieceOf(img, data[1] as BooleanArray)
         // Shin top hides under the shorts cuff: cap it upward.
         val knee = jointAcross(leg, kn.x, leg.oy + 4f, 0f, 1f)
-        leg = capInto(leg, Joint(knee.x, leg.oy + 2f, 0f, -1f, knee.radius))
+        // Start the cap inside the opaque rows: the top row or two are the cut line's soft edge.
+        leg = capInto(leg, Joint(knee.x, leg.oy + 4f, 0f, -1f, knee.radius))
         val ankle = jointAcross(leg, an.x, an.y, an.x - kn.x, an.y - kn.y)
         val (shin, shoe) = cutAt(leg, ankle, capAfter = false)
         bones += Bone("hip_$side", "root", mid(hip).x, pivotY)

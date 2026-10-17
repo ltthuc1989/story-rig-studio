@@ -10,8 +10,8 @@ elbow_far,shoulder_far,701.7,503.4
 wrist_far,elbow_far,780.5,545.3
 hip_near,root,472.0,683.0
 knee_near,hip_near,454.3,755.0
-ankle_near,knee_near,459.5,875.0
+ankle_near,knee_near,455.5,863.3
 hip_far,root,562.0,683.0
 knee_far,hip_far,556.8,750.0
-ankle_far,knee_far,561.0,871.0
+ankle_far,knee_far,556.8,860.0
 hair,head,512.0,239.5

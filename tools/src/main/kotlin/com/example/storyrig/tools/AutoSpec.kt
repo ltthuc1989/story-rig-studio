@@ -253,8 +253,20 @@ fun autoSpec(img: Img, template: RigTemplate = RigTemplate.load(TEMPLATE), debug
         }
         val armLen = tTip - tS
         fun section(tt: Float): Pair<Float, Float> { val p = at(tt); return sil.reach(p.x, p.y, n.x, n.y) to sil.reach(p.x, p.y, -n.x, -n.y) }
+        // Full extent across the arm: outermost silhouette pixels on each side, gaps included. Through spread fingers
+        // it is the whole hand, so the narrowest place is the real wrist, not one finger.
+        val spanMax = 90 * s
+        fun span(tt: Float): Pair<Float, Float> {
+            val p = at(tt)
+            fun far(ux: Float, uy: Float): Float {
+                var last = 0f; var t = 0f
+                while (t <= spanMax) { if (sil.at(p.x + ux * t, p.y + uy * t)) last = t; t += .5f }
+                return last
+            }
+            return far(n.x, n.y) to far(-n.x, -n.y)
+        }
         // Wrist: narrowest cross-section in the outer part of the arm, before the hand.
-        val prof = (0..60).map { k -> val tt = tS + armLen * (0.5f + 0.42f * k / 60); tt to section(tt) }
+        val prof = (0..60).map { k -> val tt = tS + armLen * (0.5f + 0.42f * k / 60); tt to span(tt) }
         // The forearm is often a long even plateau: the wrist sits near its outer end, a little before the hand widens.
         val wMin = prof.minOf { it.second.first + it.second.second }
         var kW = prof.indexOfFirst { it.second.first + it.second.second == wMin }
@@ -375,10 +387,24 @@ fun autoSpec(img: Img, template: RigTemplate = RigTemplate.load(TEMPLATE), debug
         val lowFrom = kneeY + ((bottom - kneeY) * 0.3f).roundToInt()
         val narrow = (lowFrom..bottom - (20 * s).roundToInt()).minBy { ws.getValue(it).let { w -> if (w == 0) Int.MAX_VALUE else w } }
         val minW = ws.getValue(narrow)
-        val ankleY = (narrow..bottom).first { ws.getValue(it) > minW * 1.25f }
+        val widenY = (narrow..bottom).first { ws.getValue(it) > minW * 1.25f }
+        // The shoe's top edge is usually above where the foot widens: from the widening, go up while the rows keep
+        // the shoe's colour; the shoe starts where they stop (a sock stripe higher up is a different colour band).
+        fun rowColour(y: Int): Int? {
+            val r = legRun(y, side == "near", leg.x(y)) ?: return null
+            var n = 0; var sr = 0; var sg = 0; var sb = 0
+            for (x in r) { val c = img[x, y]; if (a(c) > 230) { n++; sr += r(c); sg += g(c); sb += b(c) } }
+            return if (n < 3) null else argb(255, sr / n, sg / n, sb / n)
+        }
+        val shoeCol = rowColour(widenY + (3 * s).roundToInt()) ?: rowColour(widenY)
+        var edgeY = widenY
+        if (shoeCol != null) while (edgeY - 1 > narrow && rowColour(edgeY - 1)?.let { dist(it, shoeCol) < 70 } == true) edgeY--
+        // Only a clear colour change counts (a bare foot or a same-colour sock has none).
+        val edgeD = rowColour(edgeY - 2)?.let { c -> shoeCol?.let { dist(c, it) } } ?: 0
+        val ankleY = if (edgeY < widenY && edgeD >= 80) edgeY - 1 else widenY
         fun centre(y: Int) = legRun(y, side == "near", leg.x(y))!!.let { (it.first + it.last) / 2f }
         val thighY = if (step != null) (hipY + step) / 2 else (thighTop + kneeY) / 2
-        log("leg $side: shin ${shinW}px, step ${step ?: "none"}, knee y=$kneeY, narrowest $minW px at y=$narrow, ankle y=$ankleY")
+        log("leg $side: shin ${shinW}px, step ${step ?: "none"}, knee y=$kneeY, narrowest $minW px at y=$narrow, ankle y=$ankleY (widens at $widenY, colour edge $edgeD at $edgeY)")
         return LegJoints(
             Pt(centre(kneeY), kneeY.toFloat()), Pt(centre(ankleY), ankleY.toFloat()), step,
             Pt(centre(thighY), thighY.toFloat()), Pt(centre((kneeY + ankleY) / 2), ((kneeY + ankleY) / 2).toFloat()),

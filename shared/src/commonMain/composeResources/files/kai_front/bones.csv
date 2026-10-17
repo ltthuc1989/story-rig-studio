@@ -6,12 +6,12 @@ shoulder_near,torso,414.3,466.0
 elbow_near,shoulder_near,330.3,499.0
 wrist_near,elbow_near,248.2,543.5
 shoulder_far,torso,621.1,471.8
-elbow_far,shoulder_far,698.9,502.3
-wrist_far,elbow_far,775.2,543.5
+elbow_far,shoulder_far,698.0,502.2
+wrist_far,elbow_far,773.6,542.9
 hip_near,root,471.0,682.0
 knee_near,hip_near,449.3,755.0
-ankle_near,knee_near,449.5,874.4
+ankle_near,knee_near,452.5,861.4
 hip_far,root,563.0,682.0
 knee_far,hip_far,576.8,749.0
-ankle_far,knee_far,578.0,874.3
+ankle_far,knee_far,575.0,860.3
 hair,head,512.5,239.5

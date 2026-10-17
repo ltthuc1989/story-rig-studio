@@ -1,15 +1,15 @@
 # part,bone,x,y,w,h,drawn (x,y = top-left in ref.png pixels; drawn=1 in the rest pose, in draw order)
-arm_upper_far,shoulder_far,568,415,186,127,1
-arm_fore_far,elbow_far,703,492,153,116,1
-hand_far,wrist_far,827,551,43,57,1
-arm_upper_near,shoulder_near,269,416,185,126,1
-arm_fore_near,elbow_near,168,492,151,116,1
-hand_near,wrist_near,154,551,43,57,1
-shin_far,knee_far,533,725,76,186,1
-shoe_far,ankle_far,539,873,106,66,1
+arm_upper_far,shoulder_far,568,415,155,112,1
+arm_fore_far,elbow_far,670,474,132,92,1
+hand_far,wrist_far,756,520,114,88,1
+arm_upper_near,shoulder_near,299,416,155,112,1
+arm_fore_near,elbow_near,219,475,133,92,1
+hand_near,wrist_near,154,520,111,88,1
+shin_far,knee_far,533,727,76,181,1
+shoe_far,ankle_far,539,870,106,69,1
 thigh_far,hip_far,512,631,99,118,1
-shin_near,knee_near,414,724,77,187,1
-shoe_near,ankle_near,379,874,106,65,1
+shin_near,knee_near,414,726,77,181,1
+shoe_near,ankle_near,379,870,106,69,1
 thigh_near,hip_near,413,630,98,119,1
 pelvis,root,422,604,179,80,1
 torso,torso,385,357,254,275,1

@@ -1,12 +1,12 @@
 # part,bone,x,y,w,h,drawn (x,y = top-left in ref.png pixels; drawn=1 in the rest pose, in draw order)
-arm_upper_far,shoulder_far,600,406,174,136,1
-arm_fore_far,elbow_far,713,481,149,132,1
-hand_far,wrist_far,826,545,44,68,1
-shin_far,knee_far,545,763,75,157,1
-shoe_far,ankle_far,547,878,139,71,1
+arm_upper_far,shoulder_far,600,406,144,117,1
+arm_fore_far,elbow_far,683,462,130,105,1
+hand_far,wrist_far,752,506,118,107,1
+shin_far,knee_far,545,765,73,148,1
+shoe_far,ankle_far,547,875,139,74,1
 thigh_far,hip_far,535,683,71,112,1
-shin_near,knee_near,419,760,81,169,1
-shoe_near,ankle_near,406,887,137,62,1
+shin_near,knee_near,420,762,74,156,1
+shoe_near,ankle_near,406,878,137,71,1
 thigh_near,hip_near,428,683,73,112,1
 pelvis,root,365,529,309,202,1
 torso,torso,368,342,302,209,1
@@ -17,9 +17,9 @@ brow_near,head,485,195,44,18,1
 brow_far,head,597,195,42,18,1
 mouth_smile,head,532,292,64,17,1
 hair,hair,353,75,306,302,1
-arm_upper_near,shoulder_near,254,402,188,145,1
-arm_fore_near,elbow_near,160,482,160,139,1
-hand_near,wrist_near,154,552,43,68,1
+arm_upper_near,shoulder_near,286,402,156,125,1
+arm_fore_near,elbow_near,208,463,142,114,1
+hand_near,wrist_near,154,511,120,110,1
 brow_far_frown,head,588,191,61,27,0
 brow_far_raised,head,586,196,64,17,0
 brow_far_sad,head,588,192,61,25,0

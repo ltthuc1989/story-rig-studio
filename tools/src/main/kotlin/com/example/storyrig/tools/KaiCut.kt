@@ -39,6 +39,7 @@ fun main(args: Array<String>) {
         }
         "autotest" -> autoTest(File(args[1]), File(args[2]))
         "mannequin" -> drawMannequin(args[1], File(args[2]))
+        "selftest" -> if (!selfTest(File(args.getOrNull(1) ?: "tools/build/selftest"))) kotlin.system.exitProcess(1)
         "facetest" -> faceLayoutTest(File(args[1]), File(args[2]))
         else -> println("usage: scan <sheet.png> <outDir> | build|cutref|cutauto <geminiDir> <outDir> <previewDir> | autotest|facetest <geminiDir> <outRoot>")
     }
@@ -210,7 +211,11 @@ internal fun addFaceParts(dir: File, parts: HashMap<String, Part>, boxes: Map<St
         println("  no face sheet in $dir: only ref.png's own eyes and mouth (the app falls back to them)")
         return
     }
-    val (picks, sheets) = if (skin != null) facePicks(dir, skin) else {
+    // A sheet that cannot be read costs the expressions, not the whole cut.
+    val (picks, sheets) = if (skin != null) runCatching { facePicks(dir, skin) }.getOrElse {
+        println("  WARNING face sheet unusable, only ref.png's own eyes and mouth: ${it.message}")
+        return
+    } else {
         val sh = HashMap<String, Sheet>()
         val fs = readFaceMap(dir) { n -> sh.getOrPut(n) { Sheet(File(dir, "$n.png")) } } ?: error("no face_map.csv in $dir")
         fs to sh

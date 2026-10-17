@@ -2,10 +2,10 @@
 arm_upper_far,shoulder_far,602,410,141,112,1
 arm_fore_far,elbow_far,681,461,123,99,1
 hand_far,wrist_far,759,515,119,96,1
-shin_far,knee_far,539,749,99,177,1
+shin_far,knee_far,539,751,99,175,1
 shoe_far,ankle_far,561,890,126,53,1
 thigh_far,hip_far,521,635,108,159,1
-shin_near,knee_near,410,747,97,192,1
+shin_near,knee_near,410,749,97,190,1
 shoe_near,ankle_near,411,897,126,46,1
 thigh_near,hip_near,417,633,107,161,1
 pelvis,root,425,600,193,91,1

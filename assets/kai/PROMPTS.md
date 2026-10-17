@@ -105,3 +105,15 @@ Việc còn làm tay cho mỗi nhân vật: duyệt ảnh lượt 1 và lượt 
 - `prompts/legacy/`: bộ prompt cũ (bảng bộ phận thân, Recraft). Không dùng nữa.
 - Kai trong app được cắt bằng `cutref` từ `ref.png` (v5) đến 2026-10-17, sau đó bằng `cutauto`. Lệnh `build` (cắt từ bảng bộ phận) vẫn còn nhưng không dùng nữa.
 - Trước 2026-10-17 bảng mặt của Kai và vùng lưới (`MESH_GROUPS`, `INFLUENCES` trong `KaiArt.kt`) là hằng số viết tay; nay là `face_map.csv` và `mesh.csv`.
+
+## Tự kiểm tra tool (`selftest`)
+
+Chạy sau mỗi lần sửa tool, không cần Gemini:
+
+```
+./gradlew -q :tools:installDist && tools/build/install/tools/bin/tools selftest
+```
+
+Lệnh cắt mọi nhân vật trong `assets/*/gemini` (mọi góc có ảnh) và 4 biến thể tổng hợp của Kai (đổi màu, thu nhỏ, kéo giãn), rồi kiểm tra trên file đầu ra: đủ bộ phận và xương, đủ biểu cảm khi có bảng mặt, dáng gốc ghép từ các mảnh khớp `ref.png` (thiếu ≤ 0,5 %, thừa ≤ 1 %, sai màu ≤ 1 %), không mảnh nào có mẩu rời, quy tắc váy chỉ bật ở nhân vật mặc váy, Kai giống từng byte dữ liệu app, biến thể tìm khớp lệch ≤ 15 px. Kết quả ở `tools/build/selftest/selftest.txt`, ảnh tổng hợp `selftest_sheet.png`, ảnh khác biệt của từng trường hợp ở `<trường hợp>/prev/rest_diff.png` (đỏ thiếu, xanh thừa, vàng sai màu). Lệnh trả mã lỗi 1 khi có trường hợp không đạt.
+
+Giới hạn đã biết: áo sọc (Leo) sai màu khoảng 1,2 % ở chỗ hai mảnh chồng nhau, vì phần bo tròn ở đầu mảnh kéo màu từ đường cắt nên sọc không khớp. Chế độ lưới không bị.

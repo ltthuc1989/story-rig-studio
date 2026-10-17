@@ -12,12 +12,12 @@ import kotlin.math.roundToInt
  */
 
 /** A variant: a colour change and an affine map (x' = cx + (x - cx) * kx + dx, same for y) of the character. */
-private class Variant(val name: String, val kx: Float = 1f, val ky: Float = 1f, val dx: Float = 0f, val dy: Float = 0f, val recolour: (Int) -> Int = { it })
+internal class Variant(val name: String, val kx: Float = 1f, val ky: Float = 1f, val dx: Float = 0f, val dy: Float = 0f, val recolour: (Int) -> Int = { it })
 
 private fun hsb(c: Int) = Color.RGBtoHSB(r(c), g(c), b(c), null)
 private fun fromHsb(h: Float, s: Float, v: Float, al: Int) = (Color.HSBtoRGB(((h % 1f) + 1f) % 1f, s.coerceIn(0f, 1f), v.coerceIn(0f, 1f)) and 0xFFFFFF) or (al shl 24)
 
-private val variants = listOf(
+internal val variants = listOf(
     // Every hue turned 150 degrees: red shirt -> green, blue shorts -> red, tan skin -> cyan (no magenta results).
     Variant("hue150") { c -> val (h, s, v) = hsb(c); fromHsb(h + 150f / 360f, s, v, a(c)) },
     // Shirt and shoes yellow-green, shorts dark green, skin (with cheeks, ears, nose) a darker brown: less contrast
@@ -37,7 +37,7 @@ private val variants = listOf(
 )
 
 /** The variant's image: key the background, change the character, put it back on the same background colour. */
-private fun render(src: Img, v: Variant): Img {
+internal fun render(src: Img, v: Variant): Img {
     val bg = cornerColour(src)
     val keyed = keyMagenta(src)
     val cx = src.w / 2f; val cy = src.h / 2f
@@ -64,7 +64,7 @@ private fun render(src: Img, v: Variant): Img {
 }
 
 /** KaiRefSpec moved by the variant's transform (points only; for comparing). */
-private fun moved(sp: RefSpec, v: Variant, w: Int, h: Int): RefSpec {
+internal fun moved(sp: RefSpec, v: Variant, w: Int, h: Int): RefSpec {
     val cx = w / 2f; val cy = h / 2f
     fun p(q: Pt) = Pt(cx + (q.x - cx) * v.kx + v.dx, cy + (q.y - cy) * v.ky + v.dy)
     fun s(q: Seg) = p(Pt(q.x1, q.y1)).let { a -> p(Pt(q.x2, q.y2)).let { b -> Seg(a.x, a.y, b.x, b.y) } }

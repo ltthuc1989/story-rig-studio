@@ -16,8 +16,8 @@ influence,shoulder_far,621.7,471.9,701.7,503.4,0.0,29.9,torso,40.3
 influence,elbow_far,701.7,503.4,780.5,545.3,0.0,29.9,,0
 influence,wrist_far,780.5,545.3,812.5,565.5,0.0,29.9,,0
 influence,hip_near,472.0,683.0,454.3,755.0,0.0,29.9,root,40.3
-influence,knee_near,454.3,755.0,459.5,875.0,0.0,29.9,,0
-influence,ankle_near,459.5,875.0,477.0,906.5,0.0,29.9,,0
+influence,knee_near,454.3,755.0,455.5,863.3,0.0,29.9,,0
+influence,ankle_near,455.5,863.3,477.0,900.0,0.0,29.9,,0
 influence,hip_far,562.0,683.0,556.8,750.0,0.0,29.9,root,40.3
-influence,knee_far,556.8,750.0,561.0,871.0,0.0,29.9,,0
-influence,ankle_far,561.0,871.0,583.5,902.0,0.0,29.9,,0
+influence,knee_far,556.8,750.0,556.8,860.0,0.0,29.9,,0
+influence,ankle_far,556.8,860.0,583.5,897.0,0.0,29.9,,0
