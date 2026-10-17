@@ -1,0 +1,27 @@
+# Joints of the mannequin in rig_3q_right.png (1024x1024 px, magenta background), measured on the PNG.
+# Shapes: head circle centre (519.5,235) r 124; neck 490..549 x 359..385; torso 420..619 x 385..630 (round corners);
+# pelvis 430..609 x 620..689; arms are capsules r ~30 ending in a hand circle r ~35; legs are capsules r ~31 ending in a
+# foot ellipse. Near side = viewer's left (light grey), far side = viewer's right (dark grey, behind the body).
+# `cutauto` maps these onto the character by its silhouette, then refines each one on the character's own shape.
+# name,x,y,meaning
+head_centre,519.5,235,centre of the head circle
+neck_top,519.5,359,bottom of the head circle
+neck_bottom,519.5,385,top of the torso (neck cut)
+shoulder_near,420,433,arm axis where it crosses the torso side
+armpit_near,420,469,arm's lower edge meets the torso side
+hand_near,197.5,570,centre of the hand circle
+shoulder_far,619,432,arm axis where it leaves the torso side
+armpit_far,619,467,arm's lower edge meets the torso side
+hand_far,835,570,centre of the hand circle
+waist,519.5,620,torso bottom / pelvis top on the body axis
+root,519.5,655,middle of the pelvis
+hip_near,469.5,690,leg axis on the bottom of the pelvis (hip cut line)
+hip_far,561.5,690,leg axis on the bottom of the pelvis (hip cut line)
+crotch,517,690,top of the gap between the legs
+ankle_near,450,900,bottom end of the leg capsule
+foot_near,493,918,centre of the foot ellipse
+ankle_far,590,900,bottom end of the leg capsule
+foot_far,617,915,centre of the foot ellipse
+gap_arm_near,390,540,background between the arm and the torso
+gap_arm_far,650,540,background between the arm and the torso
+gap_legs,517,800,background between the legs

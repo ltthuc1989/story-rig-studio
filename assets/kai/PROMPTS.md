@@ -47,12 +47,19 @@ Gemini vẽ được bảng mặt đạt ngay từ lần đầu. Tool lấy mắ
 
 ## Sau khi có ảnh: mình làm
 
-1. Đo khoảng 15 điểm trên `ref.png`: các đường cắt ở cổ, vai, hông, khe giữa hai ống quần, khuỷu tay, cổ tay, đầu gối, cổ chân, cùng một điểm bên trong mỗi vùng. Ghi vào `tools/.../KaiRefSpec.kt`. Sau này Studio sẽ cho người dùng tự bấm chọn các điểm này.
-2. Chạy `./gradlew :tools:run --args="scan assets/kai/gemini/face.png <thư mục tạm>"` để đánh số các mảnh trong bảng mặt, rồi ghi toạ độ từng biểu cảm vào `KaiSpec.face`.
-3. Chạy `./gradlew :tools:run --args="cutref assets/kai/gemini shared/src/commonMain/composeResources/files/kai <thư mục xem thử>"`. Lệnh này ghi ra:
+1. Không cần đo điểm bằng tay nữa. Lệnh `cutauto` tự tìm các điểm cắt:
+   - Lấy khớp của hình nộm trong `assets/templates/rig_3q_right.csv` (toạ độ trên `rig_3q_right.png`), khớp khung bao bóng nhân vật với bóng hình nộm để có vị trí đoán ban đầu. Gemini chép dáng và khung của hình nộm nên vị trí đoán chỉ lệch vài chục px.
+   - Chỉnh từng điểm theo hình dạng bóng nhân vật, không theo màu: cổ là chỗ hẹp nhất giữa đầu và vai (cắt ngay trên chỗ vai loe ra); đường vai đi qua nách (đỉnh khe nền dưới cánh tay, bỏ qua khe hẹp dưới 12 px) và vuông góc với trục tay; cổ tay là chỗ hẹp ở cuối cẳng tay trước khi bàn tay loe ra; khuỷu ở giữa vai và cổ tay; đường hông ngang đáy háng (đỉnh khe nền giữa hai chân); chỗ hai giày chạm nhau đi từ đáy khe giữa hai chân xuống khấc ở mép đế; đầu gối ở chỗ ống quần kết thúc (bề rộng chân thu hẹp đột ngột); cổ chân ở chỗ bàn chân bắt đầu rộng ra. Bán kính vùng tay lấy từ bề rộng tay đo được.
+   - Màu chỉ dùng ở chỗ hai bộ phận vẽ đè lên nhau mà không có khe, và luôn so với màu của chính nhân vật: màu quần lấy mẫu quanh hông (tách ống chân khỏi ống quần, tách quần khỏi áo), màu tóc lấy ở đỉnh đầu, màu da là màu nhiều nhất trên đầu. Mắt, mày, miệng là các mảng tương phản với da nằm trọn trong mặt, phân loại theo vị trí và hình dạng; ngưỡng tương phản giảm theo độ sáng của da.
+2. Chạy `./gradlew :tools:run --args="scan assets/kai/gemini/face.png <thư mục tạm>"` để đánh số các mảnh trong bảng mặt, rồi ghi toạ độ từng biểu cảm vào `KaiSpec.face` (bước này vẫn làm tay).
+3. Chạy `./gradlew :tools:run --args="cutauto assets/kai/gemini <thư mục ra> <thư mục xem thử>"` (thêm `kai` ở cuối để in bảng so từng điểm tự tìm với điểm đo tay trong `KaiRefSpec.kt`). Lệnh này ghi ra:
    - `parts/` (các file PNG), `bones.csv`, `parts.csv`, để app nạp;
-   - `regions.png` (mỗi vùng một màu, kiểm tra cắt đúng chưa), `rest_vs_ref.png` (ghép lại đặt cạnh ảnh gốc), `pose_dance.png` và `pose_bend.png` (xoay khớp, kiểm tra có hở không).
+   - `points.png` (điểm đoán từ hình nộm màu xanh dương, điểm tự tìm màu xanh lá, điểm đo tay màu đỏ nếu có), `regions.png` (mỗi vùng một màu, kiểm tra cắt đúng chưa), `rest_vs_ref.png` (ghép lại đặt cạnh ảnh gốc), `pose_dance.png` và `pose_bend.png` (xoay khớp, kiểm tra có hở không).
+   - `cutref` (điểm đo tay trong `KaiRefSpec.kt`) vẫn giữ nguyên để so sánh; Kai trong app hiện vẫn cắt bằng `cutref`.
 4. Mở các ảnh xem thử ra kiểm tra rồi mới báo là đạt.
+5. Kiểm tra độ bền không cần Gemini: `./gradlew :tools:run --args="autotest assets/kai/gemini <thư mục tạm>"` tạo các bản biến thể của `ref.png` (đổi màu toàn bộ, đổi màu áo, quần, da tối hơn, thu nhỏ 0,85 và dời chỗ, kéo giãn ngang 1,12), cắt từng bản bằng `cutauto` và so với điểm đo tay đã biến đổi theo cùng phép biến đổi.
+
+Giới hạn của `cutauto`: cần dáng của hình nộm (tay giang, có khe nền dưới nách và giữa hai chân), nền hồng tím. Váy hoặc áo choàng che kín khe giữa hai chân, tóc dài chạm vai, áo liền quần cùng màu với áo thì phải kiểm tra kỹ `regions.png`, có thể phải sửa tay.
 
 ## Bảng chấm
 

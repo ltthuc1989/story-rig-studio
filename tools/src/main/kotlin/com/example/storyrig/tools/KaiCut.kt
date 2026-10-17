@@ -19,13 +19,20 @@ import kotlin.math.roundToInt
  *       and render test poses into previewDir (body parts from the body.png parts sheet)
  *   ./gradlew :tools:run --args="cutref <geminiDir> <outDir> <previewDir>"
  *       same outputs, body parts cut straight from ref.png (RefCut.kt); only the face comes from face sheets
+ *   ./gradlew :tools:run --args="cutauto <geminiDir> <outDir> <previewDir> [kai]"
+ *       same as cutref, but the cut points are measured from the mannequin template and the character's shape
+ *       (AutoSpec.kt) instead of KaiRefSpec; `kai` prints each point next to KaiRefSpec's. Also writes points.png.
+ *   ./gradlew :tools:run --args="autotest <geminiDir> <outRoot>"
+ *       recoloured / scaled / stretched copies of ref.png, each cut with cutauto and checked against KaiRefSpec
  */
 fun main(args: Array<String>) {
     when (args.getOrNull(0)) {
         "scan" -> scan(File(args[1]), File(args[2]))
         "build" -> build(File(args[1]), File(args[2]), File(args[3]))
         "cutref" -> cutRef(File(args[1]), File(args[2]), File(args[3]))
-        else -> println("usage: scan <sheet.png> <outDir> | build|cutref <geminiDir> <outDir> <previewDir>")
+        "cutauto" -> cutAuto(File(args[1]), File(args[2]), File(args[3]), compareKai = args.getOrNull(4) == "kai")
+        "autotest" -> autoTest(File(args[1]), File(args[2]))
+        else -> println("usage: scan <sheet.png> <outDir> | build|cutref|cutauto <geminiDir> <outDir> <previewDir> | autotest <geminiDir> <outRoot>")
     }
 }
 
