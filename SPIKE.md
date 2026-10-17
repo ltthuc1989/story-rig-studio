@@ -123,6 +123,11 @@ Sản phẩm B (truyện) nhẹ hơn C nên không thử riêng; phần chờ th
 
 1. **HUD trong app** (chỉ ở bản đo, có nút ẩn): FPS, thời gian khung, % khung rớt, số hạt, số hình vẽ mỗi khung. Dùng JankStats (`androidx.metrics:metrics-performance`).
 2. **Macrobenchmark** với `FrameTimingMetric` (`frameDurationCpuMs`, `frameOverrunMs`): mỗi cảnh chạy 20 giây, 5 lần lặp. Báo P50, P90, P95, P99. `frameOverrunMs` cần Android 12 trở lên; máy cũ hơn thì dùng `frameDurationCpuMs` và `gfxinfo`, ghi rõ trong báo cáo.
+   **Máy bị nghẽn hàng đợi buffer** (ví dụ Galaxy A23): nếu trace cho thấy gần như mọi khung đều có kiểu `Buffer Stuffing` (thường đi kèm `SurfaceFlinger Stuffing`), thì `frameOverrunMs` và `frameDurationCpuMs` đã cộng cả thời gian chờ (`queueBuffer`, `dequeueBuffer`, `postAndWait`), không còn phản ánh việc app làm. Với máy như vậy, báo thêm số của `python3 benchmark/frame_report.py`, lấy từ cùng các trace đó:
+   - `appMiss%`: tỉ lệ khung `App Deadline Missed`, thay cho ngưỡng `frameOverrunMs`. Ngưỡng: ≤ 5 %, tương ứng P95 ≤ 0.
+   - `cpu` P50/P90: thời gian làm việc của luồng UI và RenderThread, đã trừ phần chờ, thay cho ngưỡng `frameDurationCpuMs`.
+
+   Vẫn ghi số Macrobenchmark gốc trong báo cáo, kèm lý do không dùng nó để chấm.
 3. **`adb shell dumpsys gfxinfo <package> framestats`** để đối chiếu.
 4. **Perfetto trace** cho cảnh tệ nhất: tìm điểm nóng (tính uốn mềm, dựng lại path, vẽ nét viền, vẽ chồng nhiều lớp).
 5. **Cấp phát bộ nhớ:** Memory Profiler hoặc allocation tracking; sau 2 giây khởi động, vòng vẽ không được cấp phát.

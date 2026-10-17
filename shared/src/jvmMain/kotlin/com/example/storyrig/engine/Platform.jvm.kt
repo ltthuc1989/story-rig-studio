@@ -28,7 +28,7 @@ actual fun Canvas.drawPointsBatch(points: FloatArray, count: Int, paint: Paint) 
 }
 
 @Composable
-actual fun FrameLoop(onFrame: (Long) -> Unit) {
+actual fun FrameLoop(onFrame: FrameCallback) {
     val current = rememberUpdatedState(onFrame)
     LaunchedEffect(Unit) {
         var last = 0L
@@ -36,7 +36,7 @@ actual fun FrameLoop(onFrame: (Long) -> Unit) {
             withFrameNanos { t ->
                 if (last != 0L) PerfStats.shared.onFrame((t - last) / 1e6f, false, t / 1_000_000)
                 last = t
-                current.value(t)
+                current.value.onFrame(t)
             }
         }
     }

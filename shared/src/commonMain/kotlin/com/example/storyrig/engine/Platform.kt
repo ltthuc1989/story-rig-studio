@@ -24,9 +24,17 @@ expect fun traceEndAsync(name: String, cookie: Int)
  */
 expect fun Canvas.drawPointsBatch(points: FloatArray, count: Int, paint: Paint)
 
+/**
+ * Frame callback with a primitive parameter: a `(Long) -> Unit` lambda is a Function1 and boxes the Long on
+ * every call.
+ */
+fun interface FrameCallback {
+    fun onFrame(frameNanos: Long)
+}
+
 /** Calls [onFrame] once per display frame with the frame time in nanoseconds, without allocating. */
 @Composable
-expect fun FrameLoop(onFrame: (Long) -> Unit)
+expect fun FrameLoop(onFrame: FrameCallback)
 
 /**
  * Multiplies the canvas by the 2D affine [a b c d e f]. Compose's Canvas.concat(Matrix) allocates a new

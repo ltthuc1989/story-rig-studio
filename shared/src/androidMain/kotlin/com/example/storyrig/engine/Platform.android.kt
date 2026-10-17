@@ -43,7 +43,7 @@ actual fun Canvas.drawPointsBatch(points: FloatArray, count: Int, paint: Paint) 
 
 /** Choreographer callback re-posted every frame: no coroutine or lambda allocation per frame. */
 @Composable
-actual fun FrameLoop(onFrame: (Long) -> Unit) {
+actual fun FrameLoop(onFrame: FrameCallback) {
     val current = rememberUpdatedState(onFrame)
     DisposableEffect(Unit) {
         val choreographer = Choreographer.getInstance()
@@ -51,7 +51,7 @@ actual fun FrameLoop(onFrame: (Long) -> Unit) {
             var alive = true
             override fun doFrame(frameTimeNanos: Long) {
                 if (!alive) return
-                current.value(frameTimeNanos)
+                current.value.onFrame(frameTimeNanos)
                 choreographer.postFrameCallback(this)
             }
         }

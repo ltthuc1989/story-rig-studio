@@ -50,7 +50,8 @@ uiwait as (
 jank as (
   select cast(a.name as int) vs, a.jank_type from actual_frame_timeline_slice a join app using(upid)
 )
-select ui.vs, ui.dur, coalesce(rt.dur, 0), coalesce(wait.w, 0) + coalesce(uiwait.w, 0), coalesce(jank.jank_type, '')
+select ui.vs, ui.dur, coalesce(rt.dur, 0), coalesce(wait.w, 0) + coalesce(uiwait.w, 0), coalesce(uiwait.w, 0),
+  coalesce(jank.jank_type, '')
 from ui left join rt using(vs) left join wait using(vs) left join uiwait using(vs) left join jank using(vs);
 """
 
@@ -91,9 +92,9 @@ def query(pb, tmp):
     out = adb("shell", f"{DEV_TP} -q /data/local/tmp/fr.sql /data/local/tmp/fr.pb 2>/dev/null")
     rows = []
     for line in out.splitlines():
-        m = re.match(r'^(\d+),(\d+),(\d+),(\d+),"(.*)"$', line.strip())
+        m = re.match(r'^(\d+),(\d+),(\d+),(\d+),(\d+),"(.*)"$', line.strip())
         if m:
-            rows.append((int(m[2]), int(m[3]), int(m[4]), m[5]))
+            rows.append((int(m[2]), int(m[3]), int(m[4]), int(m[5]), m[6]))
     return rows
 
 
@@ -115,7 +116,8 @@ def main():
         sys.exit(f"no traces under {root}")
     ensure_tp()
     print(f"{'test':28} {'frames':>6} {'appMiss%':>8} {'stuff%':>7} | "
-          f"{'cpu P50':>7} {'P90':>5} {'P95':>5} {'P99':>5} | {'macro P50':>9} {'P90':>5}")
+          f"{'cpu P50':>7} {'P90':>5} {'P95':>5} {'P99':>5} | {'ui P50':>6} {'P90':>5} | {'rt P50':>6} {'P90':>5} | "
+          f"{'macro P50':>9} {'P90':>5}")
     for name, files in sorted(tests.items()):
         rows = []
         with tempfile.TemporaryDirectory() as tmp:
@@ -132,12 +134,15 @@ def report(name, rows):
             print(f"{name:28} no frames")
             return
         n = len(rows)
-        miss = sum(1 for r in rows if "App Deadline Missed" in r[3])
-        stuff = sum(1 for r in rows if "Buffer Stuffing" in r[3])
-        cpu = [(ui + rt - w) / 1e6 for ui, rt, w, _ in rows]
-        macro = [(ui + rt) / 1e6 for ui, rt, w, _ in rows]
+        miss = sum(1 for r in rows if "App Deadline Missed" in r[4])
+        stuff = sum(1 for r in rows if "Buffer Stuffing" in r[4])
+        cpu = [(ui + rt - w) / 1e6 for ui, rt, w, _, _ in rows]
+        uiw = [(ui - uw) / 1e6 for ui, rt, w, uw, _ in rows]
+        rtw = [(rt - (w - uw)) / 1e6 for ui, rt, w, uw, _ in rows]
+        macro = [(ui + rt) / 1e6 for ui, rt, w, _, _ in rows]
         print(f"{name:28} {n:6} {100 * miss / n:8.2f} {100 * stuff / n:7.1f} | "
               f"{pct(cpu, 50):7.1f} {pct(cpu, 90):5.1f} {pct(cpu, 95):5.1f} {pct(cpu, 99):5.1f} | "
+              f"{pct(uiw, 50):6.1f} {pct(uiw, 90):5.1f} | {pct(rtw, 50):6.1f} {pct(rtw, 90):5.1f} | "
               f"{pct(macro, 50):9.1f} {pct(macro, 90):5.1f}")
 
 

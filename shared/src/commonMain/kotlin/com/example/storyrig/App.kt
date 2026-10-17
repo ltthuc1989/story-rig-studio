@@ -91,7 +91,7 @@ private fun SceneHost(cfg: SceneConfig, perf: PerfStats, assets: Any?) {
     }
     val invalidator = remember { DrawInvalidator() }
     val onFrame = remember(scene) {
-        { t: Long ->
+        com.example.storyrig.engine.FrameCallback { t ->
             if (cfg.bisect != "draw") scene.update(t)
             if (cfg.bisect != "update") invalidator.invalidate()
         }
