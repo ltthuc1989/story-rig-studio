@@ -4,6 +4,8 @@
 - One key, GEMINI_API_KEY: from the environment, else Storyrig/.env (gitignored), else the opw project's .env.
 - Tier mode STORYRIG_TIER, "free" by default (like OPW_TIER): waits between calls, waits 60 s / 120 s on 429,
   2 attempts at most, and a daily cap. "paid" only when set explicitly.
+- "free" is only the pacing (waits, retries, daily cap); it does not make calls free. The opw key is on a prepaid
+  project: image calls spend its credits (they ran out on 2026-10-18). Ask before calling.
 - Model gemini-3.1-flash-image by default (2.5 copies the pose of an attached character image); reference images go first, then the prompt; aspect ratio set in imageConfig.
 
 Usage (from the repo root):

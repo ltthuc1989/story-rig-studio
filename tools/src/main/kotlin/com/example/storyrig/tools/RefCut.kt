@@ -88,7 +88,7 @@ private fun region(img: Img, cv: Canvas, seed: Pt, clip: Box? = null, within: Ca
     return soft
 }
 
-private val NEIGH4 = listOf(1 to 0, -1 to 0, 0 to 1, 0 to -1)
+internal val NEIGH4 = listOf(1 to 0, -1 to 0, 0 to 1, 0 to -1)
 
 private fun pieceOf(img: Img, mask: BooleanArray): Piece {
     val out = Img(img.w, img.h)

@@ -1,0 +1,16 @@
+Face parts sheet for lip sync and expressions of the attached character. Keep exactly the same style, colors, eye design and scale as the face in the attached image, three-quarter view facing right. Square 1:1, highest resolution available.
+Each piece separate, with a large empty gap around it, on a plain solid #FF00FF background. No labels, no text, no ground shadows, no sparkle or star icons.
+Draw every piece directly on the magenta background: never put a piece on a round or oval skin-colored disc or patch, only the eyes, the eyebrows and the mouths themselves.
+The eyes must keep exactly the eye design of the attached character: same shape and colours, with a white only if the attached eyes have one (if they are plain dark ovals, every eye here is a plain dark oval). Never draw an eyebrow inside or on top of an eye piece.
+Draw all eyes at the same size, all eyebrows at the same size, all mouths at the same size. The near eye is the one on the left of the face, the far eye the one on the right (slightly narrower, because the face is turned).
+Arrange the pieces in a strict grid of 6 rows, evenly spaced, each row read from left to right, with nothing else on the sheet:
+Row 1 (4 pieces): near eye open, far eye open, near eye half closed (a skin-colored eyelid covering the top half), far eye half closed.
+Row 2 (4 pieces): near eye closed happy (a dark curved line like an upside-down U), far eye closed happy, near eye wide surprised, far eye wide surprised.
+Rows 3 and 4 contain only eyebrows, no eyes.
+Row 3 (4 pieces): near eyebrow neutral, far eyebrow neutral, near eyebrow raised, far eyebrow raised.
+Row 4 (4 pieces): near eyebrow frowning, far eyebrow frowning, near eyebrow sad (angled up in the middle), far eyebrow sad.
+Row 5 (4 pieces): mouth closed smile (M/B/P), mouth slightly open (E/I), mouth wide open happy (A), mouth small round (O).
+Row 6 (3 pieces): mouth open showing top teeth (S/T), mouth big open laugh, small downturned sad mouth.
+Each mouth is one single piece including its lips. Do not draw a moustache, beard, glasses, hair or nose on this sheet.
+Absolutely no outlines.
+Art style: polished flat vector illustration for a modern educational app. Every form is built from simple geometric shapes (circles, rounded rectangles, soft triangles) joined with clean, smooth bezier curves. Absolutely no outlines. Bold saturated palette: tomato red #FF5A5F, cobalt blue #2E86DE, sunflower yellow #FFC83D, fresh green #3FBF6B, sky #CFEFFF. Shading is a single flat darker shape per form, no gradients, no texture. Simplified but appealing features: oval eyes with one small highlight, a simple open smile, hands with four fingers (three fingers and a thumb) drawn as simple rounded shapes, like classic cartoon characters. Light comes from the upper right. Clean, balanced, professional.

@@ -81,8 +81,10 @@ internal fun sheetPieces(name: String, sh: Sheet, skin: Int): List<List<SheetPie
     val img = sh.img
     val comps = sh.comps.sortedByDescending { it.area }
     val owner = HashMap<Int, Comp>()
-    // Satellites: small, not dark (a dark one is a brow next to its eye), within a short gap of a piece 3x bigger.
-    val gapMax = (15f * img.w / 1024).roundToInt()
+    // Satellites: small, not dark (a dark one is a brow next to its eye), within a short gap of a piece 3x bigger:
+    // a lower lip drawn apart from its mouth, moustache tips beside it. The gap allowed grows with the host.
+    val gapMin = (15f * img.w / 1024).roundToInt()
+    fun gapMax(host: Comp) = max(gapMin, (host.y1 - host.y0 + 1) / 2)
     fun gap(a: Comp, b: Comp) = max(max(a.x0 - b.x1, b.x0 - a.x1), max(a.y0 - b.y1, b.y0 - a.y1))
     fun meanLum(c: Comp): Float {
         var s = 0f; var n = 0
@@ -90,8 +92,10 @@ internal fun sheetPieces(name: String, sh: Sheet, skin: Int): List<List<SheetPie
         return s / max(1, n)
     }
     for (c in comps.reversed()) {
-        val host = comps.filter { it !== c && it.area >= 3 * c.area && gap(c, it) <= gapMax }.minByOrNull { gap(c, it) } ?: continue
-        if (meanLum(c) > 100f) owner[c.id] = host
+        val host = comps.filter { it !== c && it.area >= 3 * c.area && gap(c, it) <= gapMax(it) }.minByOrNull { gap(c, it) } ?: continue
+        // A dark one is still a satellite below or beside its host (a lower lip); a brow sits above its eye.
+        val below = (c.y0 + c.y1) / 2 > host.y0 + (host.y1 - host.y0) / 4
+        if (meanLum(c) > 100f || below) owner[c.id] = host
     }
     val groups = comps.filter { it.id !in owner }.map { main -> main to (listOf(main) + comps.filter { owner[it.id] === main }) }
     val pieces = groups.map { (main, all) -> classify(name, img, sh.labels, main, all, skin) }

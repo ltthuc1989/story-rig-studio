@@ -212,20 +212,26 @@ internal fun addFaceParts(dir: File, parts: HashMap<String, Part>, boxes: Map<St
         fs to sh
     }
     val byName = picks.associateBy { it.name }
+    // Sheet pieces without any skin disc a generator drew behind them (sizes are measured on the feature itself).
+    val cache = HashMap<FacePick, Piece>()
+    fun sheetPiece(fp: FacePick): Piece = cache.getOrPut(fp) {
+        val raw = sheets.getValue(fp.sheet).piece(fp.ids)
+        if (skin == null) raw else stripSkinPatch(raw, skin).also { if (it.w != raw.w || it.h != raw.h) println("  ${fp.name}: skin disc removed") }
+    }
     val scale = HashMap<Pair<String, String>, Float>()
     fun scaleOf(fp: FacePick): Float = scale.getOrPut(fp.sheet to faceScaleBase(fp.name)) {
         val baseName = faceScaleBase(fp.name)
         val base = byName[baseName]?.takeIf { it.sheet == fp.sheet } ?: error("${fp.name}: no $baseName on sheet ${fp.sheet} to scale by")
         val box = boxes.getValue(baseName)
-        ((box.x1 - box.x0).toFloat() / sheets.getValue(fp.sheet).piece(base.ids).w)
+        ((box.x1 - box.x0).toFloat() / sheetPiece(base).w)
             .also { println("${fp.sheet} sheet ($baseName) -> ref scale ${"%.3f".format(it)}") }
     }
     for (fp in picks) {
-        if (faceScaleBase(fp.name) !in boxes) {
-            println("  ${fp.name}: skipped, ref.png has no ${faceScaleBase(fp.name)} to size it by")
+        if (faceScaleBase(fp.name) !in boxes || (fp.name !in boxes && faceBase(fp.name) !in boxes)) {
+            println("  ${fp.name}: skipped, ref.png has no ${faceScaleBase(fp.name)} / ${faceBase(fp.name)} to size and place it by")
             continue
         }
-        val p = sheets.getValue(fp.sheet).piece(fp.ids).scaledToRef(scaleOf(fp))
+        val p = sheetPiece(fp).scaledToRef(scaleOf(fp))
         val box = boxes[fp.name]
         val cx: Int; val cy: Int
         if (box != null) { cx = (box.x0 + box.x1) / 2; cy = (box.y0 + box.y1) / 2 } else {

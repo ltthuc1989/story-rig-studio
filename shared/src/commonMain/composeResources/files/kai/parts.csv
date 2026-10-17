@@ -23,10 +23,10 @@ hand_near,wrist_near,157,523,109,86,1
 brow_far_raised,head,580,221,50,22,0
 brow_near_raised,head,469,220,59,24,0
 eye_far_half,head,582,248,40,51,0
-eye_far_happy,head,580,251,45,45,0
+eye_far_happy,head,582,262,41,22,0
 eye_far_wide,head,582,247,41,53,0
 eye_near_half,head,477,246,54,57,0
-eye_near_happy,head,474,250,61,49,0
+eye_near_happy,head,477,262,55,24,0
 eye_near_wide,head,478,245,53,59,0
 mouth_a,head,525,315,57,37,0
 mouth_e,head,534,324,39,18,0
