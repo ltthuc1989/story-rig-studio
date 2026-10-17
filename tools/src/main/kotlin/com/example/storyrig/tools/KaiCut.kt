@@ -24,6 +24,9 @@ import kotlin.math.roundToInt
  *       (AutoSpec.kt) instead of KaiRefSpec; `kai` prints each point next to KaiRefSpec's. Also writes points.png.
  *   ./gradlew :tools:run --args="autotest <geminiDir> <outRoot>"
  *       recoloured / scaled / stretched copies of ref.png, each cut with cutauto and checked against KaiRefSpec
+ *       (and then facetest)
+ *   ./gradlew :tools:run --args="facetest <geminiDir> <outRoot>"
+ *       Kai's face pieces laid out as prompts/2_face_sheet.txt asks, read back by the layout (no face_map.csv)
  */
 fun main(args: Array<String>) {
     when (args.getOrNull(0)) {
@@ -32,7 +35,8 @@ fun main(args: Array<String>) {
         "cutref" -> cutRef(File(args[1]), File(args[2]), File(args[3]))
         "cutauto" -> cutAuto(File(args[1]), File(args[2]), File(args[3]), compareKai = args.getOrNull(4) == "kai")
         "autotest" -> autoTest(File(args[1]), File(args[2]))
-        else -> println("usage: scan <sheet.png> <outDir> | build|cutref|cutauto <geminiDir> <outDir> <previewDir> | autotest <geminiDir> <outRoot>")
+        "facetest" -> faceLayoutTest(File(args[1]), File(args[2]))
+        else -> println("usage: scan <sheet.png> <outDir> | build|cutref|cutauto <geminiDir> <outDir> <previewDir> | autotest|facetest <geminiDir> <outRoot>")
     }
 }
 
@@ -78,17 +82,16 @@ internal class Sheet(file: File) {
     }
 
     /** The separate piece nearest to each point (distance to its box, 0 inside). */
-    fun piece(vararg at: KaiSpec.Pt): Piece = piece(at.toList())
+    fun piece(vararg at: KaiSpec.Pt): Piece = piece(ids(at.toList()))
 
-    fun piece(at: List<KaiSpec.Pt>): Piece {
-        val ids = at.map { pt ->
-            comps.minBy { c ->
-                val dx = maxOf(c.x0 - pt.x, 0, pt.x - c.x1); val dy = maxOf(c.y0 - pt.y, 0, pt.y - c.y1)
-                dx * dx + dy * dy
-            }.id
-        }.distinct().toIntArray()
-        return extract(img, labels, comps, ids)
-    }
+    fun ids(at: List<KaiSpec.Pt>): Set<Int> = at.map { pt ->
+        comps.minBy { c ->
+            val dx = maxOf(c.x0 - pt.x, 0, pt.x - c.x1); val dy = maxOf(c.y0 - pt.y, 0, pt.y - c.y1)
+            dx * dx + dy * dy
+        }.id
+    }.toSet()
+
+    fun piece(ids: Set<Int>): Piece = extract(img, labels, comps, ids.toIntArray())
 }
 
 private fun build(dir: File, outDir: File, previewDir: File) {
@@ -179,7 +182,13 @@ private fun build(dir: File, outDir: File, previewDir: File) {
         println("  leg $side: hip y=$hipY knee ${knee.x.roundToInt()},${knee.y.roundToInt()} r=${knee.radius.roundToInt()} ankle ${ankle.x.roundToInt()},${ankle.y.roundToInt()} r=${ankle.radius.roundToInt()}")
     }
 
-    addFaceParts(dir, parts, emptyMap())
+    addFaceParts(
+        dir, parts, mapOf(
+            "eye_near_open" to KaiSpec.refEyeNear, "eye_far_open" to KaiSpec.refEyeFar,
+            "brow_near" to KaiSpec.refBrowNear, "brow_far" to KaiSpec.refBrowFar, "mouth_smile" to KaiSpec.refMouth,
+        ),
+        skin = null,
+    )
     parts["nose"] = Part("nose", "head", cutNose(ref, KaiSpec.noseBox))
 
     writeOut(outDir, bones, parts)
@@ -187,24 +196,33 @@ private fun build(dir: File, outDir: File, previewDir: File) {
 }
 
 /**
- * Face parts: shapes from the face sheets; sizes and positions from ref.png boxes ([boxes] overrides the measured
- * ones in KaiSpec, e.g. with what `cutref` found while erasing). Variants are centred on their base part.
+ * Face parts: shapes from the face sheets (FaceSheet.kt picks which piece is which); sizes and positions from the
+ * base parts' ref.png [boxes] (what `cutref`/`cutauto` found while erasing). Each variant is scaled like its sheet's
+ * scale base (eyes and brows by the near eye, mouths by the smile) and centred on its base part. [skin]: the
+ * character's skin colour for the shape checks of auto detection (null: no checks, face_map.csv is required).
  */
-internal fun addFaceParts(dir: File, parts: HashMap<String, Part>, boxes: Map<String, Box>) {
-    val sheets = KaiSpec.face.map { it.sheet }.distinct().associateWith { Sheet(File(dir, "$it.png")) }
-    fun boxOf(fp: KaiSpec.FacePart) = boxes[fp.name] ?: fp.refBox
-    val faceScale = sheets.mapValues { (name, sh) ->
-        val fp = KaiSpec.face.first { it.name == KaiSpec.faceScaleBy.getValue(name) }
-        val box = boxOf(fp)!!
-        ((box.x1 - box.x0).toFloat() / sh.piece(fp.at).w).also { println("$name sheet -> ref scale ${"%.3f".format(it)}") }
+internal fun addFaceParts(dir: File, parts: HashMap<String, Part>, boxes: Map<String, Box>, skin: Int?) {
+    val (picks, sheets) = if (skin != null) facePicks(dir, skin) else {
+        val sh = HashMap<String, Sheet>()
+        val fs = readFaceMap(dir) { n -> sh.getOrPut(n) { Sheet(File(dir, "$n.png")) } } ?: error("no face_map.csv in $dir")
+        fs to sh
     }
-    for (fp in KaiSpec.face) {
-        val p = sheets.getValue(fp.sheet).piece(fp.at).scaledToRef(faceScale.getValue(fp.sheet))
-        val box = boxOf(fp)
+    val byName = picks.associateBy { it.name }
+    val scale = HashMap<Pair<String, String>, Float>()
+    fun scaleOf(fp: FacePick): Float = scale.getOrPut(fp.sheet to faceScaleBase(fp.name)) {
+        val baseName = faceScaleBase(fp.name)
+        val base = byName[baseName]?.takeIf { it.sheet == fp.sheet } ?: error("${fp.name}: no $baseName on sheet ${fp.sheet} to scale by")
+        val box = boxes.getValue(baseName)
+        ((box.x1 - box.x0).toFloat() / sheets.getValue(fp.sheet).piece(base.ids).w)
+            .also { println("${fp.sheet} sheet ($baseName) -> ref scale ${"%.3f".format(it)}") }
+    }
+    for (fp in picks) {
+        val p = sheets.getValue(fp.sheet).piece(fp.ids).scaledToRef(scaleOf(fp))
+        val box = boxes[fp.name]
         val cx: Int; val cy: Int
         if (box != null) { cx = (box.x0 + box.x1) / 2; cy = (box.y0 + box.y1) / 2 } else {
-            val base = parts.getValue(fp.like!!).piece
-            cx = base.ox + base.w / 2; cy = base.oy + base.h / 2
+            val base = boxes[faceBase(fp.name)] ?: error("${fp.name}: no ${faceBase(fp.name)} to centre on")
+            cx = (base.x0 + base.x1) / 2; cy = (base.y0 + base.y1) / 2
         }
         p.ox = cx - p.w / 2; p.oy = cy - p.h / 2
         parts[fp.name] = Part(fp.name, "head", p)
