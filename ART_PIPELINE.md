@@ -53,7 +53,18 @@ Hai tờ, không phải một: gộp tất cả vào một tờ thì các ô mi�
 | C3 | **Mặt nghiêng:** mắt nghiêng (mở, nhắm, cười, mở to), lông mày, 12 miệng nghiêng |
 | C4 | **Bàn tay phải** (tay trái lấy đối xứng). Trực diện: xoè thả lỏng, nắm, chỉ, giơ ngón cái, xoè lòng bàn tay (vẫy), ngửa (mời), cầm (chữ C), đếm 1–4 (5 là xoè). Nghiêng: thả lỏng, nắm |
 
-**Tuỳ chọn, hỏi người dùng sau:** phụ kiện tách lớp để đung đưa (balo của Kai, kính của Bo). Đồ vật cầm tay thuộc cảnh, không thuộc nhân vật.
+**Bổ sung sau rà soát khớp (2026-10-18, mục 8):**
+- **Tờ 1:**
+  - ống chân vẽ dư xuống trong giày;
+  - chân một mảnh có gối thật (gấu quần đùi nằm trên đùi);
+  - Hana: đùi vẽ dư lên tới hông dưới váy;
+  - đầu không tóc (để đầu không giữ bản sao tóc), dây buộc tóc nằm trên đuôi tóc;
+  - bộ phận rời góc 3/4: thử xếp vừa 2 tờ (chuyển B3 sang tờ 2, xếp sát; nếu vẫn thiếu thì thu hàng A còn khoảng 1150 px). Đo cỡ ô ở Bước 1; chỉ thêm tờ 3 khi không vừa và người dùng đồng ý;
+  - dáng ngồi nhìn trực diện và 3/4 (đùi hướng về người xem, code không làm được), nếu cảnh cần ngồi quay mặt ra.
+- **Tờ 2:** lòng bàn tay và mu bàn tay của cùng dáng; bàn tay khi vỗ (nhìn cạnh); cổ tay vẽ dư.
+- **Phụ kiện tách lớp, nay bắt buộc:** kính và ria của Bo, balo của Kai (mặt sau, quai). Đồ vật cầm tay thuộc cảnh, không thuộc nhân vật.
+- **Lật đối xứng cho góc nhìn trái:** người dùng chấp nhận hình in ngực và tóc mái đổi bên.
+- **sheetcheck thêm:** miệng giày đủ vòng; có đầu không tóc; có lòng và mu bàn tay; phụ kiện tách riêng; đầu tròn có tâm ở khớp; các góc cùng độ dài tay áo (hình gốc của Hana: trực diện tay dài, 3/4 tay ngắn).
 
 ### Tạo lại cho cả 5 nhân vật (quyết định 2026-10-18)
 - **Giữ nguyên thiết kế:** `ref.png` và `view_front.png` của từng nhân vật chỉ dùng làm chuẩn nhận diện, không tạo lại.
@@ -96,9 +107,22 @@ Nhân vật cận cảnh cao khoảng 650–860 px trên điện thoại (sân k
   9. bộ phận rời khớp với người trực diện về màu và cỡ (bề ngang thân, độ dài tay chân, lệch ≤ 5 %); đầu vai và đầu đùi là hình tròn; thân không khuyết ở nách;
   10. đủ 12 miệng, đủ bàn tay; mắt có tròng đen tách riêng.
 - **Cắt:** `./gradlew :tools:run --args="cutauto <geminiDir> <outDir> <previewDir>"`. Kiểm tra: `./gradlew :tools:run --args="selftest <dir>"`.
-- **Bảng kiểm tra vai và nách (bắt buộc sau mỗi lần sửa tool cắt, rig hay clip):** `tools/pose_sheet.sh <out.png> [chars]`. Mỗi nhân vật một hàng gồm đứng yên, vẫy tay, dang tay, đang giơ và chữ V, phóng to phần vai. Phải mở ra xem cả bộ trực diện lẫn 3/4 trước khi báo là đã sửa xong. Đã có lần sửa lỗi này lại làm hỏng lại lỗi cũ vì chỉ soi một tư thế.
+- **Bảng thử khớp (bắt buộc sau mỗi lần sửa tool cắt, rig hay clip):** `tools/joint_sheet.sh <outDir> [cuts]`.
+  - Mỗi bộ cắt (mặc định cả 11) chụp 16 tư thế cực hạn của clip `STRESS` (DanceClips.kt): đứng yên, dang tay, chữ V, tay vào ngực, gập khuỷu, lật bàn tay, nhấc gối, ngồi, đá chân ra sau, xoay cổ chân, cúi, nghiêng đầu, lắc tóc và váy, đưa tay ra trước, chống nạnh, sải bước.
+  - Ra `<cut>.png` (8×2 ô) và `<cut>/pose_NN.png` ở cỡ thật để phóng to từng khớp.
+  - Xem hết mọi ô của mọi bộ, so với bảng của commit tốt gần nhất, rồi mới báo đã sửa.
+- **Bảng vai và nách** (cũ, vẫn dùng được để soi nhanh vai): `tools/pose_sheet.sh <out.png> [chars]`. Mỗi nhân vật một hàng gồm đứng yên, vẫy tay, dang tay, đang giơ và chữ V, phóng to phần vai. Phải mở ra xem cả bộ trực diện lẫn 3/4 trước khi báo là đã sửa xong. Đã có lần sửa lỗi này lại làm hỏng lại lỗi cũ vì chỉ soi một tư thế.
 
 ## 4. Lắp rig
+
+### Quy tắc khớp chuẩn (mọi khớp, cả bộ kit lẫn cắt hình phẳng)
+1. **Mảnh che:** ở mỗi khớp, mảnh có mép vẽ (vai áo, cổ áo, gấu áo, gấu quần, cổ tay áo, cổ giày, chân tóc) được vẽ trên và không xoay theo mảnh con.
+2. **Mảnh con có đầu tròn:** tâm đầu tròn ở điểm khớp, nằm dưới mảnh che. Đầu tròn tô bằng màu hoặc hoa văn của chính mảnh con, không chép điểm ảnh của mảnh khác (quai balo, sọc ngực, bóng cằm).
+3. **Điểm khớp ở khớp xương thật** (theo hình nộm), không theo mép quần áo.
+4. **Thứ tự vẽ đổi theo tư thế** khi tay chân đi qua trước hoặc sau thân.
+5. **Code không làm được thì đưa vào bộ kit** (lòng bàn tay, tóc tách lớp, kính, dáng ngồi nhìn trực diện…).
+
+Lỗi khớp nào cũng thuộc một trong 5 loại: A mép vẽ nằm trên mảnh xoay; B phần khuất chép từ hình gốc; C điểm khớp sai chỗ; D thứ tự vẽ cố định; E thiếu hình. Danh sách đã rà ở mục 8.
 
 ### Chuẩn: lắp từ bộ phận rời (`cutparts`, sẽ làm)
 - Đặt từng bộ phận vào đúng chỗ trên người trực diện ở hàng A, bằng cách so viền (silhouette). Tận dụng `AutoSpec` để đo khớp.
@@ -156,6 +180,8 @@ Plan đầy đủ: bộ kit 2 tờ (mục 2), lắp rig từ bộ phận rời (
 | --- | --- | --- |
 | — | Vai và nách khi cắt hình phẳng: mặt trong ống tay sang tay, nắp theo dây cung, khớp vai trượt, nhún vai, vai cứng trong mesh, làm sạch mép thân, `pose_sheet.sh` | xong 2026-10-18 (`e677b7f`) |
 | 0 | Giữ app dùng được trong lúc làm kit. Nắp vai lấy hoa văn tay áo: đi dọc hướng sọc tay áo (vuông góc trục tay) tới điểm tay áo gần nhất có màu chính, thay vì chép ngực áo. Sửa lỗi Leo "mảng ngực xoay theo tay". Nếu Leo lệch màu ở tư thế đứng vượt 1 %, loại điểm thuộc nắp vai khỏi phép so màu và ghi lý do. Soi `pose_sheet.sh` trực diện và 3/4, so với `e677b7f` | xong 2026-10-18: lệch màu tư thế đứng Leo trực diện 0,43 %, 3/4 0,24 % (dưới 1 %, không cần loại nắp khỏi phép so); selftest 15/15, `motionCheck` đạt. Còn: vài đốm trắng nhỏ ở góc vai Leo (đầu sọc tay áo kéo vào nắp); tay xa của Bo trực diện tô bóng sẫm từ hình gốc, chờ bộ kit mới |
+| 0b | Người dùng: vai vẫn xoay theo tay (viền vai nằm trên mảnh tay). Rà soát mọi khớp × mọi góc × mọi động tác; quy tắc khớp chuẩn (mục 4); bảng thử `tools/joint_sheet.sh` với clip `STRESS`; danh sách lỗi ở mục 8 | xong 2026-10-18 |
+| 0c | Sửa theo mục 8, mỗi mục soi `joint_sheet.sh` trước và sau: quả cầu vai → thứ tự vẽ tay xa → gối theo hình nộm → cổ giày → tóc và dây buộc → váy Hana → mặt sau (quần đùi khi ngồi, đá chân) → cổ tay → nắp tô trơn (cổ, khuỷu, đùi, quai balo trên tay) → kính Bo | chưa |
 | 1 | 2 tờ mẫu (`rig_body.png`, `rig_face_hands.png`, kèm `.csv` ô) trong `MannequinSheet.kt`. 2 prompt (`body_sheet.txt`, `face_hands_sheet.txt`) nói rõ phần phải vẽ dư, 12 miệng, bàn tay đếm số | chưa |
 | 2 | `splitsheet` và `sheetcheck` (10 mục ở mục 3), thử trên `turnaround_v1.jpg` | chưa |
 | 3 | Gemini cho **Kai**: 2 lượt, 4K, **người dùng duyệt riêng**. Chạy `sheetcheck`, báo bằng lời thường kèm ảnh khoanh lỗi | chờ duyệt |
@@ -164,6 +190,34 @@ Plan đầy đủ: bộ kit 2 tờ (mục 2), lắp rig từ bộ phận rời (
 | 6 | **Người dùng xem Kai trong app và xác nhận ổn hết.** Chưa xác nhận thì không gọi Gemini cho nhân vật khác | chưa |
 | 7 | Lần lượt Mia → Leo → Hana → Bo: mỗi nhân vật 2 lượt, người dùng duyệt trước khi gọi, xong và xem trong app rồi mới sang nhân vật sau | chưa |
 
-Mỗi bước: soi `tools/pose_sheet.sh` (trực diện và 3/4), selftest, `motionCheck`, rồi mở lại app desktop cho người dùng xem.
+Mỗi bước: soi `tools/joint_sheet.sh` (cả 11 bộ cắt), selftest, `motionCheck`, rồi mở lại app desktop cho người dùng xem.
 
 Lượt Gemini ngày 2026-10-18: 12/20 paid (11 hình trực diện, 1 tờ thử 5 góc). Từ 2026-10-19 dùng `STORYRIG_TIER=free`.
+
+## 8. Rà soát khớp (2026-10-18)
+
+Nguồn: đọc code tool cắt và engine, các ảnh mảnh cắt, và bảng thử `joint_sheet.sh` của cả 11 bộ. Loại lỗi (A–E) xem mục 4. "Đã thấy" là đã thấy trên bảng thử.
+
+| # | Khớp | Lỗi | Loại | Sửa ở tool cắt / engine | Bộ kit |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Vai | Viền vai xoay theo tay (đã thấy, mọi nhân vật). Góc 3/4 tay xa và góc sau lưng: thân để góc vai vuông. Mảng sẫm mặt trong ống tay xoay theo tay. Xoay người: vai trượt khác nhịp với thân | A, B | Quả cầu vai: mảnh trên xương không xoay, vẽ đè đầu tay, có trong `lateral` của PseudoYaw; khớp vai đồng tâm, không trượt | Thân có vai tròn và nách; tay có đầu tròn |
+| 2 | Quai balo (Kai) | Một đoạn quai balo nằm trên mảnh tay gần, xoay theo tay (đã thấy, 3/4) | B | Điểm ảnh khác tông áo trên mảnh tay sát đường cắt vai trả về thân | Balo tách lớp |
+| 3 | Cổ | Nắp cổ chép bóng cằm; nghiêng đầu lộ khấc ở cổ áo (Leo) | B | Nắp cổ tô màu da trơn | Cổ vẽ dư |
+| 4 | Khuỷu (tay áo dài) | Nắp cẳng tay chép sọc, xoay theo (chỉ ở ảnh cứng) | B | Nắp khuỷu theo `sleeveColour` | Tay áo dài liền mảnh |
+| 5 | Cổ tay | Tay áo dài: bàn tay đè lên cổ tay áo. Lật bàn tay: đầu tròn cẳng tay thò ra; lật 180° chỉ là mu bàn tay soi gương | A, E | Bàn tay vẽ dưới cổ tay áo dài; đầu tròn co theo độ lật | Lòng và mu bàn tay; cổ tay vẽ dư |
+| 6 | Eo | Bóng dưới gấu áo nằm trên quần. Hana: khoang thân trong mesh lộn ngược (thắt lưng bị kéo 50/50) | B | Sửa công thức khoang thân cho váy liền (MeshSpec) | Gấu áo vẽ đè, cạp quần vẽ dư |
+| 7 | Hông (quần) | Ảnh cứng: nắp đùi chép túi, nếp | B | Nắp đùi tô trơn | Đầu đùi tròn |
+| 8 | Hông (váy Hana) | Mảng váy mờ như bóng ma khi nhấc gối và khi ngồi (đã thấy); vụn da trên mép váy; hông neo `root` không neo `skirt`; đùi trượt dưới váy đứng yên | A, B, D | Không chia điểm ảnh đường cắt hông cho váy; hông neo `skirt`; váy lắc theo đùi | Đùi vẽ dư dưới váy |
+| 9 | Gối (quần đùi) | Gối đặt ở gấu quần; Mia đùi 29 px, ống chân 179 px, gập ngay ở gấu quần (đã thấy). DanceClips dùng độ dài chân của Kai cho mọi người | C | Gối theo hình nộm; gấu quần trên đùi che; độ dài chân theo nhân vật | Chân một mảnh có gối |
+| 10 | Gối (quần dài, gối trần) | Ảnh cứng: đầu đùi vuông thò ra khi gập | A | Đầu đùi bo tròn | — |
+| 11 | Cổ chân | Miệng giày cong, đường cắt thẳng: phần miệng giày nằm lại trên ống chân. Leo: khe da sẫm giữa gấu quần và giày khi xoay cổ chân (đã thấy) | A | Cắt giày theo vùng màu giày; ống chân kéo dài xuống dưới giày | Ống chân vẽ dư trong giày |
+| 12 | Tóc | Đầu giữ bản sao tóc (viền đôi khi lắc); dây buộc tóc của Mia đứng yên khi đuôi ngựa lắc | A, B, E | Bản sao co vào trong theo biên độ lắc; dây buộc theo đuôi tóc | Tóc tách lớp, đầu không tóc |
+| 13 | Mặt khi xoay người | Kính, ria Bo vẽ chết trên đầu: mắt trượt khỏi kính | E | Kính thành mảnh mặt riêng | Kính, ria tách lớp |
+| 14 | Thứ tự vẽ | 3/4: tay xa đưa vào ngực biến mất sau thân (đã thấy, Kai, Mia, Hana). Sau lưng: đùi đè ống chân khi nhấc gối | D | Thứ tự vẽ theo tư thế | — |
+| 15 | Mặt sau (Kai) | Ngồi: quần đùi rách vụn; đá chân ra sau: lộ một mảng ống quần (đã thấy) | A, D | Lưới hông và thứ tự vẽ ở góc sau lưng | — |
+| 16 | Góc trực diện | Ngồi, cúi chào, đưa tay ra trước: đùi và tay chĩa về người xem co thành mẩu cụt (đã thấy, mọi nhân vật) | E | Clip làm các động tác này ở góc 3/4 hoặc nghiêng | Dáng ngồi nhìn trực diện nếu cảnh cần |
+| 17 | Góc nhìn trái | Hình in ngực, tóc mái lệch bị lật | — | Người dùng chấp nhận | — |
+| 18 | Xoay người | Balo hiện đột ngột khi đổi sang mặt sau; chưa có lớp nhoè hoặc che lúc đổi góc | D, E | Nhoè hoặc che lúc đổi góc (như demo Bobo) | Balo tách lớp |
+| 19 | Hình gốc | Hana: trực diện tay áo dài, 3/4 tay áo ngắn | E | — | Vẽ mọi góc trên cùng tờ; `sheetcheck` so độ dài tay áo |
+
+Động tác có trong kế hoạch nhưng chưa có clip (đi, chạy, cúi chào, ngồi, nhảy, vỗ tay, chỉ, mời, đếm số, cầm đồ, cưỡi ngựa): soi tư thế cực hạn tương ứng trong `STRESS` trước khi viết clip; thêm tư thế vào `STRESS` khi có động tác mới.

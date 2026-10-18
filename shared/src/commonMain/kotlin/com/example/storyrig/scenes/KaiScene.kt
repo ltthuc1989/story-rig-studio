@@ -100,7 +100,7 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
     private val pinFeet = cfg.flagOf("feet", true)
     /** `--es views 0` plays the clips as written for three-quarter in front/back views too, to compare. */
     private val adaptViews = cfg.flagOf("views", true)
-    /** `--es dance pump`: everyone dances that clip only (wave, pump, march, idle) instead of changing every 8 beats. */
+    /** `--es dance pump`: everyone dances that clip only (wave, pump, march, idle; stress for tools/joint_sheet.sh) instead of changing every 8 beats. */
     private val dance = DanceClips.ALL.indexOfFirst { it.name == cfg.valueOf("dance") }
     private val turning = cfg.turn.isNotEmpty()
     private val feetNear: Array<FootLock>
@@ -271,7 +271,7 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
         if (useClips) {
             // Everyone changes dance every 8 beats, on the beat, with a half-beat crossfade.
             val bar = (beat / SWITCH_BEATS).toInt().coerceAtLeast(0)
-            val clip = if (dance >= 0) dance else (i + bar) % DanceClips.ALL.size
+            val clip = if (dance >= 0) dance else (i + bar) % DanceClips.DANCES.size
             k.player.play(clip, bar * SWITCH_BEATS, fadeBeats = .5f)
             k.reset(homeX[i], y, kaiScale[i], mirrored[r])
             k.yaw?.apply(bodyYaw[i], headYaw[i])

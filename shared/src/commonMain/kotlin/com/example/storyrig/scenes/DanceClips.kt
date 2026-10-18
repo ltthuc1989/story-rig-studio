@@ -97,7 +97,43 @@ object DanceClips {
         roll("wrist_far") { at(0f, 55f) }
     }
 
-    val ALL = arrayOf(WAVE, PUMP, MARCH, IDLE)
+    /**
+     * Joint check, not a dance: one extreme pose per beat, held (tools/joint_sheet.sh shoots each near the end of its
+     * beat, once the springs settle). Every joint at the far end of what the dances do now or the planned actions will
+     * (sit, bow, kick, reach, point, hands on hips, a stride), so a joint that breaks shows before a clip needs it.
+     * Pose k (beat k): 0 rest, 1 arms out, 2 arms up in a V, 3 hands to the chest, 4 elbows bent up, 5 hands turned
+     * over, 6 knee up, 7 sit, 8 kick back, 9 ankles turned, 10 bow, 11 head tilt, 12 hair and skirt swung, 13 arms
+     * reaching forward, 14 hands on hips, 15 stride.
+     */
+    val STRESS = Clip.build("stress", 16f) {
+        held(
+            mapOf(),
+            mapOf("r:shoulder_near" to 90f, "r:shoulder_far" to -90f),
+            mapOf("r:shoulder_near" to 150f, "r:shoulder_far" to -150f),
+            mapOf("r:shoulder_near" to 15f, "r:elbow_near" to -110f, "r:shoulder_far" to -15f, "r:elbow_far" to 110f),
+            mapOf("r:shoulder_near" to 90f, "r:elbow_near" to 120f, "r:shoulder_far" to -90f, "r:elbow_far" to -120f),
+            mapOf("r:shoulder_near" to 30f, "r:shoulder_far" to -30f, "o:wrist_near" to 180f, "o:wrist_far" to 180f),
+            mapOf("p:hip_near" to 90f, "p:knee_near" to -90f),
+            mapOf("p:hip_near" to 90f, "p:knee_near" to -90f, "p:hip_far" to 90f, "p:knee_far" to -90f, "y:root" to 70f),
+            mapOf("p:hip_near" to -40f, "p:knee_near" to -90f),
+            mapOf("p:ankle_near" to 30f, "p:ankle_far" to -30f),
+            mapOf("p:torso" to 30f, "p:head" to 15f),
+            mapOf("r:head" to 15f, "r:torso" to 4f),
+            mapOf("r:hair" to -7f, "r:skirt" to 8f, "r:torso" to -4f),
+            mapOf("p:shoulder_near" to 90f, "p:shoulder_far" to 90f),
+            mapOf("r:shoulder_near" to 40f, "r:elbow_near" to -100f, "r:shoulder_far" to -40f, "r:elbow_far" to 100f),
+            mapOf(
+                "p:hip_near" to 45f, "p:knee_near" to -30f, "p:hip_far" to -35f, "p:knee_far" to -60f,
+                "p:shoulder_near" to -40f, "p:shoulder_far" to 40f, "p:elbow_near" to 60f, "p:elbow_far" to 60f,
+            ),
+        )
+    }
+
+    /** The dances the scene takes turns with, in [ALL]'s order. */
+    val DANCES = arrayOf(WAVE, PUMP, MARCH, IDLE)
+
+    /** Every clip a rig can play by name (`--es dance <name>`): the dances, then clips played only on request. */
+    val ALL = DANCES + STRESS
 
     /** Thigh and shin in the cut (ref.png px): used to keep the feet on the ground while the knees bend. */
     private const val THIGH = 62f
@@ -146,6 +182,19 @@ object DanceClips {
         pitch("hip_$side") { at(beat, 0f); at(beat + .45f, 60f); at(beat + .95f, 0f, Ease.HOLD) }
         pitch("knee_$side") { at(beat, 0f); at(beat + .45f, -85f); at(beat + .95f, 0f, Ease.HOLD) }
         pitch("ankle_$side") { at(beat, 0f); at(beat + .45f, 25f); at(beat + .95f, 0f, Ease.HOLD) }
+    }
+
+    /**
+     * One pose per beat, held for the beat. Keys are "<channel>:<bone>" (r rot, p pitch, o roll, x tx, y ty); a channel
+     * a pose leaves out is 0 there.
+     */
+    private fun Clip.Builder.held(vararg poses: Map<String, Float>) {
+        val props = mapOf('r' to Clip.ROT, 'p' to Clip.PITCH, 'o' to Clip.ROLL, 'x' to Clip.TX, 'y' to Clip.TY)
+        for (key in poses.flatMap { it.keys }.distinct()) {
+            channel(key.substringAfter(':'), props.getValue(key[0])) {
+                for ((i, p) in poses.withIndex()) at(i.toFloat(), p[key] ?: 0f, Ease.HOLD)
+            }
+        }
     }
 
     private const val D2R = (kotlin.math.PI / 180.0).toFloat()

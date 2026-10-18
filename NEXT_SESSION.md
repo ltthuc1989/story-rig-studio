@@ -10,7 +10,8 @@
    - Sau khi gọi: chạy `sheetcheck`, báo kết quả bằng lời thường, kèm ảnh khoanh lỗi và số lượt đã gọi.
    - Lỗi thì đề xuất gọi lại 1 lượt, không tự gọi.
 3. **Mỗi bước:**
-   - soi `tools/pose_sheet.sh <out.png>` (trực diện) và `tools/pose_sheet.sh <out.png> kai,mia,leo,hana,bo` (3/4), phóng to các tư thế có giơ tay;
+   - soi `tools/joint_sheet.sh <outDir>` (16 tư thế cực hạn × 11 bộ cắt), xem hết mọi ô, phóng to khớp vừa sửa từ `<cut>/pose_NN.png`, so với bảng của commit trước;
+   - trước khi làm một bước, tự hỏi bước đó có sửa đúng gốc lỗi người dùng thấy không (quy tắc khớp chuẩn, ART_PIPELINE.md mục 4 và 8);
    - chạy selftest (`./gradlew :tools:run --args="selftest <dir>"`) và `./gradlew :desktopApp:motionCheck`;
    - commit bằng tiếng Việt, cập nhật mục 7 của `ART_PIPELINE.md`;
    - dừng app cũ và mở lại app desktop cho người dùng xem.
