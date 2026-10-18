@@ -63,7 +63,8 @@ tờ mẫu → Gemini (1 lượt, người dùng duyệt) → splitsheet → she
 ## 4. Quy tắc cắt (tools/…/AutoSpec.kt, RefCut.kt)
 
 - **Vai:** đường cắt dọc theo hông áo, từ đỉnh nách lên đỉnh vai, vượt ra mỗi đầu `SHOULDER_MARGIN` (6 px). Khớp vai nằm giữa đường cắt.
-- **Đầu cánh tay:** chỉ có nửa đĩa phía đỉnh vai (che đường vai khi tay buông). Bán kính trừ `SHOULDER_MARGIN`.
+- **Đầu cánh tay:** đĩa cắt theo dây cung từ đầu nách của đường cắt lên mép đĩa: nửa trên che đường vai khi tay buông, mặt dưới tay chạy thẳng từ nách khi giơ. Bán kính trừ `SHOULDER_MARGIN`.
+- **Mặt trong ống tay:** điểm ảnh trên thân sát đường cắt vai, có màu là sắc sẫm hơn của màu áo (mặt trong ống tay, đầu viền tay áo chạy vào nách), được chuyển sang tay. Khác tông màu (quai balo, hình in) thì giữ trên thân.
 - **Thân:** chỉ tô `ARM_FILL` (2 px) sau tay để khử răng cưa. Tô sâu hơn sẽ lộ ra như một cục áo khi giơ tay.
 - **Trục tay:** khi trục dò từ mẫu lệch quá 15°, lấy trục theo chính điểm ảnh cánh tay (PCA).
 - **Bàn tay:** mảnh cứng (`BitmapPart`) trên xương cổ tay, không nằm trong lưới cánh tay.
@@ -97,7 +98,7 @@ tờ mẫu → Gemini (1 lượt, người dùng duyệt) → splitsheet → she
 
 | Bước | Việc | Trạng thái |
 | --- | --- | --- |
-| 0 | Sửa nách rách khi giơ tay: tam giác bóng sẫm trên thân, góc bậc ở đầu cánh tay | đang làm |
+| 0 | Sửa nách rách khi giơ tay: mặt trong ống tay và đầu viền tay áo nằm lại trên thân được chuyển sang tay (`innerSleeveToArm`); đầu cánh tay cắt theo dây cung từ nách lên mép đĩa, không còn góc bậc | xong 2026-10-18 |
 | 1 | Tờ mẫu constructor 16:9 + prompt `constructor_sheet.txt` | chưa |
 | 2 | `splitsheet`, thử trên `assets/kai/gemini/turnaround_v1.jpg` | chưa |
 | 2b | `sheetcheck` tự kiểm tờ | chưa |
