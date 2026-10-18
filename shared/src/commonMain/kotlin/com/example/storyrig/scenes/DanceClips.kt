@@ -21,10 +21,13 @@ object DanceClips {
         sway(4f, 5f)
         nod(4)
         rot("torso") { at(0f, 3f); at(2f, -3f) }
-        // Raised near arm, waving from the elbow; the wrist trails the elbow by a tenth of a beat.
-        rot("shoulder_near") { at(0f, 112f); at(2f, 120f) }
-        rot("elbow_near") { for (b in 0 until 4) { at(b + 0f, 18f); at(b + .5f, 62f) } }
-        rot("wrist_near") { for (b in 0 until 4) { at(b + .1f, -22f); at(b + .6f, 18f) } }
+        // A child's wave: upper arm out to the side, elbow a little above the shoulder; the forearm rocks between ~30
+        // degrees out from vertical and vertical (elbow 45..76 on a ~104 degree arm). Cartoon upper arms are short,
+        // so rocking past vertical would put the hand on the ear; it never opens past straight either. The wrist
+        // trails the forearm by a tenth of a beat.
+        rot("shoulder_near") { at(0f, 102f); at(2f, 106f) }
+        rot("elbow_near") { for (b in 0 until 4) { at(b + 0f, 45f); at(b + .5f, 76f) } }
+        rot("wrist_near") { for (b in 0 until 4) { at(b + .1f, -12f); at(b + .6f, 12f) } }
         rot("shoulder_far") { at(0f, -4f) }
         pitch("shoulder_far") { at(0f, 18f); at(2f, 26f) }
         pitch("elbow_far") { at(0f, 45f) }
