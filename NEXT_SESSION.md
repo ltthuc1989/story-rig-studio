@@ -16,5 +16,5 @@
    - commit bằng tiếng Việt, cập nhật mục 7 của `ART_PIPELINE.md`;
    - dừng app cũ và mở lại app desktop cho người dùng xem.
 4. **Lượt Gemini:** ngày 2026-10-18 đã có 14 hình ra (12 sáng + 2 tờ thân bộ kit tối) và vài lượt lỗi; bộ đếm 44. Từ 2026-10-19 dùng `STORYRIG_TIER=free` (chỉ là chờ giữa các lượt, tiền vẫn tính). Lệnh: `--attach` lặp lại cho mỗi tệp; `NO_IMAGE` thì hỏi người dùng rồi thử lại tối đa 2 lần.
-5. **Đang ở Bước 3 (Kai):** gọi tờ thân v3 với tờ mẫu mới (`assets/templates/rig_body.png`), xem kết quả ở ART_PIPELINE mục 7; xong rồi tờ mặt và tay.
+5. **Đang ở Bước 3 (Kai):** tờ thân với tờ mẫu mới (`assets/templates/rig_body.png`): **thử `--size 1K` trước** ($0,067), soi kỹ và đo màu, người dùng thấy ổn mới gọi 4K. Rồi tờ mặt và tay, cũng 1K trước. Kết quả các lần trước ở ART_PIPELINE mục 7.
 6. Trả lời người dùng bằng tiếng Việt.
