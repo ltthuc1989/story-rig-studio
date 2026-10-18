@@ -7,7 +7,7 @@ group,pelvis,8,pelvis,root;hip_near;hip_far
 group,torso,8,torso,torso;root
 group,arm_near,8,arm_upper_near;arm_fore_near,shoulder_near;elbow_near;wrist_near
 # influence,bone,x0,y0,x1,y1,radius,blend,attachTo,band
-influence,torso,515.0,422.5,515.0,597.1,72.5,29.9,,0
+influence,torso,515.0,422.5,515.0,587.6,82.0,29.9,,0
 influence,root,492.5,632.9,537.5,632.9,40.5,29.9,,0
 influence,shoulder_near,431.7,450.5,327.5,500.4,0.0,13.0,,0
 influence,elbow_near,327.5,500.4,243.2,545.9,0.0,13.0,,0

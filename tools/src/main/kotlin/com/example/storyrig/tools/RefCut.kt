@@ -134,9 +134,7 @@ private fun capInto(p: Piece, j: Joint, ref: Img, keep: Pt? = null): Piece {
         // Colour of the piece just before the cut on this line.
         val sx = (fx - (t + 2f) * j.ux).roundToInt(); val sy = (fy - (t + 2f) * j.uy).roundToInt()
         val c = p.colourAt(sx, sy)
-        // A shoulder cap lies over the shirt's front: where the reference shows a print there (a heart, a strap), leave a
-        // hole so the torso's own print shows instead of being painted over with plain shirt.
-        if (a(c) > 127) out[x - x0, y - y0] = capColour(ref, x, y, band, c or (0xFF shl 24), dropOther = keep != null)
+        if (a(c) > 127) out[x - x0, y - y0] = capColour(ref, x, y, band, c or (0xFF shl 24))
     }
     return Piece(out, x0, y0).trimmed()
 }
@@ -145,9 +143,11 @@ private fun capInto(p: Piece, j: Joint, ref: Img, keep: Pt? = null): Piece {
  * The inside of a sleeve: a darker shade of the shirt's colour on the torso side of a shoulder cut [sh] (the A-pose
  * shows the sleeve's opening as a thin dark wedge between sleeve and body, or a cuff running on into the armpit). The
  * cut splits it, and the part left on the torso shows as a torn dark patch once the arm is raised; it belongs to the
- * arm, so it moves to [armM]. Pixels of another hue (a backpack strap, a print) stay on the torso.
+ * arm, so [armM] takes it. The torso keeps those pixels too, as plain shirt ([plainShirt]): its side along the cut
+ * stays straight and clean wherever a raised or lifted arm uncovers it. Pixels of another hue (a backpack strap, a
+ * print) stay on the torso only. Returns the pixels to repaint on the torso and the shirt colour, or null.
  */
-private fun innerSleeveToArm(img: Img, cv: Canvas, torsoM: BooleanArray, armM: BooleanArray, sh: Seg) {
+private fun innerSleeveToArm(img: Img, cv: Canvas, torsoM: BooleanArray, armM: BooleanArray, sh: Seg): Pair<BooleanArray, Int>? {
     val w = img.w
     val y0 = min(sh.y1, sh.y2).toInt(); val y1 = max(sh.y1, sh.y2).toInt()
     val len = y1 - y0
@@ -165,7 +165,7 @@ private fun innerSleeveToArm(img: Img, cv: Canvas, torsoM: BooleanArray, armM: B
         val p = y * w + x
         if (torsoM[p] && !armM[p] && !cv.blocked[p] && a(img.px[p]) > 200 && across(x, y) < 20f) shirtCols += img.px[p]
     }
-    val shirt = mainColours(shirtCols).firstOrNull() ?: return
+    val shirt = mainColours(shirtCols).firstOrNull() ?: return null
     fun shade(c: Int) = a(c) > 0 && lum(c) < lum(shirt) - 6f && hueGap(c, shirt) < 20f && colourDist(c, shirt) < 160
     val moved = BooleanArray(img.px.size)
     val st = ArrayDeque<Int>()
@@ -186,9 +186,95 @@ private fun innerSleeveToArm(img: Img, cv: Canvas, torsoM: BooleanArray, armM: B
     }
     val count = moved.count { it }
     // A whole shaded side of the shirt is not a sleeve's inside: leave it.
-    if (count > len * len / 3) { println("cutref: shoulder at ${sh.x1.roundToInt()}: $count shaded px, too many for a sleeve's inside, kept on the torso"); return }
-    for (p in moved.indices) if (moved[p]) { torsoM[p] = false; armM[p] = true }
-    if (count > 0) println("cutref: shoulder at ${sh.x1.roundToInt()}: $count px of the sleeve's inside moved to the arm")
+    if (count > len * len / 3) { println("cutref: shoulder at ${sh.x1.roundToInt()}: $count shaded px, too many for a sleeve's inside, kept on the torso"); return null }
+    for (p in moved.indices) if (moved[p]) armM[p] = true
+    if (count > 0) println("cutref: shoulder at ${sh.x1.roundToInt()}: $count px of the sleeve's inside given to the arm, plain shirt on the torso")
+    return moved to shirt
+}
+
+/**
+ * The torso's side along a shoulder cut [sh], for when an arm moves off it ([out]: -1 the arm is left of the cut,
+ * 1 right). Above the armpit the side is the cut itself, not a drawn line, so two things show once the arm is raised:
+ * - a step at the armpit, where the shirt's side below flares out past the cut: the side line below the armpit is
+ *   carried on up (at most [SIDE_FILL] px out) in plain shirt, so it runs straight to the shoulder;
+ * - specks on the cut line, which both parts share (the sleeve's colours on the torso's edge): repainted as shirt.
+ * Both are under the arm in the rest pose.
+ */
+private fun cleanShoulderSide(p: Piece, img: Img, torsoM: BooleanArray, armM: BooleanArray, sh: Seg, out: Int): Piece {
+    val w = img.w
+    val top = min(sh.y1, sh.y2); val bottom = max(sh.y1, sh.y2)
+    val armpit = bottom - SHOULDER_MARGIN
+    fun cutX(y: Float) = sh.x1 + (sh.x2 - sh.x1) * (y - sh.y1) / (sh.y2 - sh.y1)
+    val cols = ArrayList<Int>()
+    for (y in top.toInt()..armpit.toInt()) for (k in 3..20) {
+        val x = (cutX(y.toFloat()) - out * k).roundToInt()
+        if (x !in 0 until w || y !in 0 until img.h) continue
+        val i = y * w + x
+        if (torsoM[i] && !armM[i] && a(img.px[i]) > 200) cols += img.px[i]
+    }
+    val shirt = mainColours(cols).firstOrNull() ?: return p
+    val g = SIDE_FILL + 2
+    val o = Img(p.w + 2 * g, p.h + 2 * g)
+    for (y in 0 until p.h) for (x in 0 until p.w) o[x + g, y + g] = p.img[x, y]
+    val ox = p.ox - g; val oy = p.oy - g
+    fun at(x: Int, y: Int) = if (o.inside(x - ox, y - oy)) o[x - ox, y - oy] else 0
+    fun put(x: Int, y: Int, c: Int) { if (o.inside(x - ox, y - oy)) o[x - ox, y - oy] = c }
+    // Specks on and next to the cut line, down to its armpit end (sleeve colours, a magenta fringe at the armpit).
+    for (y in top.toInt()..bottom.toInt()) {
+        val cx = cutX(y.toFloat())
+        for (x in (cx - 4).toInt()..(cx + 4).toInt() + 1) {
+            val c = at(x, y)
+            if (a(c) > 0 && colourDist(c, shirt) > SAME_GARMENT) put(x, y, (shirt and 0xFFFFFF) or (a(c) shl 24))
+        }
+    }
+    // The side line just below the armpit: the outermost torso pixel of each row, fitted x = a + b y.
+    val ys = ArrayList<Float>(); val xs = ArrayList<Float>()
+    for (y in (armpit + 3).toInt()..(armpit + 25).toInt()) {
+        val cx = cutX(y.toFloat())
+        var edge = Float.NaN
+        for (k in 40 downTo -10) {
+            val x = (cx + out * k).roundToInt()
+            if (a(at(x, y)) > 127) { edge = x.toFloat(); break }
+        }
+        if (!edge.isNaN()) { ys += y.toFloat(); xs += edge }
+    }
+    if (ys.size >= 6) {
+        val my = ys.average().toFloat(); val mx = xs.average().toFloat()
+        var sxy = 0f; var syy = 0f
+        for (i in ys.indices) { sxy += (ys[i] - my) * (xs[i] - mx); syy += (ys[i] - my) * (ys[i] - my) }
+        val b = if (syy > 0f) sxy / syy else 0f
+        for (y in top.toInt()..(armpit + 3).toInt()) {
+            val cx = cutX(y.toFloat())
+            val reach = ((mx + b * (y - my)) - cx) * out
+            if (reach <= .5f) continue
+            val r = min(reach, SIDE_FILL.toFloat())
+            for (k in 0..r.toInt() + 1) {
+                val x = (cx + out * k).roundToInt()
+                if (a(at(x, y)) > 200) continue
+                val cover = (r - k + .5f).coerceIn(0f, 1f)
+                if (cover <= 0f) continue
+                // Only grow the torso where it already reaches the cut on this row.
+                if (a(at((cx - out * 2).roundToInt(), y)) <= 127) continue
+                put(x, y, (shirt and 0xFFFFFF) or ((255 * cover).toInt() shl 24))
+            }
+        }
+    }
+    return Piece(o, ox, oy).trimmed()
+}
+
+/** Most px a torso's side is carried on past a shoulder cut ([cleanShoulderSide]). */
+private const val SIDE_FILL = 12
+
+/** Repaints [cells] of a piece cut from an image [w] px wide in [colour], keeping their alpha. */
+private fun plainShirt(p: Piece, cells: BooleanArray, w: Int, colour: Int) {
+    for (y in 0 until p.h) for (x in 0 until p.w) {
+        val gx = x + p.ox; val gy = y + p.oy
+        if (gx < 0 || gy < 0 || gx >= w) continue
+        val i = gy * w + gx
+        if (i >= cells.size || !cells[i]) continue
+        val c = p.img[x, y]
+        if (a(c) > 0) p.img[x, y] = (colour and 0xFFFFFF) or (a(c) shl 24)
+    }
 }
 
 private fun lum(c: Int) = r(c) * .299f + g(c) * .587f + b(c) * .114f
@@ -453,7 +539,7 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
             if (near) m[p] = true
         }
     }
-    for ((armM, sh) in listOf(armNearM to S.shoulderNear, armFarM to S.shoulderFar)) innerSleeveToArm(img, cv, torsoM, armM, sh)
+    val insides = listOf(armNearM to S.shoulderNear, armFarM to S.shoulderFar).mapNotNull { (armM, sh) -> innerSleeveToArm(img, cv, torsoM, armM, sh) }
     debugMasks(previewDir, img, cv, masks)
     println("cutref: $islands island pixels joined a neighbouring region")
 
@@ -473,6 +559,9 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
 
     // Torso: fill in a little behind the removed arms, cap the neck (all hidden in the rest pose).
     var torso = pieceOf(img, torsoM)
+    for ((cells, shirt) in insides) plainShirt(torso, cells, img.w, shirt)
+    torso = cleanShoulderSide(torso, img, torsoM, armNearM, S.shoulderNear, if (S.seedArmNear.x < S.shoulderNear.x1) -1 else 1)
+    torso = cleanShoulderSide(torso, img, torsoM, armFarM, S.shoulderFar, if (S.seedArmFar.x < S.shoulderFar.x1) -1 else 1)
     // The shoulder cut runs along the shirt's side, so only a sliver (anti-aliasing at the cut) is filled: a deeper fill
     // shows as a lump of shirt under the armpit when the arm is raised.
     torso = fillBehind(torso, armNearM, img.w, ARM_FILL, img)

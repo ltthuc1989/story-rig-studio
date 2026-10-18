@@ -7,7 +7,7 @@ shoe_near,ankle_near,371,896,117,41,1
 thigh_near,hip_near,414,635,94,158,1
 pelvis,root,419,615,187,77,1
 torso,torso,399,327,227,310,1
-arm_upper_far,shoulder_far,600,393,136,169,1
+arm_upper_far,shoulder_far,570,393,166,169,1
 arm_fore_far,elbow_far,671,497,116,118,1
 hand_far,wrist_far,741,568,95,98,1
 arm_upper_near,shoulder_near,289,397,167,164,1

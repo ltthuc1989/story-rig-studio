@@ -444,8 +444,9 @@ class KaiRig(
 
     /**
      * Slides each shoulder's pivot with its arm's angle, like a shoulder blade: about the rest pivot (level with the
-     * armpit) while the arm is at its drawn angle or raised, about bones.csv's hang pivot (high in the shoulder ball)
-     * once it hangs down, smoothly in between. Turning about a point H instead of the pivot M is the same turn plus a
+     * armpit) at the drawn angle, about bones.csv's hang pivot (high in the shoulder ball) once the arm hangs down,
+     * smoothly in between; raised above its drawn angle the whole arm lifts towards the hang pivot (a shrug), so a
+     * straight arm up starts at the shoulder's top, not at the armpit. Turning about a point H instead of the pivot M is the same turn plus a
      * shift of (I - R)(H - M) in the parent's space. After the clip, springs and feet, before [Rig.pose].
      */
     fun slideShoulders() {
@@ -457,13 +458,23 @@ class KaiRig(
         if (bone < 0 || (dx == 0f && dy == 0f) || hangDeg == 0f) return
         val o = bone * 5
         val r = sk.local[o + 2]
-        val t = (r / (hangDeg * DEG2RAD)).coerceIn(0f, 1f)
-        val w = t * t * (3f - 2f * t)
-        if (w == 0f) return
-        val vx = w * dx; val vy = w * dy
-        val c = kotlin.math.cos(r); val sn = kotlin.math.sin(r)
-        sk.local[o] += vx - (c * vx - sn * vy)
-        sk.local[o + 1] += vy - (sn * vx + c * vy)
+        val t = r / (hangDeg * DEG2RAD)
+        if (t > 0f) {
+            // Coming down: turn about the hang pivot.
+            val u = t.coerceAtMost(1f)
+            val w = u * u * (3f - 2f * u)
+            val vx = w * dx; val vy = w * dy
+            val c = kotlin.math.cos(r); val sn = kotlin.math.sin(r)
+            sk.local[o] += vx - (c * vx - sn * vy)
+            sk.local[o + 1] += vy - (sn * vx + c * vy)
+        } else if (t < 0f) {
+            // Going up: the shoulder lifts with the arm (a shrug), the whole arm shifted up towards the hang pivot.
+            // Turning about a higher point instead swings the sleeve's underside out as a flap.
+            val u = (-r / (SHRUG_FULL_DEG * DEG2RAD) * kotlin.math.sign(hangDeg)).coerceIn(0f, 1f)
+            val w = u * u * (3f - 2f * u) * SHRUG
+            sk.local[o] += w * dx
+            sk.local[o + 1] += w * dy
+        }
     }
 
     companion object {
@@ -473,6 +484,11 @@ class KaiRig(
         const val EYE_OPEN = 0
         const val EYE_HALF = 1
         const val EYE_HAPPY = 2
+
+        /** Arm raised this far above its drawn angle (degrees) lifts the shoulder fully ([slideShoulders]). */
+        private const val SHRUG_FULL_DEG = 100f
+        /** Full shoulder lift as a share of the hang pivot's offset (about 30 px on Kai). */
+        private const val SHRUG = .4f
 
         /** Rest-pose height in ref.png pixels (hair top to sole). */
         const val HEIGHT = 850f

@@ -9,7 +9,7 @@ shin_near,knee_near,427,728,67,164,1
 shoe_near,ankle_near,415,860,124,80,1
 thigh_near,hip_near,418,631,103,119,1
 pelvis,root,427,603,174,83,1
-torso,torso,425,355,184,277,1
+torso,torso,425,355,187,277,1
 head,head,354,85,317,310,1
 eye_near_open,head,476,249,56,51,1
 eye_far_open,head,579,248,47,50,1
@@ -17,7 +17,7 @@ brow_near,head,477,222,43,21,1
 brow_far,head,588,222,35,20,1
 mouth_smile,head,523,325,60,16,1
 hair,hair,354,85,317,210,1
-arm_upper_near,shoulder_near,301,407,167,120,1
+arm_upper_near,shoulder_near,301,407,174,120,1
 arm_fore_near,elbow_near,220,473,135,96,1
 hand_near,wrist_near,157,523,109,86,1
 brow_far_raised,head,580,221,50,22,0
