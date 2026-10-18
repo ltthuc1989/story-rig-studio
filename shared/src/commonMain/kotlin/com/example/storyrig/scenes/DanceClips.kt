@@ -2,6 +2,8 @@ package com.example.storyrig.scenes
 
 import com.example.storyrig.engine.Clip
 import com.example.storyrig.engine.Ease
+import com.example.storyrig.engine.View
+import com.example.storyrig.engine.ViewAdapt
 import kotlin.math.asin
 import kotlin.math.cos
 import kotlin.math.sin
@@ -71,6 +73,36 @@ object DanceClips {
     }
 
     val ALL = arrayOf(WAVE, PUMP, MARCH, IDLE)
+
+    /**
+     * How these clips (written for the three-quarter view) show from the front: hips, knees and ankles swing the
+     * legs forward and back, so from the front they are foreshortening (depth 1) with a small mirrored remainder
+     * that turns the knees out (near leg is on the viewer's left: + turns it out, so near gains are negative, far
+     * positive, for the clips' negative hip angles). Elbows bend forward with negative angles (the forearm comes
+     * at the viewer, a little inward) and wave in the picture plane with positive ones (the raised arm in WAVE).
+     * Shoulders, torso, head and wrists are not listed: arm raises to the side stay rotations.
+     */
+    val FRONT: ViewAdapt = ViewAdapt.build(View.FRONT) {
+        for (bone in listOf("hip", "knee", "ankle")) {
+            bone("${bone}_near", keep = -.15f, depth = 1f)
+            bone("${bone}_far", keep = .15f, depth = 1f)
+        }
+        bone("elbow_near", keep = .25f, depth = 1f, keepPos = 1f, depthPos = 0f)
+        bone("elbow_far", keep = .25f, depth = 1f, keepPos = 1f, depthPos = 0f)
+    }
+
+    /**
+     * From behind: the same, since near is still the viewer's left (now the character's left side) and forward is
+     * now away from the viewer, which foreshortens just the same.
+     */
+    val BACK: ViewAdapt = ViewAdapt.build(View.BACK) { copy(FRONT) }
+
+    /** Table for a rig cut in [view]; null for the three-quarter view the clips are written for. */
+    fun adaptFor(view: View): ViewAdapt? = when (view) {
+        View.Q3 -> null
+        View.FRONT -> FRONT
+        View.BACK -> BACK
+    }
 
     /** Thigh and shin in the cut (ref.png px): used to keep the feet on the ground while the knees bend. */
     private const val THIGH = 62f

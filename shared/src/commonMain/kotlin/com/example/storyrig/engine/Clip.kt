@@ -1,5 +1,7 @@
 package com.example.storyrig.engine
 
+import kotlin.math.cos
+
 /**
  * Motion clips as data, shared by every character with the same bone names.
  * A clip is a set of channels (bone name + property); each channel is a list of keys in **beats**, and each key
@@ -99,6 +101,51 @@ class Clip private constructor(
     }
 }
 
+/** Which way a character's cut faces. Clips are written for [Q3] (three-quarter, facing right). */
+enum class View {
+    Q3, FRONT, BACK;
+
+    companion object {
+        /** character.csv `view` value (3q, front, back); null when unknown. */
+        fun parse(s: String?): View? = when (s?.trim()?.lowercase()) {
+            "3q" -> Q3
+            "front" -> FRONT
+            "back" -> BACK
+            else -> null
+        }
+    }
+}
+
+/**
+ * How clips written for the three-quarter view show in another [view], per bone name (data: one table per view,
+ * shared by every character with the same bone names; see DanceClips.VIEWS).
+ *
+ * A clip rotation r of a listed bone is split in two: [Gain.keep] * r stays a rotation on screen (signed, so the
+ * near and far leg can mirror each other), and [Gain.depth] * r is the part that turns towards or away from the
+ * viewer. That depth angle adds up down the chain (thigh, then shin, then foot) and each bone is foreshortened
+ * along its length by cos(depth angle) ([Skeleton.fore]): a knee lift seen from the front is a shorter thigh, not
+ * a sideways kick. Angles > 0 may use their own gains ([Gain.keepPos], [Gain.depthPos]): an elbow bends forward
+ * (towards the viewer) with negative angles but waves in the picture plane with positive ones.
+ * Bones not listed keep their rotation.
+ */
+class ViewAdapt private constructor(val view: View, val gains: Map<String, Gain>) {
+    class Gain(val keep: Float, val depth: Float, val keepPos: Float = keep, val depthPos: Float = depth)
+
+    class Builder(private val view: View) {
+        private val gains = LinkedHashMap<String, Gain>()
+        fun bone(name: String, keep: Float, depth: Float, keepPos: Float = keep, depthPos: Float = depth) {
+            gains[name] = Gain(keep, depth, keepPos, depthPos)
+        }
+        /** Same gains as another view (front and back differ only in which side is near). */
+        fun copy(from: ViewAdapt) = gains.putAll(from.gains)
+        fun build() = ViewAdapt(view, gains.toMap())
+    }
+
+    companion object {
+        fun build(view: View, block: Builder.() -> Unit) = Builder(view).apply(block).build()
+    }
+}
+
 /**
  * Plays [clips] on one skeleton, driven by a beat clock (scene time / beat length, or the audio clock), so the
  * motion stays on the music whatever the tempo. Switching clips crossfades over [play]'s fadeBeats.
@@ -106,12 +153,15 @@ class Clip private constructor(
  *
  * [zeroDeg] lets a rig say where 0 degrees is for a bone (e.g. shoulders measured from the arm hanging down),
  * so clips are written in the same terms for every character.
+ * [adapt]: how the clips show in the rig's view (front/back); null or a [View.Q3] table plays them as written.
+ * An adapted player writes [Skeleton.fore] for every bone, so the rig resets that each frame.
  */
 class ClipPlayer(
     private val sk: Skeleton,
     private val clips: Array<Clip>,
     boneIndex: (String) -> Int,
     zeroDeg: (String) -> Float = { 0f },
+    adapt: ViewAdapt? = null,
 ) {
     /** Per clip, per channel: index into [Skeleton.local], or -1 when the rig lacks that bone. */
     private val slot = Array(clips.size) { ci ->
@@ -123,6 +173,23 @@ class ClipPlayer(
         FloatArray(c.channels) { ch -> if (c.channelProp[ch] == Clip.ROT) zeroDeg(c.channelBone[ch]) else 0f }
     }
     private val acc = FloatArray(sk.size * 5)
+    /** The [zeroDeg] part of [acc], so view gains apply to the clip's own angle only. */
+    private val zacc = FloatArray(sk.size * 5)
+    private val adapted = adapt != null && adapt.view != View.Q3
+    private val keepNeg = FloatArray(sk.size) { 1f }
+    private val depthNeg = FloatArray(sk.size)
+    private val keepPos = FloatArray(sk.size) { 1f }
+    private val depthPos = FloatArray(sk.size)
+    /** Accumulated depth angle (radians) per bone, this frame. */
+    private val pitch = FloatArray(sk.size)
+
+    init {
+        if (adapt != null && adapted) for ((name, g) in adapt.gains) {
+            val b = boneIndex(name)
+            if (b < 0) continue
+            keepNeg[b] = g.keep; depthNeg[b] = g.depth; keepPos[b] = g.keepPos; depthPos[b] = g.depthPos
+        }
+    }
 
     var current = -1
         private set
@@ -143,6 +210,7 @@ class ClipPlayer(
     fun apply(beat: Float) {
         if (current < 0) return
         acc.fill(0f)
+        zacc.fill(0f)
         var w = 1f
         if (prev >= 0) {
             w = Ease.apply(Ease.SINE, clamp((beat - fadeStart) / fadeBeats))
@@ -156,7 +224,18 @@ class ClipPlayer(
             val tsy = if (sk.parent[b] < 0) sk.local[o + 4] else 1f
             sk.local[o] += acc[o] * tsx
             sk.local[o + 1] += acc[o + 1] * tsy
-            sk.local[o + 2] += acc[o + 2] * DEG
+            if (adapted) {
+                val z = zacc[o + 2]
+                val r = acc[o + 2] - z
+                val pos = r > 0f
+                val p = sk.parent[b]
+                val pt = (if (pos) depthPos[b] else depthNeg[b]) * r * DEG + (if (p >= 0) pitch[p] else 0f)
+                pitch[b] = pt
+                sk.local[o + 2] += (z + (if (pos) keepPos[b] else keepNeg[b]) * r) * DEG
+                sk.fore[b] = if (pt == 0f) 1f else maxOf(cos(pt), MIN_FORE)
+            } else {
+                sk.local[o + 2] += acc[o + 2] * DEG
+            }
             sk.local[o + 3] *= 1f + acc[o + 3]
             sk.local[o + 4] *= 1f + acc[o + 4]
         }
@@ -174,6 +253,12 @@ class ClipPlayer(
             var v = c.sample(ch, t) + z[ch]
             if (c.channelProp[ch] >= Clip.SX) v -= 1f
             acc[j] += v * w
+            zacc[j] += z[ch] * w
         }
+    }
+
+    private companion object {
+        /** A bone pointing straight at the viewer still shows a little (and the inverse stays finite). */
+        const val MIN_FORE = .25f
     }
 }

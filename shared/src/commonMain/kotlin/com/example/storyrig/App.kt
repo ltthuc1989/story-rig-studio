@@ -46,23 +46,30 @@ import com.example.storyrig.scenes.KaiAssets
 import com.example.storyrig.scenes.KaiScene
 import com.example.storyrig.scenes.LakeScene
 import kotlinx.coroutines.delay
+import kotlin.coroutines.cancellation.CancellationException
 
 fun createScene(cfg: SceneConfig, perf: PerfStats, assets: Any?): Scene = when (cfg.scene) {
-    "kai" -> @Suppress("UNCHECKED_CAST") KaiScene(cfg, perf, assets as List<KaiAssets>)
+    "kai" -> @Suppress("UNCHECKED_CAST") KaiScene(cfg, perf, assets as List<List<KaiAssets>>)
     // p1, p2, p4 arrive on day 2-3
     else -> LakeScene(cfg, perf)
 }
 
 /** Assets a scene needs before it can be built (image decoding is suspend). Vector scenes need none. */
 suspend fun loadSceneAssets(cfg: SceneConfig): Any? = when (cfg.scene) {
-    "kai" -> cfg.chars.map { name ->
-        KaiAssets.load(
+    "kai" -> {
+        suspend fun load(name: String) = KaiAssets.load(
             name,
             mesh = cfg.art == "mesh",
             screenScale = KaiScene.scaleFor(cfg.count),
             cellPx = cfg.meshPx,
             block = if (cfg.meshGrid == "uniform") 1 else 4,
         )
+        // One list per kind of actor: its views (just one unless it turns; then the views that were cut).
+        if (cfg.turn.isNotEmpty()) cfg.turn.map { base ->
+            KaiAssets.viewNames(base).mapNotNull { name ->
+                if (name == base) load(name) else try { load(name) } catch (e: CancellationException) { throw e } catch (e: Exception) { null }
+            }
+        } else cfg.chars.map { listOf(load(it)) }
     }
     else -> null
 }

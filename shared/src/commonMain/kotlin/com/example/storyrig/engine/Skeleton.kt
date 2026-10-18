@@ -7,7 +7,8 @@ import kotlin.math.sqrt
 
 /**
  * Bone tree stored in flat arrays. Parents must come before children.
- * Local transform per bone: x, y, rotation (radians), scaleX, scaleY (T * R * S).
+ * Local transform per bone: x, y, rotation (radians), scaleX, scaleY (T * R * S), times an optional
+ * foreshortening along the bone's length ([fore], [axisX]/[axisY]).
  * World and skin matrices are 2D affine [a, b, c, d, e, f]: x' = a x + c y + e, y' = b x + d y + f.
  */
 class Skeleton(val size: Int) {
@@ -18,6 +19,16 @@ class Skeleton(val size: Int) {
     private val skin = FloatArray(size * 6)
     /** Per-bone dual-quaternion skin data, [DQ] floats per bone; valid after [updateSkin]. Read only. */
     val dq = FloatArray(size * DQ)
+
+    /**
+     * Foreshortening per bone: its parts (and its children's pivots) shrink by this factor along the unit axis
+     * ([axisX], [axisY]) in the bone's rest local space, e.g. a forearm pointing at the viewer. 1 = none. Children
+     * do not inherit it (their own frame is un-squashed), so a shin keeps its length when the thigh shortens.
+     * Whoever writes it resets it each frame (KaiRig.reset).
+     */
+    val fore = FloatArray(size) { 1f }
+    val axisX = FloatArray(size)
+    val axisY = FloatArray(size) { 1f }
 
     init {
         for (i in 0 until size) {
@@ -49,14 +60,31 @@ class Skeleton(val size: Int) {
             val r = local[o + 2]
             val cr = cos(r)
             val sr = sin(r)
-            val la = cr * local[o + 3]
-            val lb = sr * local[o + 3]
-            val lc = -sr * local[o + 4]
-            val ld = cr * local[o + 4]
+            var la = cr * local[o + 3]
+            var lb = sr * local[o + 3]
+            var lc = -sr * local[o + 4]
+            var ld = cr * local[o + 4]
             val le = local[o]
             val lf = local[o + 1]
             val w = i * 6
             val p = parent[i]
+            val f = fore[i]
+            if (f != 1f) {
+                // L = L * A, A = I + (f - 1) u u^T: squash along the bone's own axis.
+                val ux = axisX[i]; val uy = axisY[i]; val g = f - 1f
+                val a00 = 1f + g * ux * ux; val a01 = g * ux * uy; val a11 = 1f + g * uy * uy
+                val na = la * a00 + lc * a01; val nb = lb * a00 + ld * a01
+                val nc = la * a01 + lc * a11; val nd = lb * a01 + ld * a11
+                la = na; lb = nb; lc = nc; ld = nd
+            }
+            if (p >= 0 && fore[p] != 1f) {
+                // L = A_parent^-1 * L: the child's own frame is not squashed with its parent (its pivot still is).
+                val ux = axisX[p]; val uy = axisY[p]; val g = 1f / fore[p] - 1f
+                val b00 = 1f + g * ux * ux; val b01 = g * ux * uy; val b11 = 1f + g * uy * uy
+                val na = b00 * la + b01 * lb; val nb = b01 * la + b11 * lb
+                val nc = b00 * lc + b01 * ld; val nd = b01 * lc + b11 * ld
+                la = na; lb = nb; lc = nc; ld = nd
+            }
             if (p < 0) {
                 world[w] = la; world[w + 1] = lb; world[w + 2] = lc; world[w + 3] = ld; world[w + 4] = le; world[w + 5] = lf
             } else {

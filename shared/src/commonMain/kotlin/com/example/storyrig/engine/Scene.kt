@@ -32,6 +32,11 @@ class SceneConfig(private val args: Map<String, String>) {
     val start = args["start"] ?: "walk"
     /** Characters in scenes that take a cast (`kai`): `--es char mia,leo` uses files/mia, files/leo in turn. */
     val chars = (args["char"] ?: "kai").split(',').map { it.trim() }.filter { it.isNotEmpty() }.ifEmpty { listOf("kai") }
+    /**
+     * Actors that turn between views (`kai`): `--es turn kai` builds each actor from files/kai, kai_front and
+     * kai_back (the views that exist) and turns it every few beats; replaces [chars].
+     */
+    val turn = (args["turn"] ?: "").split(',').map { it.trim() }.filter { it.isNotEmpty() }
     /** Number of characters in scenes that take one (`kai`). */
     val count = (args["count"]?.toIntOrNull() ?: 5).coerceIn(1, 12)
     /** false: no per-frame redraw (allocation bisecting only). */
@@ -41,6 +46,9 @@ class SceneConfig(private val args: Map<String, String>) {
 
     /** Any boolean extra, for scene-specific switches. */
     fun flagOf(key: String, def: Boolean) = flag(key, def)
+
+    /** Any string extra, for scene-specific options. */
+    fun valueOf(key: String): String? = args[key]
 
     private fun flag(key: String, def: Boolean): Boolean = when (args[key]?.lowercase()) {
         null -> def

@@ -20,6 +20,7 @@ import com.example.storyrig.engine.DrawItem
 import com.example.storyrig.engine.Rig
 import com.example.storyrig.engine.Skeleton
 import com.example.storyrig.engine.Sprite
+import com.example.storyrig.engine.View
 import com.example.storyrig.engine.uptimeMillis
 import org.jetbrains.compose.resources.decodeToImageBitmap
 import storyrig.shared.generated.resources.Res
@@ -44,6 +45,10 @@ class KaiAssets(
     val loadMs: Float,
     /** Real height relative to Kai (character.csv `heightScale`): ref.png always fills the frame, people don't. */
     val heightScale: Float = 1f,
+    /** Folder name under files/ (kai, kai_front, ...). */
+    val name: String = "",
+    /** Which way the cut faces (character.csv `view`; else the folder's _front/_back suffix; else 3q). */
+    val view: View = View.Q3,
 ) {
     /** Rest pose, from the data (ref.png pixels): root pivot to the soles, and hair top to the soles. */
     val rootToSole: Float
@@ -132,8 +137,19 @@ class KaiAssets(
             val facts = runCatching { csv(Res.readBytes("$dir/character.csv").decodeToString()) }.getOrNull().orEmpty()
                 .associate { it[0] to it.getOrElse(1) { "" } }
             val heightScale = facts["heightScale"]?.toFloatOrNull() ?: 1f
-            return KaiAssets(atlas, names, parent, px, py, parts, meshes, meshAtlas, (uptimeMillis() - t0).toFloat(), heightScale)
+            val view = View.parse(facts["view"]) ?: viewFromName(name)
+            return KaiAssets(atlas, names, parent, px, py, parts, meshes, meshAtlas, (uptimeMillis() - t0).toFloat(), heightScale, name, view)
         }
+
+        /** Fallback before character.csv says `view`: kai_front, kai_back. */
+        fun viewFromName(name: String) = when {
+            name.endsWith("_front") -> View.FRONT
+            name.endsWith("_back") -> View.BACK
+            else -> View.Q3
+        }
+
+        /** Folder names of every view of [base] that may exist (three-quarter first). */
+        fun viewNames(base: String) = listOf(base, "${base}_front", "${base}_back")
 
         /** [firstPart]: the group's part drawn first (parts.csv order); the mesh is drawn in its place. */
         private class Limb(val group: MeshGroup, val image: ImageBitmap, val x: Int, val y: Int, val firstPart: String)
@@ -195,6 +211,8 @@ class KaiRig(
     clips: Array<Clip> = DanceClips.ALL,
     /** Draw [KaiAssets.meshes] (skinned limbs, torso, pelvis) instead of their rigid parts. */
     useMeshes: Boolean = false,
+    /** Show the clips the way they look in the cut's view (DanceClips.FRONT/BACK); false plays them as written. */
+    adaptView: Boolean = true,
 ) {
     val sk = Skeleton(a.boneNames.size)
     private val restX = FloatArray(sk.size)
@@ -208,6 +226,10 @@ class KaiRig(
     val shoulderF = a.bone("shoulder_far"); val elbowF = a.bone("elbow_far"); val wristF = a.bone("wrist_far")
     val hipN = a.bone("hip_near"); val kneeN = a.bone("knee_near"); val ankleN = a.bone("ankle_near")
     val hipF = a.bone("hip_far"); val kneeF = a.bone("knee_far"); val ankleF = a.bone("ankle_far")
+
+    val view get() = a.view
+    /** Root pivot to the soles in the rest pose (ref.png px). */
+    val rootToSole get() = a.rootToSole
 
     /** Shoulder angles (degrees) that make each arm hang straight down; poses are written relative to that. */
     val hangNear: Float
@@ -260,9 +282,12 @@ class KaiRig(
         auto = AutoLayers(sk, root, torso, phase = phase)
         hangNear = hang(shoulderN, wristN)
         hangFar = hang(shoulderF, wristF)
-        player = ClipPlayer(sk, clips, { a.boneOrNull(it) }) {
-            when (it) { "shoulder_near" -> hangNear; "shoulder_far" -> hangFar; else -> 0f }
-        }
+        lengthAxes()
+        player = ClipPlayer(
+            sk, clips, { a.boneOrNull(it) },
+            zeroDeg = { when (it) { "shoulder_near" -> hangNear; "shoulder_far" -> hangFar; else -> 0f } },
+            adapt = if (adaptView) DanceClips.adaptFor(a.view) else null,
+        )
         mouths = if (mouth == null) emptyArray() else MOUTHS.map { spriteOr(it, "mouth_smile") }.toTypedArray()
         eyesNear = if (eyeNear == null) emptyArray() else EYES.map { spriteOr("eye_near_$it", "eye_near_open") }.toTypedArray()
         eyesFar = if (eyeFar == null) emptyArray() else EYES.map { spriteOr("eye_far_$it", "eye_far_open") }.toTypedArray()
@@ -282,6 +307,31 @@ class KaiRig(
         if (l > 1f) { s.massX = cx / l; s.massY = cy / l }
     }
 
+    /**
+     * Each bone's length axis for foreshortening ([Skeleton.fore]), in its rest local space: towards its first child
+     * (thigh to knee), or for an end bone (hand, foot) towards the centre of its drawn parts, else its parent's.
+     */
+    private fun lengthAxes() {
+        for (b in 0 until sk.size) {
+            var dx = 0f; var dy = 0f
+            val child = (0 until sk.size).firstOrNull { a.boneParent[it] == b }
+            if (child != null) {
+                dx = a.pivotX[child] - a.pivotX[b]; dy = a.pivotY[child] - a.pivotY[b]
+            } else {
+                var area = 0f
+                for (row in a.parts) if (row.drawn && row.bone == b) {
+                    val ar = (row.w * row.h).toFloat()
+                    dx += (row.x + row.w / 2f - a.pivotX[b]) * ar; dy += (row.y + row.h / 2f - a.pivotY[b]) * ar
+                    area += ar
+                }
+            }
+            val l = kotlin.math.hypot(dx, dy)
+            val p = a.boneParent[b]
+            if (l > 1f) { sk.axisX[b] = dx / l; sk.axisY[b] = dy / l }
+            else if (p in 0 until b) { sk.axisX[b] = sk.axisX[p]; sk.axisY[b] = sk.axisY[p] }
+        }
+    }
+
     private fun hang(shoulder: Int, wrist: Int): Float {
         val dx = a.pivotX[wrist] - a.pivotX[shoulder]; val dy = a.pivotY[wrist] - a.pivotY[shoulder]
         return 90f - kotlin.math.atan2(dy, dx) / DEG2RAD
@@ -296,10 +346,20 @@ class KaiRig(
         return Sprite(a.atlas[name], (row.x - a.pivotX[row.bone]).toInt(), (row.y - a.pivotY[row.bone]).toInt())
     }
 
-    /** Back to rest pose, root at (x, y) with uniform [scale]. Angles are then set with [rot] (degrees). */
-    fun reset(x: Float, y: Float, scale: Float) {
+    /**
+     * Back to rest pose, root at (x, y) with uniform [scale]; [mirror] flips the rig to face left (root scaleX < 0).
+     * Angles are then set with [rot] (degrees).
+     */
+    fun reset(x: Float, y: Float, scale: Float, mirror: Boolean = false) {
         for (i in 0 until sk.size) sk.set(i, restX[i], restY[i])
-        sk.set(root, x, y, 0f, scale, scale)
+        sk.fore.fill(1f)
+        sk.set(root, x, y, 0f, if (mirror) -scale else scale, scale)
+    }
+
+    /** Forget spring and squash motion (after a jump the viewer doesn't see, e.g. mirroring a hidden rig). */
+    fun resetMotion() {
+        motion.reset()
+        auto.reset()
     }
 
     fun rot(bone: Int, deg: Float) = sk.setRot(bone, deg * DEG2RAD)

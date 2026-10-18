@@ -66,7 +66,9 @@ class SecondaryMotion(private val sk: Skeleton, specs: List<SpringBone>) {
             var dy = sk.world[w + 1] * mx[i] + sk.world[w + 3] * my[i]
             val l = hypot(dx, dy)
             if (l > 0f) { dx /= l; dy /= l }
-            val torque = inertia[i] * (dy * ax - dx * ay) * TORQUE_SCALE
+            var torque = inertia[i] * (dy * ax - dx * ay) * TORQUE_SCALE
+            // A mirrored rig (root scaleX < 0) turns the other way on screen for the same local angle.
+            if (sk.world[w] * sk.world[w + 3] - sk.world[w + 1] * sk.world[w + 2] < 0f) torque = -torque
             val acc = k[i] * (target - angle[i]) - damp[i] * vel[i] + torque
             vel[i] += acc * dt
             angle[i] += vel[i] * dt
@@ -75,6 +77,11 @@ class SecondaryMotion(private val sk: Skeleton, specs: List<SpringBone>) {
             sk.local[b * 5 + 2] = angle[i]
         }
         started = true
+    }
+
+    /** Forget the motion so far (the rig jumped, e.g. was mirrored while hidden): next frame starts at rest. */
+    fun reset() {
+        started = false
     }
 
     private companion object {
@@ -119,6 +126,11 @@ class AutoLayers(
         val breath = 1f + breathAmp * sin(2f * PI.toFloat() * t / breathPeriodSec)
         sk.local[torso * 5 + 4] *= breath
     }
+
+    /** Forget the root's motion so far (the rig jumped); breathing keeps its phase. */
+    fun reset() {
+        lastY = Float.NaN; lastVy = 0f; squash = 0f; squashVel = 0f
+    }
 }
 
 /**
@@ -129,7 +141,9 @@ class AutoLayers(
  *
  * Call [captureGround] right after resetting to the standing pose each frame (it records where the ankle is when
  * standing), then let clips and the other layers move the bones, then [apply].
- * [bend] = 1 bends the knee towards +x (character facing right), -1 towards -x.
+ * The knee bends to the side it is already on in the pose so far (forward in three-quarter view, out in front view);
+ * [bend] picks the side when the leg is straight: 1 = towards +x (facing right), -1 towards -x. Works on a
+ * mirrored rig (root scaleX < 0): [bend] flips with it, and corrections are turned into the rig's local angles.
  */
 class FootLock(
     private val sk: Skeleton,
@@ -173,18 +187,37 @@ class FootLock(
         val tx = lerp(ax, lockX, w)
         val ty = lerp(ay, groundY, w)
         val hx = wd[h + 4]; val hy = wd[h + 5]
-        val l1 = hypot(wd[k + 4] - hx, wd[k + 5] - hy)
-        val l2 = hypot(ax - wd[k + 4], ay - wd[k + 5])
-        ik2(hx, hy, tx, ty, l1, l2, bend, out)
-        sk.local[hip * 5 + 2] += angleTo(wd[k + 4] - hx, wd[k + 5] - hy, out[0] - hx, out[1] - hy)
+        val kx = wd[k + 4]; val ky = wd[k + 5]
+        val l1 = hypot(kx - hx, ky - hy)
+        val l2 = hypot(ax - kx, ay - ky)
+        // Local angle -> screen angle: -1 on a mirrored rig.
+        val flip = if (wd[h] * wd[h + 3] - wd[h + 1] * wd[h + 2] < 0f) -1f else 1f
+        // Which side of the hip-ankle line the knee is on now (the leg points down: + is towards +x).
+        val dy = ay - hy
+        val side = if (abs(dy) > 1f) kx - (hx + (ax - hx) * (ky - hy) / dy) else 0f
+        val eps = SIDE_PX * scale
+        val out2 = if (side > eps) 1 else if (side < -eps) -1 else if (flip < 0f) -bend else bend
+        ik2(hx, hy, tx, ty, l1, l2, out2, out)
+        sk.local[hip * 5 + 2] += flip * angleTo(kx - hx, ky - hy, out[0] - hx, out[1] - hy)
         sk.updateWorld()
-        sk.local[knee * 5 + 2] += angleTo(wd[a + 4] - wd[k + 4], wd[a + 5] - wd[k + 5], out[2] - wd[k + 4], out[3] - wd[k + 5])
+        sk.local[knee * 5 + 2] += flip * angleTo(wd[a + 4] - wd[k + 4], wd[a + 5] - wd[k + 5], out[2] - wd[k + 4], out[3] - wd[k + 5])
         sk.updateWorld()
-        sk.local[ankle * 5 + 2] += w * wrap(footRot - atan2(wd[a + 1], wd[a]))
+        sk.local[ankle * 5 + 2] += flip * w * wrap(footRot - atan2(wd[a + 1], wd[a]))
+    }
+
+    /** Unpin (the rig jumped, e.g. was mirrored while hidden); call [captureGround] again before [apply]. */
+    fun reset() {
+        planted = false
+        w = -1f
     }
 
     /** Rotation from direction (x0, y0) to (x1, y1), in -PI..PI. */
     private fun angleTo(x0: Float, y0: Float, x1: Float, y1: Float) = wrap(atan2(y1, x1) - atan2(y0, x0))
+
+    private companion object {
+        /** Knee this far (character px) off the hip-ankle line counts as bent to that side. */
+        const val SIDE_PX = 2f
+    }
 
     private fun wrap(r: Float): Float {
         var v = r
@@ -208,6 +241,8 @@ object HumanoidMotion {
         // Parents first: the arm chain lags more the further it is from the body.
         add("head", 160f, 13f, .25f, .25f)
         add("hair", 70f, 5.5f, 1.4f, .12f)
+        // A skirt (child of the root, pivot at the waist) swings like the hair but stiffer, at most ~8 degrees.
+        add("skirt", 150f, 9f, .9f, .14f)
         for (side in listOf("near", "far")) {
             add("shoulder_$side", 420f, 26f, 0f)
             add("elbow_$side", 260f, 17f, .3f)
