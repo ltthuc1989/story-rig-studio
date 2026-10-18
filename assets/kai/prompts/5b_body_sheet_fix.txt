@@ -1,0 +1,14 @@
+# Sửa tờ thân Kai bằng cách sửa ảnh (không vẽ lại cả tờ). Đính kèm theo thứ tự:
+# (1) tờ thân cần sửa (bản 1K v3: assets/kai/gemini/attempts/kit_body_v3_1k.jpg, hoặc bản 1K đã đạt khi gọi 4K),
+# (2) assets/templates/rig_body.png (tờ mẫu hình nộm).
+# Chỉ sửa 3 lỗi của v3: quần rời có 2 ống, chân nghiêng và chân 3/4 dính giày, giày rời có cổ tất.
+Edit Image 1 and generate the edited image.
+Image 1 is a character parts sheet for 2D cutout animation. Keep everything in it exactly the same: every piece, its position, size, angle, colors and art style, and the plain magenta background. Change only the pieces listed below.
+Image 2 is the grey mannequin layout that the sheet follows: each grey shape marks one piece. Use it only to see the right shape of a piece; do not draw the mannequin.
+
+Changes:
+1. The three loose shorts pieces (middle row, left group, second piece; middle row, right group, second piece; bottom row, second piece): replace each one by a short waistband strip in the same denim color: the waistband and the seat down to the crotch only, about one third as tall as the shorts, with ONE straight horizontal bottom edge from side to side. No leg openings, no cuffs, no gap or notch between the legs, like the short grey band at the same place in Image 2.
+2. The side-view loose leg (middle row, right group, fourth piece) and the three-quarter loose leg (bottom row, fifth piece): remove the shoe. The white sock with its red stripe continues straight down past the ankle and ends rounded, exactly like the front loose leg (middle row, left group, fourth piece).
+3. The three loose shoes (middle row, left group, fifth piece; middle row, right group, fifth piece; bottom row, last piece): remove the sock from each shoe, so that each shoe is alone and empty.
+
+Change nothing else. No text, no labels, no shadows.
