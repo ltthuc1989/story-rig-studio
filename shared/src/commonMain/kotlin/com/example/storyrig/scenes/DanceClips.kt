@@ -28,6 +28,8 @@ object DanceClips {
         rot("shoulder_near") { at(0f, 102f); at(2f, 106f) }
         rot("elbow_near") { for (b in 0 until 4) { at(b + 0f, 45f); at(b + .5f, 76f) } }
         rot("wrist_near") { for (b in 0 until 4) { at(b + .1f, -12f); at(b + .6f, 12f) } }
+        // The cut draws the back of the hand at the viewer; a wave shows the palm (thumb towards the head).
+        roll("wrist_near") { at(0f, 180f) }
         rot("shoulder_far") { at(0f, -4f) }
         pitch("shoulder_far") { at(0f, 18f); at(2f, 26f) }
         pitch("elbow_far") { at(0f, 45f) }
@@ -83,6 +85,9 @@ object DanceClips {
         pitch("elbow_near") { at(0f, 8f); at(4f, 14f) }
         rot("shoulder_far") { at(0f, -8f); at(4f, -5f) }
         pitch("elbow_far") { at(0f, 14f); at(4f, 8f) }
+        // Relaxed hands turn in towards the thighs: seen from the front they narrow, instead of showing their back.
+        roll("wrist_near") { at(0f, 55f) }
+        roll("wrist_far") { at(0f, 55f) }
     }
 
     val ALL = arrayOf(WAVE, PUMP, MARCH, IDLE)

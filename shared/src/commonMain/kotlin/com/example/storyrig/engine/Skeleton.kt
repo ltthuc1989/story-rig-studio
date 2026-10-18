@@ -30,6 +30,12 @@ class Skeleton(val size: Int) {
     val axisX = FloatArray(size)
     val axisY = FloatArray(size) { 1f }
     /**
+     * Width across the bone's length axis, -1..1: a hand turning over (the forearm's roll). 1 = as drawn, 0 = edge on,
+     * -1 = mirrored across its length (the thumb on the other side: the other face of the hand). Children do not
+     * inherit it, like [fore]. Whoever writes it resets it each frame (ClipPlayer's [Clip.ROLL]).
+     */
+    val roll = FloatArray(size) { 1f }
+    /**
      * Width per bone: its parts (and its children's pivots) shrink by this factor along the bone's rest local x
      * (a torso seen turning sideways, [PseudoYaw]). 1 = none. Like [fore], children do not inherit it. Whoever
      * writes it resets it each frame.
@@ -75,20 +81,22 @@ class Skeleton(val size: Int) {
             val w = i * 6
             val p = parent[i]
             val f = fore[i]
-            if (f != 1f) {
-                // L = L * A, A = I + (f - 1) u u^T: squash along the bone's own axis.
-                val ux = axisX[i]; val uy = axisY[i]; val g = f - 1f
-                val a00 = 1f + g * ux * ux; val a01 = g * ux * uy; val a11 = 1f + g * uy * uy
+            val rl = roll[i]
+            if (f != 1f || rl != 1f) {
+                // L = L * A, A = I + (f - 1) u u^T + (r - 1) v v^T: squash along the bone's own axis u and across it
+                // (v = u turned 90 degrees). Symmetric, so the same formula serves both.
+                val ux = axisX[i]; val uy = axisY[i]; val g = f - 1f; val h = rl - 1f
+                val a00 = 1f + g * ux * ux + h * uy * uy; val a01 = g * ux * uy - h * ux * uy; val a11 = 1f + g * uy * uy + h * ux * ux
                 val na = la * a00 + lc * a01; val nb = lb * a00 + ld * a01
                 val nc = la * a01 + lc * a11; val nd = lb * a01 + ld * a11
                 la = na; lb = nb; lc = nc; ld = nd
             }
             val wd = wide[i]
             if (wd != 1f) { la *= wd; lb *= wd }
-            if (p >= 0 && fore[p] != 1f) {
+            if (p >= 0 && (fore[p] != 1f || roll[p] != 1f)) {
                 // L = A_parent^-1 * L: the child's own frame is not squashed with its parent (its pivot still is).
-                val ux = axisX[p]; val uy = axisY[p]; val g = 1f / fore[p] - 1f
-                val b00 = 1f + g * ux * ux; val b01 = g * ux * uy; val b11 = 1f + g * uy * uy
+                val ux = axisX[p]; val uy = axisY[p]; val g = 1f / fore[p] - 1f; val h = 1f / roll[p] - 1f
+                val b00 = 1f + g * ux * ux + h * uy * uy; val b01 = g * ux * uy - h * ux * uy; val b11 = 1f + g * uy * uy + h * ux * ux
                 val na = b00 * la + b01 * lb; val nb = b01 * la + b11 * lb
                 val nc = b00 * lc + b01 * ld; val nd = b01 * lc + b11 * ld
                 la = na; lb = nb; lc = nc; ld = nd

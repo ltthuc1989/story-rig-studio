@@ -80,6 +80,8 @@ class Clip private constructor(
         fun sy(bone: String, block: Keys.() -> Unit) = channel(bone, SY, block)
         /** Forwards (> 0) or back swing, degrees; see [ClipPlayer]. */
         fun pitch(bone: String, block: Keys.() -> Unit) = channel(bone, PITCH, block)
+        /** Turn round the bone's own length, degrees: 180 shows a hand's other face (palm up instead of down). */
+        fun roll(bone: String, block: Keys.() -> Unit) = channel(bone, ROLL, block)
 
         fun build(): Clip {
             val start = IntArray(keys.size + 1)
@@ -106,6 +108,8 @@ class Clip private constructor(
         const val SY = 4
         /** Not a [Skeleton.local] slot: a swing round the body's left-right axis, projected by [ClipPlayer]. */
         const val PITCH = 5
+        /** Not a [Skeleton.local] slot: a turn round the bone's own length (a hand turning over), [Skeleton.roll]. */
+        const val ROLL = 6
 
         fun build(name: String, beats: Float, block: Builder.() -> Unit) = Builder(name, beats).apply(block).build()
     }
@@ -159,6 +163,7 @@ class ClipPlayer(
                 when {
                     b < 0 -> -1
                     c.channelProp[ch] == Clip.PITCH -> sk.size * 5 + b
+                    c.channelProp[ch] == Clip.ROLL -> sk.size * 6 + b
                     else -> b * 5 + c.channelProp[ch]
                 }
             }
@@ -168,8 +173,8 @@ class ClipPlayer(
         val c = clips[ci]
         FloatArray(c.channels) { ch -> if (c.channelProp[ch] == Clip.ROT) zeroDeg(c.channelBone[ch]) else 0f }
     }
-    /** Local offsets per bone (5 slots), then one pitch per bone. */
-    private val acc = FloatArray(sk.size * 6)
+    /** Local offsets per bone (5 slots), then one pitch and one roll per bone. */
+    private val acc = FloatArray(sk.size * 7)
     private val sinYaw = if (yawDeg == null) 1f else sin(yawDeg * DEG)
     private val projected = yawDeg != null
     /** Absolute pitch (radians) per bone and its picture angle, this frame. */
@@ -226,6 +231,12 @@ class ClipPlayer(
                 if (pt != 0f) sk.fore[b] *= maxOf(sqrt(cp * cp + sp * sp * sinYaw * sinYaw), MIN_FORE)
             }
             sk.local[o + 2] += r
+            val rl = acc[sk.size * 6 + b]
+            if (rl != 0f) {
+                // Never exactly edge on: the inverse for the bone's children must stay finite.
+                val c = cos(rl * DEG)
+                sk.roll[b] = if (c >= 0f) maxOf(c, MIN_ROLL) else minOf(c, -MIN_ROLL)
+            }
             sk.local[o + 3] *= 1f + acc[o + 3]
             sk.local[o + 4] *= 1f + acc[o + 4]
         }
@@ -250,5 +261,7 @@ class ClipPlayer(
     private companion object {
         /** A bone pointing straight at the viewer still shows a little (and the inverse stays finite). */
         const val MIN_FORE = .25f
+        /** A hand edge on still shows a sliver. */
+        const val MIN_ROLL = .08f
     }
 }

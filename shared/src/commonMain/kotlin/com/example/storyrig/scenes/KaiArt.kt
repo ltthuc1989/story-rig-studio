@@ -410,6 +410,7 @@ class KaiRig(
     fun reset(x: Float, y: Float, scale: Float, mirror: Boolean = false) {
         for (i in 0 until sk.size) sk.set(i, restX[i], restY[i])
         sk.fore.fill(1f)
+        sk.roll.fill(1f)
         sk.wide.fill(1f)
         sk.set(root, x, y, 0f, if (mirror) -scale else scale, scale)
     }
