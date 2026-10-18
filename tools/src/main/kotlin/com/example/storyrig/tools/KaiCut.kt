@@ -38,7 +38,7 @@ fun main(args: Array<String>) {
             cutAuto(File(args[1]), File(args[2]), File(args[3]), compareKai = v == "kai", view = if (v == "front" || v == "back") v else "3q")
         }
         "autotest" -> autoTest(File(args[1]), File(args[2]))
-        "mannequin" -> drawMannequin(args[1], File(args[2]))
+        "mannequin" -> drawMannequin(args[1], File(args[2]), args.getOrNull(3)?.toDouble() ?: 32.0)
         "selftest" -> if (!selfTest(File(args.getOrNull(1) ?: "tools/build/selftest"))) kotlin.system.exitProcess(1)
         "facetest" -> faceLayoutTest(File(args[1]), File(args[2]))
         else -> println("usage: scan <sheet.png> <outDir> | build|cutref|cutauto <geminiDir> <outDir> <previewDir> | autotest|facetest <geminiDir> <outRoot>")

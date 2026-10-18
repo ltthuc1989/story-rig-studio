@@ -124,7 +124,8 @@ def cmd_gen(a):
         except urllib.error.HTTPError as e:
             detail = e.read().decode(errors="replace")[:300]
             print(f"attempt {attempt}/{MAX_RETRIES}: HTTP {e.code} {detail}", file=sys.stderr)
-            if e.code in (400, 403) or attempt == MAX_RETRIES:
+            # 400/403: bad request or key; 402: prepaid credits used up. Retrying can't help, it only adds to the count.
+            if e.code in (400, 402, 403) or attempt == MAX_RETRIES:
                 sys.exit(1)
             wait = min(60 * attempt, 180) if e.code == 429 else min(RETRY_DELAY * attempt, 120)
             print(f"waiting {wait}s before retrying", file=sys.stderr)

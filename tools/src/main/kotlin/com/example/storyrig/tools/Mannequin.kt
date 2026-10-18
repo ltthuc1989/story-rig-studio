@@ -14,10 +14,11 @@ import javax.imageio.ImageIO
 /**
  * Grey pose mannequins on magenta that Gemini copies the pose and framing from (one per view). Same body sizes as
  * rig_3q_right.png (1024 px square, child proportions, arms ~30 degrees below horizontal, legs apart), so every view
- * of a character comes out at the same scale.
- *   mannequin front|back <out.png>
+ * of a character comes out at the same scale. [armDeg]: the arms' angle below horizontal, same length at any angle;
+ * 45 is the A-pose (shoulders deform naturally when the arms come down, see rig_front.png), 32 the older templates.
+ *   mannequin front|back <out.png> [armDeg]
  */
-internal fun drawMannequin(view: String, out: File) {
+internal fun drawMannequin(view: String, out: File, armDeg: Double = 32.0) {
     val s = 1024
     val img = BufferedImage(s, s, BufferedImage.TYPE_INT_RGB)
     val g = img.createGraphics()
@@ -29,8 +30,10 @@ internal fun drawMannequin(view: String, out: File) {
     for (side in listOf(-1, 1)) {
         limb(g, limb, cx + side * 42, 640.0, cx + side * 57, 900.0, 31.0)
         foot(g, limb, cx + side * 66, 918.0, side)
-        limb(g, limb, cx + side * 82, 420.0, cx + side * 307, 560.0, 31.0)
-        g.color = limb; g.fill(Ellipse2D.Double(cx + side * 322 - 35, 570.0 - 35, 70.0, 70.0))
+        // Arm 265 px from (82, 420) off the centre line, hand circle 21 px further on.
+        val ax = Math.cos(Math.toRadians(armDeg)); val ay = Math.sin(Math.toRadians(armDeg))
+        limb(g, limb, cx + side * 82, 420.0, cx + side * (82 + 265 * ax), 420 + 265 * ay, 31.0)
+        g.color = limb; g.fill(Ellipse2D.Double(cx + side * (82 + 286 * ax) - 35, 420 + 286 * ay - 35, 70.0, 70.0))
     }
     g.color = body
     g.fill(RoundRectangle2D.Double(cx - 100, 385.0, 200.0, 250.0, 70.0, 70.0))
