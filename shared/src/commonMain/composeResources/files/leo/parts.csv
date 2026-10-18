@@ -9,7 +9,7 @@ shin_near,knee_near,410,749,97,190,1
 shoe_near,ankle_near,411,897,126,46,1
 thigh_near,hip_near,417,633,107,161,1
 pelvis,root,425,600,193,91,1
-torso,torso,407,343,228,278,1
+torso,torso,413,343,216,278,1
 head,head,357,60,305,325,1
 eye_near_open,head,488,210,58,49,1
 eye_far_open,head,585,209,51,49,1

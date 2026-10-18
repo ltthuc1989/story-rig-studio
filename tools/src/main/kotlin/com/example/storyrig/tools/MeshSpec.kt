@@ -45,14 +45,16 @@ internal fun writeMesh(outDir: File, bones: List<Bone>, parts: Map<String, Part>
     val band = 1.55f * w
     val cell = (w / 3.25f).roundToInt().coerceAtLeast(2)
 
+    // Hands are not in the arm meshes: they stay rigid parts on the wrist bone, so turning a hand over (a mirror,
+    // Clip.ROLL) doesn't pinch the wrist where its weights blend with the forearm's; the hand covers the wrist joint.
     val groups = listOf(
-        "arm_far" to (listOf("arm_upper_far", "arm_fore_far", "hand_far") to listOf("shoulder_far", "elbow_far", "wrist_far")),
+        "arm_far" to (listOf("arm_upper_far", "arm_fore_far") to listOf("shoulder_far", "elbow_far", "wrist_far")),
         "leg_far" to (listOf("shin_far", "thigh_far") to listOf("hip_far", "knee_far", "ankle_far")),
         "leg_near" to (listOf("shin_near", "thigh_near") to listOf("hip_near", "knee_near", "ankle_near")),
         // A skirt follows its own bone (the pelvis part is on it), not the root.
         "pelvis" to (listOf("pelvis") to listOf(if ("skirt" in byName) "skirt" else "root", "hip_near", "hip_far")),
         "torso" to (listOf("torso") to listOf("torso", "shoulder_near", "shoulder_far", "root")),
-        "arm_near" to (listOf("arm_upper_near", "arm_fore_near", "hand_near") to listOf("shoulder_near", "elbow_near", "wrist_near")),
+        "arm_near" to (listOf("arm_upper_near", "arm_fore_near") to listOf("shoulder_near", "elbow_near", "wrist_near")),
     )
 
     class Inf(val bone: String, val x0: Float, val y0: Float, val x1: Float, val y1: Float, val radius: Float = 0f, val attachTo: String? = null)

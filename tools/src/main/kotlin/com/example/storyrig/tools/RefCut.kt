@@ -107,9 +107,11 @@ private fun jointOn(s: Seg, towardX: Float, towardY: Float): Joint {
 
 /**
  * Round cap past a cut on the +u side of [j], filled by smearing the piece's colours at the cut along u; over the same
- * garment in [ref] it takes the reference's pixels ([capColour]).
+ * garment in [ref] it takes the reference's pixels ([capColour]). With [keep] only the half of the cap on that side of
+ * the joint is filled (a shoulder: the top half covers the shoulder line when the arm hangs; a bottom half would
+ * stick out under the armpit as a lump of shirt when the arm is raised).
  */
-private fun capInto(p: Piece, j: Joint, ref: Img): Piece {
+private fun capInto(p: Piece, j: Joint, ref: Img, keep: Pt? = null): Piece {
     val r = j.radius
     val band = bandColours(p, j, -r, -2f)
     val x0 = min(p.ox, (j.x - r).toInt() - 2); val y0 = min(p.oy, (j.y - r).toInt() - 2)
@@ -120,6 +122,7 @@ private fun capInto(p: Piece, j: Joint, ref: Img): Piece {
         val fx = x + .5f; val fy = y + .5f
         val t = (fx - j.x) * j.ux + (fy - j.y) * j.uy
         if (t <= 0f || hypot(fx - j.x, fy - j.y) > r) continue
+        if (keep != null && (fx - j.x) * keep.x + (fy - j.y) * keep.y < 0f) continue
         if (a(out[x - x0, y - y0]) > 200) continue
         // Colour of the piece just before the cut on this line.
         val sx = (fx - (t + 2f) * j.ux).roundToInt(); val sy = (fy - (t + 2f) * j.uy).roundToInt()
@@ -282,6 +285,16 @@ private fun eraseFeature(p: Piece, area: Box, isSkin: (Int) -> Boolean, contrast
     return Box(bx0, by0, bx1 + 1, by1 + 1) to Piece(feature, bx0 - 2, by0 - 2)
 }
 
+/** Draw order for a cut's view. */
+private fun orderFor(view: String) = when (view) {
+    "3q" -> drawOrder
+    "front" -> drawOrderFront
+    else -> drawOrderFrontBack
+}
+
+/** Px of shirt filled in behind a removed arm (anti-aliasing at the shoulder cut only). */
+private const val ARM_FILL = 2
+
 /** How far a shoulder cut runs past the arm's top and the armpit (AutoSpec, KaiRefSpec). */
 internal const val SHOULDER_MARGIN = 6f
 
@@ -376,8 +389,10 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
 
     // Torso: fill in a little behind the removed arms, cap the neck (all hidden in the rest pose).
     var torso = pieceOf(img, torsoM)
-    torso = fillBehind(torso, armNearM, img.w, 8, img)
-    torso = fillBehind(torso, armFarM, img.w, 8, img)
+    // The shoulder cut runs along the shirt's side, so only a sliver (anti-aliasing at the cut) is filled: a deeper fill
+    // shows as a lump of shirt under the armpit when the arm is raised.
+    torso = fillBehind(torso, armNearM, img.w, ARM_FILL, img)
+    torso = fillBehind(torso, armFarM, img.w, ARM_FILL, img)
     torso = capInto(torso, jointOn(S.neck, S.seedHead.x, S.seedHead.y), img)
     parts["torso"] = Part("torso", "torso", torso)
     val pelvis = pieceOf(img, pelvisM)
@@ -395,8 +410,11 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
         val mask = data[0] as BooleanArray; val sh = data[1] as Seg; val el = data[2] as Pt; val wr = data[3] as Pt
         var arm = pieceOf(img, mask)
         // Round shoulder end under the shirt: the cut runs SHOULDER_MARGIN past the arm's edges, the cap must not,
-        // or it pokes above the shoulder line once the arm hangs down.
-        arm = capInto(arm, jointOn(sh, S.seedTorso.x, S.seedTorso.y).let { Joint(it.x, it.y, it.ux, it.uy, it.radius - SHOULDER_MARGIN) }, img)
+        // or it pokes above the shoulder line once the arm hangs down. Only its top half (towards the cut's top end,
+        // away from the armpit): the arm's underside then runs straight into the shirt's side when it is raised.
+        val up = hypot(sh.x1 - sh.x2, sh.y1 - sh.y2).let { l -> Pt((sh.x1 - sh.x2) / l, (sh.y1 - sh.y2) / l) }
+        val shJoint = jointOn(sh, S.seedTorso.x, S.seedTorso.y).let { Joint(it.x, it.y, it.ux, it.uy, it.radius - SHOULDER_MARGIN) }
+        arm = capInto(arm, shJoint, img, keep = up)
         val shoulder = mid(sh)
         val elbow = jointAcross(arm, el.x, el.y, el.x - shoulder.x, el.y - shoulder.y)
         val (upper, rest) = cutAt(arm, elbow, ref = img)
@@ -473,10 +491,10 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
         }
     }
 
-    writeOut(outDir, bones, parts, if (S.view == "3q") drawOrder else drawOrderFrontBack)
+    writeOut(outDir, bones, parts, orderFor(S.view))
     writeCharacter(File(dir.parentFile, "character.csv"), File(outDir, "character.csv"), S.view)
     writeMesh(outDir, bones, parts, BodyMeasure(torsoHalf, hemY, elbowHalf.average().toFloat()))
-    renderPreviews(previewDir, ref, bones, parts, if (S.view == "3q") drawOrder else drawOrderFrontBack)
+    renderPreviews(previewDir, ref, bones, parts, orderFor(S.view))
 }
 
 /**

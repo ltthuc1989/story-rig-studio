@@ -1,10 +1,4 @@
 # part,bone,x,y,w,h,drawn (x,y = top-left in ref.png pixels; drawn=1 in the rest pose, in draw order)
-arm_upper_far,shoulder_far,570,399,166,163,1
-arm_fore_far,elbow_far,671,497,116,118,1
-hand_far,wrist_far,741,568,95,98,1
-arm_upper_near,shoulder_near,289,397,167,164,1
-arm_fore_near,elbow_near,236,496,117,118,1
-hand_near,wrist_near,188,573,90,93,1
 shin_far,knee_far,527,751,89,183,1
 shoe_far,ankle_far,537,896,118,41,1
 thigh_far,hip_far,518,638,93,155,1
@@ -12,7 +6,13 @@ shin_near,knee_near,409,751,90,184,1
 shoe_near,ankle_near,371,896,117,41,1
 thigh_near,hip_near,414,635,94,158,1
 pelvis,root,419,615,187,77,1
-torso,torso,399,327,229,310,1
+torso,torso,399,327,227,310,1
+arm_upper_far,shoulder_far,570,399,166,163,1
+arm_fore_far,elbow_far,671,497,116,118,1
+hand_far,wrist_far,741,568,95,98,1
+arm_upper_near,shoulder_near,289,397,167,164,1
+arm_fore_near,elbow_near,236,496,117,118,1
+hand_near,wrist_near,188,573,90,93,1
 head,head,368,109,289,265,1
 eye_near_open,head,457,217,24,28,1
 eye_far_open,head,545,217,24,28,1

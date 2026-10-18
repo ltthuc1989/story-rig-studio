@@ -283,7 +283,23 @@ val drawOrder = listOf(
     "arm_upper_near", "arm_fore_near", "hand_near",
 )
 
-/** Front and back views: neither arm is behind the other, both go behind the torso so the shoulder cuts hide. */
+/**
+ * Front view: neither arm is behind the other; both are in front of the torso (behind the head), so hands can cross the
+ * body (clap, hands on the chest). The shoulder cut runs along the shirt's side and the arm's round end is only its top
+ * half, so nothing of the cut shows; a raised sleeve's corner lies over the shirt.
+ */
+val drawOrderFront = listOf(
+    "shin_far", "shoe_far", "thigh_far",
+    "shin_near", "shoe_near", "thigh_near",
+    "pelvis", "torso",
+    "arm_upper_far", "arm_fore_far", "hand_far",
+    "arm_upper_near", "arm_fore_near", "hand_near",
+    "head", "nose",
+    "eye_near_open", "eye_far_open", "brow_near", "brow_far", "mouth_smile",
+    "hair",
+)
+
+/** Back view: the body is between the viewer and the arms' front, so both arms go behind the torso. */
 val drawOrderFrontBack = listOf(
     "arm_upper_far", "arm_fore_far", "hand_far",
     "arm_upper_near", "arm_fore_near", "hand_near",

@@ -1,11 +1,11 @@
 # Skinned meshes (art=mesh), ref.png pixels. Written by :tools (MeshSpec.kt); see there for how each number is derived.
 # group,name,cell,parts (;),bones (;)
-group,arm_far,8,arm_upper_far;arm_fore_far;hand_far,shoulder_far;elbow_far;wrist_far
+group,arm_far,8,arm_upper_far;arm_fore_far,shoulder_far;elbow_far;wrist_far
 group,leg_far,8,shin_far;thigh_far,hip_far;knee_far;ankle_far
 group,leg_near,8,shin_near;thigh_near,hip_near;knee_near;ankle_near
 group,pelvis,8,pelvis,root;hip_near;hip_far
 group,torso,8,torso,torso;shoulder_near;shoulder_far;root
-group,arm_near,8,arm_upper_near;arm_fore_near;hand_near,shoulder_near;elbow_near;wrist_near
+group,arm_near,8,arm_upper_near;arm_fore_near,shoulder_near;elbow_near;wrist_near
 # influence,bone,x0,y0,x1,y1,radius,blend,attachTo,band
 influence,torso,511.5,422.1,511.5,591.9,80.5,29.3,,0
 influence,root,488.4,631.3,534.6,631.3,41.6,29.3,,0

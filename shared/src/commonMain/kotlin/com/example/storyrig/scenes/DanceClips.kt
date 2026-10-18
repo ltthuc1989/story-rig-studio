@@ -30,9 +30,10 @@ object DanceClips {
         rot("wrist_near") { for (b in 0 until 4) { at(b + .1f, -12f); at(b + .6f, 12f) } }
         // The cut draws the back of the hand at the viewer; a wave shows the palm (thumb towards the head).
         roll("wrist_near") { at(0f, 180f) }
-        rot("shoulder_far") { at(0f, -4f) }
-        pitch("shoulder_far") { at(0f, 18f); at(2f, 26f) }
-        pitch("elbow_far") { at(0f, 45f) }
+        // The other arm hangs loose; a small forward swing only (a big one shortens forearm and hand from the front).
+        rot("shoulder_far") { at(0f, -6f); at(2f, -9f) }
+        pitch("shoulder_far") { at(0f, 6f); at(2f, 10f) }
+        pitch("elbow_far") { at(0f, 12f) }
     }
 
     /** Arms fling out (overshoot, hold), pump in, up in a V, pump in; a small squeeze before each fling. */
@@ -43,10 +44,13 @@ object DanceClips {
         rot("torso") { at(0f, 0f); at(2.3f, -4f); at(3.25f, 2f) }
         armHits("shoulder_near", 1f)
         armHits("shoulder_far", -1f)
-        for (side in listOf("elbow_near", "elbow_far")) pitch(side) {
-            at(0f, 60f, Ease.BACK); at(.3f, 8f); at(.85f, 8f, Ease.IO)
-            at(1.25f, 65f); at(1.85f, 65f, Ease.BACK); at(2.3f, 5f); at(2.85f, 5f, Ease.IO)
-            at(3.25f, 60f); at(3.85f, 72f)
+        // Elbows bend in the picture: the arms are out to the sides, so seen from the front a pump folds the forearms
+        // up or in across the picture, not towards the viewer (that would shorten forearm and hand to stubs). Near
+        // arm: - folds up from an arm held out; the far arm mirrors it.
+        for ((side, sign) in listOf("elbow_near" to 1f, "elbow_far" to -1f)) rot(side) {
+            at(0f, -60f * sign, Ease.BACK); at(.3f, -8f * sign); at(.85f, -8f * sign, Ease.IO)
+            at(1.25f, -65f * sign); at(1.85f, -65f * sign, Ease.BACK); at(2.3f, -5f * sign); at(2.85f, -5f * sign, Ease.IO)
+            at(3.25f, -60f * sign); at(3.85f, -72f * sign)
         }
     }
 
