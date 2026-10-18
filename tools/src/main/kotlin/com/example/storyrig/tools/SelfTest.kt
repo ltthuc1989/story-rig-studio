@@ -63,9 +63,9 @@ private class Case(
 private class Row(val name: String, val ok: Boolean, val ms: Long, val notes: List<String>, val preview: File)
 
 private val BODY = listOf("head", "torso", "pelvis") +
-    listOf("near", "far").flatMap { s -> listOf("arm_upper_$s", "arm_fore_$s", "hand_$s", "thigh_$s", "shin_$s", "shoe_$s") }
+    listOf("near", "far").flatMap { s -> listOf("arm_upper_$s", "arm_fore_$s", "shoulder_ball_$s", "hand_$s", "thigh_$s", "shin_$s", "shoe_$s") }
 private val BONES = listOf("root", "torso", "head") +
-    listOf("near", "far").flatMap { s -> listOf("shoulder_$s", "elbow_$s", "wrist_$s", "hip_$s", "knee_$s", "ankle_$s") }
+    listOf("near", "far").flatMap { s -> listOf("shoulder_$s", "shoulder_ball_$s", "elbow_$s", "wrist_$s", "hip_$s", "knee_$s", "ankle_$s") }
 
 private fun runCase(c: Case, outRoot: File): Row {
     val out = File(outRoot, "${c.name}/out"); val prev = File(outRoot, "${c.name}/prev")

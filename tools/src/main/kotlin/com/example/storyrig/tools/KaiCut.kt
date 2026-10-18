@@ -73,7 +73,7 @@ private fun scan(sheet: File, outDir: File) {
     for (c in comps) println("$name #${c.id}: box ${c.x0},${c.y0}-${c.x1},${c.y1} area ${c.area}")
 }
 
-/** [hangX], [hangY]: shoulders only, the pivot the arm turns about once it hangs down (see SHOULDER_HANG_PIVOT). */
+/** [hangX], [hangY]: shoulders only, the pivot the arm turns about once it hangs down (KaiRig.slideShoulders); cuts with a shoulder ball (RefCut.shoulderBall) leave them out. */
 class Bone(val name: String, val parent: String?, val px: Float, val py: Float, val hangX: Float = Float.NaN, val hangY: Float = Float.NaN)
 class Part(val name: String, val bone: String, val piece: Piece)
 
@@ -273,28 +273,31 @@ private fun cutNose(ref: Img, box: Box): Piece {
     return Piece(out, box.x0, box.y0).trimmed()
 }
 
-/** Back-to-front draw order of the rest pose. Variants (other eyes, mouths) are written but not drawn. */
+/**
+ * Back-to-front draw order of the rest pose. Variants (other eyes, mouths) are written but not drawn. Each arm is upper
+ * arm, forearm, shoulder ball (RefCut.shoulderBall: the shoulder stays with the shirt over the arm's top), hand.
+ */
 val drawOrder = listOf(
-    "arm_upper_far", "arm_fore_far", "hand_far",
+    "arm_upper_far", "arm_fore_far", "shoulder_ball_far", "hand_far",
     "shin_far", "shoe_far", "thigh_far",
     "shin_near", "shoe_near", "thigh_near",
     "pelvis", "torso", "head", "nose",
     "eye_near_open", "eye_far_open", "brow_near", "brow_far", "mouth_smile",
     "hair",
-    "arm_upper_near", "arm_fore_near", "hand_near",
+    "arm_upper_near", "arm_fore_near", "shoulder_ball_near", "hand_near",
 )
 
 /**
  * Front view: neither arm is behind the other; both are in front of the torso (behind the head), so hands can cross the
- * body (clap, hands on the chest). The shoulder cut runs along the shirt's side and the arm's round end is only its top
- * half, so nothing of the cut shows; a raised sleeve's corner lies over the shirt.
+ * body (clap, hands on the chest). The shoulder ball covers the arm's top, so the shoulder's outline stays with the shirt
+ * whatever the arm does.
  */
 val drawOrderFront = listOf(
     "shin_far", "shoe_far", "thigh_far",
     "shin_near", "shoe_near", "thigh_near",
     "pelvis", "torso",
-    "arm_upper_far", "arm_fore_far", "hand_far",
-    "arm_upper_near", "arm_fore_near", "hand_near",
+    "arm_upper_far", "arm_fore_far", "shoulder_ball_far", "hand_far",
+    "arm_upper_near", "arm_fore_near", "shoulder_ball_near", "hand_near",
     "head", "nose",
     "eye_near_open", "eye_far_open", "brow_near", "brow_far", "mouth_smile",
     "hair",
@@ -302,8 +305,8 @@ val drawOrderFront = listOf(
 
 /** Back view: the body is between the viewer and the arms' front, so both arms go behind the torso. */
 val drawOrderFrontBack = listOf(
-    "arm_upper_far", "arm_fore_far", "hand_far",
-    "arm_upper_near", "arm_fore_near", "hand_near",
+    "arm_upper_far", "arm_fore_far", "shoulder_ball_far", "hand_far",
+    "arm_upper_near", "arm_fore_near", "shoulder_ball_near", "hand_near",
     "shin_far", "shoe_far", "thigh_far",
     "shin_near", "shoe_near", "thigh_near",
     "pelvis", "torso", "head", "nose",

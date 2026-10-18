@@ -483,13 +483,83 @@ private const val ARM_FILL = 2
 internal const val SHOULDER_MARGIN = 6f
 
 /**
- * Where on a shoulder cut (0 top end, 1 armpit end) the arm pivots once it hangs down. A raised arm turns about the
- * middle of the cut (level with the armpit), so its underside stays against the shirt's side; a hanging arm turns
- * about a point high in the shoulder ball, so the top of the sleeve stays put instead of swinging ~30 px out like a
- * shoulder pad. One fixed pivot can't do both (high tears the armpit open when the arm goes up); the app slides the
- * pivot between the two with the arm's angle (KaiRig.slideShoulders), like a shoulder blade.
+ * The shoulder as a ball that stays with the shirt (a cut-out ball joint): the figure's pixels within [r] of the arm's
+ * pivot [c] ([shoulderJoint]). Drawn over the arm's top, on a bone of its own that never turns, so the shoulder's
+ * outline stays put and only the arm turns, coming out from under it; the arm's head ([roundHead]) stays hidden under
+ * the ball. The arm pivots at the ball's centre, so the arm's edge where it leaves the ball stays on the ball's rim at
+ * every angle (a pivot that slides or lifts would push the arm's top out past the shoulder).
+ * On the torso's side of the shoulder cut [sh] ([toTorso]) the ball is the torso's own pixels; on the arm's side it
+ * takes the shirt's pattern carried on across from the torso (stripes run on round the shoulder, [sleeveColour] along
+ * the torso's axis), in the shirt's colours only: those that are main colours of both the torso and the sleeve near
+ * the shoulder, so a backpack strap or a print on the chest is not carried onto the shoulder. On the arm's side only
+ * the sleeve's shirt-coloured pixels are taken: a short sleeve's cuff within the ball is the sleeve's own edge and turns
+ * with the arm.
  */
-internal const val SHOULDER_HANG_PIVOT = .2f
+private fun shoulderBall(img: Img, torso: Piece, torsoM: BooleanArray, armM: BooleanArray, sh: Seg, toTorso: Pt, c: Pt, r: Float): Piece {
+    val w = img.w
+    val mx = (sh.x1 + sh.x2) / 2; val my = (sh.y1 + sh.y2) / 2
+    val reach = hypot(sh.x2 - sh.x1, sh.y2 - sh.y1)
+    val torsoCols = ArrayList<Int>(); val armCols = ArrayList<Int>()
+    for (y in (my - reach).toInt()..(my + reach).toInt()) for (x in (mx - reach).toInt()..(mx + reach).toInt()) {
+        if (!img.inside(x, y) || a(img[x, y]) <= 200 || hypot(x + .5f - mx, y + .5f - my) > reach) continue
+        if (torsoM[y * w + x]) torsoCols += img[x, y] else if (armM[y * w + x]) armCols += img[x, y]
+    }
+    val armMain = mainColours(armCols)
+    val shirt = mainColours(torsoCols).filter { t -> armMain.any { colourDist(t, it) <= SAME_GARMENT } }
+    val x0 = (c.x - r).toInt() - 1; val y0 = (c.y - r).toInt() - 1
+    val out = Img((2 * r).toInt() + 3, (2 * r).toInt() + 3)
+    for (y in 0 until out.h) for (x in 0 until out.w) {
+        val gx = x + x0; val gy = y + y0
+        if (!img.inside(gx, gy)) continue
+        val i = gy * w + gx
+        val src = img.px[i]
+        if (a(src) == 0 || !(torsoM[i] || armM[i])) continue
+        val fx = gx + .5f; val fy = gy + .5f
+        val cover = (r - hypot(fx - c.x, fy - c.y) + .5f).coerceIn(0f, 1f)
+        if (cover <= 0f) continue
+        val col = if ((fx - mx) * toTorso.x + (fy - my) * toTorso.y >= 0f) torso.colourAt(gx, gy).takeIf { a(it) > 200 } ?: src
+        // A short sleeve's cuff (and anything else not the shirt) is the sleeve's own edge: it stays on the arm.
+        else if (shirt.none { colourDist(src, it) <= SAME_GARMENT }) continue
+        else sleeveColour(torso, fx, fy, Pt(0f, 1f), shirt, 2 * reach) ?: src
+        out[x, y] = (col and 0xFFFFFF) or ((a(src) * cover).roundToInt() shl 24)
+    }
+    return Piece(out, x0, y0).trimmed()
+}
+
+/**
+ * The shoulder joint, centre and radius of the ball inscribed in the top of the sleeve: the shoulder's top [top] (where
+ * the sleeve's top edge meets the shirt) projected onto the arm's axis (through the shoulder cut's middle [m], along
+ * [axis]), and its distance from that axis. The arm turns about it, so its top edge stays on the ball at every angle.
+ * Where the arm stands square to the cut it is the cut's middle; where the arm slants down along the cut (a figure
+ * whose arms hang close to the body) the cut is long and its middle low, and a pivot there swung the sleeve's top out
+ * like a pad and left a lump of fixed sleeve on the shoulder.
+ */
+private fun shoulderJoint(top: Pt, m: Pt, axis: Pt): Pair<Pt, Float> {
+    val dx = top.x - m.x; val dy = top.y - m.y
+    val along = dx * axis.x + dy * axis.y
+    return Pt(m.x + along * axis.x, m.y + along * axis.y) to abs(dx * axis.y - dy * axis.x)
+}
+
+/**
+ * The arm's top cut to a round head of radius [r] round its pivot [c] (a ball joint): outside it the arm keeps only what
+ * is ahead of the pivot along its [axis] and on the arm's side of the shoulder cut (through [m], [toTorso] pointing
+ * into the torso). The sleeve behind the pivot lies under the shoulder ball, and left on the arm it swung out past the
+ * shoulder like a pad; the cap and the inside of the sleeve over the torso swung onto the chest once the arm hung down
+ * (the torso keeps plain shirt under them).
+ */
+private fun roundHead(p: Piece, c: Pt, axis: Pt, r: Float, m: Pt, toTorso: Pt): Piece {
+    for (y in 0 until p.h) for (x in 0 until p.w) {
+        val col = p.img[x, y]
+        if (a(col) == 0) continue
+        val fx = x + p.ox + .5f; val fy = y + p.oy + .5f
+        val ahead = (fx - c.x) * axis.x + (fy - c.y) * axis.y >= 0f
+        val armSide = (fx - m.x) * toTorso.x + (fy - m.y) * toTorso.y < 0f
+        if (ahead && armSide) continue
+        val cover = (r - hypot(fx - c.x, fy - c.y) + .5f).coerceIn(0f, 1f)
+        if (cover < 1f) p.img[x, y] = (col and 0xFFFFFF) or ((a(col) * cover).roundToInt() shl 24)
+    }
+    return p.trimmed()
+}
 
 /** How far (degrees, either way) the app may swing a skirt on its bone without opening a gap over the thighs. */
 internal const val SKIRT_SWING = 8.0
@@ -615,13 +685,17 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
         val shoulder = mid(sh)
         val axis = hypot(el.x - shoulder.x, el.y - shoulder.y).let { l -> Pt((el.x - shoulder.x) / l, (el.y - shoulder.y) / l) }
         arm = capInto(arm, shJoint, img, keep = up, axis = axis)
-        val hang = Pt(sh.x1 + (sh.x2 - sh.x1) * SHOULDER_HANG_PIVOT, sh.y1 + (sh.y2 - sh.y1) * SHOULDER_HANG_PIVOT)
+        val (pivot, ballR) = shoulderJoint(Pt(sh.x1 - up.x * SHOULDER_MARGIN, sh.y1 - up.y * SHOULDER_MARGIN), shoulder, axis)
+        arm = roundHead(arm, pivot, axis, ballR, shoulder, Pt(shJoint.ux, shJoint.uy))
         val elbow = jointAcross(arm, el.x, el.y, el.x - shoulder.x, el.y - shoulder.y)
         val (upper, rest) = cutAt(arm, elbow, ref = img)
         val wrist = jointAcross(rest, wr.x, wr.y, wr.x - el.x, wr.y - el.y)
         val (fore, hand) = cutAt(rest, wrist, ref = img)
         elbowHalf += elbow.radius
-        bones += Bone("shoulder_$side", "torso", shoulder.x, shoulder.y, hang.x, hang.y)
+        // The shoulder stays with the shirt: a ball round the arm's pivot, drawn over the arm's top, which turns under it.
+        parts["shoulder_ball_$side"] = Part("shoulder_ball_$side", "shoulder_ball_$side", shoulderBall(img, torso, torsoM, mask, sh, Pt(shJoint.ux, shJoint.uy), pivot, ballR))
+        bones += Bone("shoulder_ball_$side", "torso", pivot.x, pivot.y)
+        bones += Bone("shoulder_$side", "torso", pivot.x, pivot.y)
         bones += Bone("elbow_$side", "shoulder_$side", elbow.x, elbow.y)
         bones += Bone("wrist_$side", "elbow_$side", wrist.x, wrist.y)
         parts["arm_upper_$side"] = Part("arm_upper_$side", "shoulder_$side", upper)

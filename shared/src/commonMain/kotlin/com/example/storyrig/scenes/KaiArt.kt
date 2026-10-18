@@ -351,7 +351,7 @@ class KaiRig(
         headFrom = if (contiguous) hi.first() else -1
         headTo = if (contiguous) hi.last() + 1 else -1
         yaw = facingYaw?.let { fy ->
-            val lateral = listOf("shoulder_near", "shoulder_far", "hip_near", "hip_far").map { a.boneOrNull(it) }
+            val lateral = listOf("shoulder_near", "shoulder_far", "shoulder_ball_near", "shoulder_ball_far", "hip_near", "hip_far").map { a.boneOrNull(it) }
                 .filter { it >= 0 && (sk.parent[it] == torso || sk.parent[it] == root) }.toIntArray()
             val features = byName.filter { (n, p) -> p.bone == head && n != "head" }.values.toTypedArray()
             val headPart = a.parts.firstOrNull { it.name == "head" }

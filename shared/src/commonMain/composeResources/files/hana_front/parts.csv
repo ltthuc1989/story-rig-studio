@@ -9,9 +9,11 @@ pelvis,skirt,359,532,308,199,1
 torso,torso,407,342,215,210,1
 arm_upper_far,shoulder_far,567,392,188,151,1
 arm_fore_far,elbow_far,673,461,148,124,1
+shoulder_ball_far,shoulder_ball_far,552,385,84,83,1
 hand_far,wrist_far,763,523,107,97,1
 arm_upper_near,shoulder_near,271,390,188,152,1
 arm_fore_near,elbow_near,204,460,148,123,1
+shoulder_ball_near,shoulder_ball_near,389,385,84,83,1
 hand_near,wrist_near,154,522,107,98,1
 head,head,346,75,335,309,1
 eye_near_open,head,425,214,64,45,1
