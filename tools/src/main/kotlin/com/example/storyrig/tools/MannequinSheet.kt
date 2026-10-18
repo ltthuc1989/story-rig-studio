@@ -83,11 +83,12 @@ private fun halfWidth(yaw: Int): Double {
     return m + 10
 }
 
-private fun drawFigure(g: Graphics2D, yaw: Int, cx: Double, top: Double, k: Double) {
+/** [farGrey]: the far limbs' grey; the kit sheet draws them like the near ones (darker came back as darker skin). */
+private fun drawFigure(g: Graphics2D, yaw: Int, cx: Double, top: Double, k: Double, farGrey: Color = Color(120, 120, 120)) {
     val v = View(yaw)
     fun X(px: Double, pz: Double) = cx + v.x(px, pz) * k
     fun Y(py: Double) = top + py * k
-    val body = Color(165, 165, 165); val near = Color(190, 190, 190); val far = Color(120, 120, 120)
+    val body = Color(165, 165, 165); val near = Color(190, 190, 190); val far = farGrey
     // Limbs on the side away from the viewer first (dark), then the torso, then the near limbs (light) over it.
     val sides = listOf(-1, 1).sortedBy { v.z(it * 82.0, 0.0) }
     fun leg(side: Int, c: Color) {
@@ -217,7 +218,7 @@ private fun drawBodySheet(out: File) {
     val margin = 30.0; val gapY = 40.0
     // Row A: the five views, figure boxes from y 90 to 960 units like rig_sheet.csv.
     val views = SHEET_YAWS.mapIndexed { i, yaw ->
-        Slot("view_${SHEET_VIEWS[i]}", halfWidth(yaw) * 2, 870.0) { gg, x, y, k -> drawFigure(gg, yaw, x + halfWidth(yaw) * k, y - 90 * k, k) }
+        Slot("view_${SHEET_VIEWS[i]}", halfWidth(yaw) * 2, 870.0) { gg, x, y, k -> drawFigure(gg, yaw, x + halfWidth(yaw) * k, y - 90 * k, k, farGrey = LIGHT) }
     }
     var y = margin
     y += row(g, views, y, rows) + gapY
