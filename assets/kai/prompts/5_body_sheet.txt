@@ -1,0 +1,32 @@
+# Bộ kit tờ 1 (thân) cho Kai, 16:9 4K. Đính kèm theo thứ tự: (1) assets/kai/gemini/ref.png (3/4 đã duyệt),
+# (2) assets/kai/gemini/view_front.png (trực diện đã duyệt), (3) assets/templates/rig_body.png (tờ mẫu hình nộm).
+# Bố cục phải giữ đúng tờ mẫu: tool đọc từng bộ phận theo ô trong assets/templates/rig_body.csv.
+# Bản chung cho mọi nhân vật: assets/templates/prompts/body_sheet.txt (chỉ khác đoạn "Character notes").
+Three images are attached.
+Image 1 and Image 2 are the approved design of ONE character, Kai (Image 1 three-quarter view, Image 2 front view): keep exactly the same character everywhere on this sheet (same face, hair shape, proportions, clothes, colors and art style). Copy every clothing detail exactly, with the same size, shape and color. Ignore their poses.
+Image 3 is a grey mannequin sheet that shows only the layout: what to draw, where, how big, and in which pose. Copy its layout exactly: every grey shape is replaced by the matching part of the character, drawn at the same position, the same size and the same angle, with wide empty background between all the pieces. Do not draw the mannequin itself and do not copy its grey color. Light grey shapes are the near side, dark grey shapes are the far side.
+
+Character notes (Kai, 7 years old): red T-shirt with a small white star on the chest, short sleeves rolled up into a darker red cuff; mustard-yellow backpack, from the front only its two shoulder straps show over the shirt; blue denim shorts with turned-up cuffs; bare knees; white socks with one red stripe; orange and white velcro sneakers; short messy dark hair with a cowlick and a side-swept fringe; hands with four fingers (three fingers and a thumb).
+
+This is a parts kit for 2D cutout animation: software will cut the pieces apart and join them at the joints, so each loose piece must also show the parts that are normally hidden where it joins the next piece.
+
+Top row, five full-body views of Kai, left to right, all exactly the same height, standing on the same ground line:
+1. Front view: head and body face the viewer squarely, the face a mirror image left to right, both ears equally visible, like Image 2.
+2. Three-quarter view: turned 45 degrees towards the right of the image, like Image 1.
+3. Side view (profile) facing exactly the right of the image: one eye, the nose and mouth in profile on the right edge of the face, one ear in the middle of the head, the body seen from its side, narrow. The near arm hangs with a slight swing forward, exactly like the mannequin; the far arm is hidden.
+4. Three-quarter back view: turned 135 degrees, the back of the head and body, no face, still turned towards the right of the image.
+5. Back view: exactly from behind, the back of the head with the hair, both ears equally visible, the backpack seen from behind, the back of the shorts and the heels of the shoes. No face.
+In views 1, 2, 4 and 5 both arms are straight and angled down at 45 degrees, palms open, fingers relaxed, with a clear empty gap between each arm and the torso; legs straight with a clear gap between them from the crotch down. Each view shows only what really is on that side (the star is only on the front).
+
+Middle row, left group: the loose parts seen from the FRONT, left to right:
+1. The torso alone: the T-shirt without its sleeves and without the head, seen from the front. Draw what the arms normally hide: both shoulders as full rounded shapes, both armpits, and the sides of the shirt running down straight and complete from the armpit to the hem, in the shirt's own color. The neck (skin) reaches up above the collar as if under the chin. The two backpack straps over the shoulders as in Image 2, and the star.
+2. The shorts alone, seen from the front: the waistband drawn complete (the part normally hidden under the shirt's hem), down to the crotch; no legs.
+3. One arm alone, hanging straight down: at the top the short sleeve with its rolled cuff, the sleeve's top closed as a full round shape (where it joins the shoulder); then the bare arm and the open hand with relaxed fingers.
+4. One leg alone, straight: at the top the leg of the shorts with its turned-up cuff, its top closed as a full round shape (the hip, normally hidden inside the shorts); then the bare knee, the shin and the sock; the sock continues straight down past the ankle (the part normally hidden inside the shoe), no shoe.
+5. One shoe alone, seen from the front, with its opening complete (where the leg goes in).
+Middle row, right group: the same five loose parts seen from the SIDE (profile, facing the right of the image): torso (from its side, narrow, the shoulder as a full rounded shape, the backpack's side and strap), shorts, one arm, one leg, one shoe (long, toe to the right).
+Bottom row: the loose parts seen at THREE-QUARTER (turned 45 degrees to the right like Image 1), left to right: torso (both shoulders rounded, armpits and sides complete), shorts, the near arm, the far arm (seen from its other side, a little darker), one leg, one shoe.
+
+All loose parts at exactly the same scale as the full-body views, so they fit together. No piece touches or overlaps another piece.
+Plain solid pure magenta background (#FF00FF: red 255, green 0, blue 255) filling the whole image, absolutely no shadow, no ground, no scenery, no text, no letters, no labels, no numbers, no arrows, no guide lines, no logo, no watermark. Do not use magenta or pink anywhere on the character.
+Art style: exactly the art style of Image 1 and Image 2: polished flat vector illustration for a modern educational app, simple geometric shapes joined with clean smooth curves, absolutely no outlines, a single flat darker shading shape per form, no gradients, no texture. Light comes from the upper right. Clean, balanced, professional.

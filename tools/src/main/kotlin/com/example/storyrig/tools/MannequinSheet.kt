@@ -152,3 +152,251 @@ private fun limb(g: Graphics2D, c: Color, x1: Double, y1: Double, x2: Double, y2
     g.stroke = BasicStroke((2 * r).toFloat(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND)
     g.draw(Line2D.Double(x1, y1, x2, y2))
 }
+
+/*
+ * The two kit sheets (ART_PIPELINE.md section 2), 16:9, drawn at 2752 x 1536 (Gemini returns 5504 x 3072 at 4K, twice
+ * this). One body unit (the 1024 px templates' units) is KIT_K px here, so a full figure (830 units) is about 1410 px
+ * tall at 4K. Every slot is written to <out>.csv as name,x0,y0,x1,y1,scale (px of this sheet; scale: how many times
+ * the body scale the slot is drawn, 2.4 for the face and hand pieces so they get more pixels; splitsheet scales them back).
+ *   mannequin kit <dir>   writes <dir>/rig_body.png and <dir>/rig_face_hands.png with their .csv
+ */
+internal fun drawKitSheets(dir: File) {
+    drawBodySheet(File(dir, "rig_body.png"))
+    drawFaceHandsSheet(File(dir, "rig_face_hands.png"))
+}
+
+private const val KIT_W = 2752
+private const val KIT_H = 1536
+private const val KIT_K = .85
+
+private val GREY = Color(165, 165, 165)
+private val LIGHT = Color(190, 190, 190)
+private val DARK = Color(120, 120, 120)
+private val INK = Color(95, 95, 95)
+
+/** A piece on a kit sheet: [w] x [h] body units, [draw] puts it with its box's top-left at (x, y) px, k px per unit. */
+private class Slot(val name: String, val w: Double, val h: Double, val scale: Double = 1.0, val draw: (Graphics2D, Double, Double, Double) -> Unit)
+
+/** Lays [slots] out in one row from [y] px, spread evenly across the sheet; returns the csv rows and the row's height. */
+private fun row(g: Graphics2D, slots: List<Slot>, y: Double, rows: MutableList<String>, groupGap: Map<Int, Double> = emptyMap()): Double {
+    val widths = slots.map { it.w * KIT_K * it.scale }
+    val extra = groupGap.values.sum()
+    val gap = (KIT_W - widths.sum() - extra) / (slots.size + 1)
+    var x = gap
+    var hMax = 0.0
+    for ((i, s) in slots.withIndex()) {
+        x += groupGap[i] ?: 0.0
+        val k = KIT_K * s.scale
+        s.draw(g, x, y, k)
+        rows += "%s,%d,%d,%d,%d,%s".format(s.name, x.toInt(), y.toInt(), (x + s.w * k).toInt(), (y + s.h * k).toInt(), s.scale.toString())
+        hMax = maxOf(hMax, s.h * k)
+        x += widths[i] + gap
+    }
+    return hMax
+}
+
+private fun disc(g: Graphics2D, c: Color, x: Double, y: Double, r: Double) { g.color = c; g.fill(Ellipse2D.Double(x - r, y - r, 2 * r, 2 * r)) }
+private fun box(g: Graphics2D, c: Color, x0: Double, y0: Double, x1: Double, y1: Double, round: Double) {
+    g.color = c; g.fill(RoundRectangle2D.Double(x0, y0, x1 - x0, y1 - y0, round, round))
+}
+
+/**
+ * Sheet 1, the body: row A the five views (as rig_sheet.png); row B the loose parts seen from the front and from the side;
+ * row C the loose parts seen at three-quarter. Loose parts are drawn the way they hang under their neighbours: a torso
+ * with round shoulders and the armpits and the shirt's sides under the arms, a neck reaching up under the chin; an arm
+ * with a round head at the shoulder; a leg with a round head at the hip, reaching down inside the shoe; the pelvis
+ * reaching up under the shirt's hem; a shoe on its own.
+ */
+private fun drawBodySheet(out: File) {
+    val img = BufferedImage(KIT_W, KIT_H, BufferedImage.TYPE_INT_RGB)
+    val g = img.createGraphics()
+    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+    g.color = Color(255, 0, 255); g.fillRect(0, 0, KIT_W, KIT_H)
+    val rows = ArrayList<String>()
+    rows += "# name,x0,y0,x1,y1,scale (px of this 2752 x 1536 sheet; Gemini's 4K sheet is twice this)"
+    val margin = 30.0; val gapY = 40.0
+    // Row A: the five views, figure boxes from y 90 to 960 units like rig_sheet.csv.
+    val views = SHEET_YAWS.mapIndexed { i, yaw ->
+        Slot("view_${SHEET_VIEWS[i]}", halfWidth(yaw) * 2, 870.0) { gg, x, y, k -> drawFigure(gg, yaw, x + halfWidth(yaw) * k, y - 90 * k, k) }
+    }
+    var y = margin
+    y += row(g, views, y, rows) + gapY
+    // Row B: front parts, then side parts.
+    val front = partSet("front", 0)
+    val side = partSet("side", 90)
+    y += row(g, front + side, y, rows, mapOf(front.size to 120.0)) + gapY
+    // Row C: three-quarter parts (near and far arm both: the far one is seen from its other side).
+    row(g, partSet("3q", 45), y, rows)
+    g.dispose()
+    out.parentFile?.mkdirs()
+    ImageIO.write(img, "png", out)
+    File(out.path.removeSuffix(".png") + ".csv").writeText(rows.joinToString("\n") + "\n")
+    println("wrote $out")
+}
+
+/** Loose parts of one view, in body units: torso, pelvis, arm(s), leg, shoe. */
+private fun partSet(view: String, yaw: Int): List<Slot> {
+    val v = View(yaw)
+    val tw = 200 * abs(v.c) + 120 * abs(v.s)
+    val pw = 180 * abs(v.c) + 110 * abs(v.s)
+    // Shoulder balls where the arms join, seen from the yaw (both on the centre line seen from the side).
+    val ballX = listOf(-1, 1).map { v.x(it * 82.0, 0.0) }
+    val halfT = maxOf(tw / 2, ballX.maxOf { abs(it) } + 40)
+    val torso = Slot("${view}_torso", 2 * halfT, 310.0) { g, x, y, k ->
+        val cx = x + halfT * k
+        fun Y(u: Double) = y + (u - 325) * k
+        // Neck reaching up under the chin, torso, shoulder balls (the far one behind, the near one over it).
+        box(g, GREY, cx - 30 * k, Y(330.0), cx + 30 * k, Y(420.0), 20 * k)
+        val order = listOf(-1, 1).sortedBy { v.z(it * 82.0, 0.0) }
+        // Seen square on, both shoulders face the viewer alike (both over the torso); turned, the far one is behind it.
+        val square = abs(v.s) < 1e-6
+        if (!square) disc(g, DARK, cx + v.x(order[0] * 82.0, 0.0) * k, Y(425.0), 40 * k)
+        box(g, GREY, cx - tw / 2 * k, Y(385.0), cx + tw / 2 * k, Y(635.0), 70 * k)
+        if (square) disc(g, LIGHT, cx + v.x(order[0] * 82.0, 0.0) * k, Y(425.0), 40 * k)
+        disc(g, LIGHT, cx + v.x(order[1] * 82.0, 0.0) * k, Y(425.0), 40 * k)
+    }
+    val pelvis = Slot("${view}_pelvis", pw, 130.0) { g, x, y, k ->
+        // Reaching up 40 units under the shirt's hem (the waistband drawn in full).
+        box(g, GREY, x, y, x + pw * k, y + 130 * k, 50 * k)
+    }
+    fun arm(name: String, c: Color) = Slot(name, 80.0, 360.0) { g, x, y, k ->
+        val cx = x + 40 * k
+        disc(g, c, cx, y + 40 * k, 40 * k)
+        limb(g, c, cx, y + 40 * k, cx, y + 300 * k, 31 * k)
+        disc(g, c, cx, y + 320 * k, 35 * k)
+    }
+    val leg = Slot("${view}_leg", 80.0, 360.0) { g, x, y, k ->
+        val cx = x + 40 * k
+        disc(g, LIGHT, cx, y + 40 * k, 40 * k)
+        // Down past the ankle: the part inside the shoe.
+        limb(g, LIGHT, cx, y + 40 * k, cx, y + 329 * k, 31 * k)
+    }
+    val fw = 44 * abs(v.c) + 84 * abs(v.s) + 16
+    val shoe = Slot("${view}_shoe", fw, 50.0) { g, x, y, k ->
+        g.color = LIGHT; g.fill(Ellipse2D.Double(x, y + 3 * k, fw * k, 44 * k))
+    }
+    val arms = if (yaw == 45) listOf(arm("3q_arm_near", LIGHT), arm("3q_arm_far", DARK)) else listOf(arm("${view}_arm", LIGHT))
+    return listOf(torso, pelvis) + arms + listOf(leg, shoe)
+}
+
+/**
+ * Sheet 2, face, hands, hair: row 1 the front eye (white and pupil apart), its states and the brows; row 2 the 12 front
+ * mouths; row 3 the side eye, brow and the 12 side mouths; rows 4 and 5 the right hand's shapes; row 6 the head without
+ * hair, the hair layers and the accessory. Face and hand pieces at 2.4 times the body scale, the head row at body scale.
+ */
+private fun drawFaceHandsSheet(out: File) {
+    val img = BufferedImage(KIT_W, KIT_H, BufferedImage.TYPE_INT_RGB)
+    val g = img.createGraphics()
+    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+    g.color = Color(255, 0, 255); g.fillRect(0, 0, KIT_W, KIT_H)
+    val rows = ArrayList<String>()
+    rows += "# name,x0,y0,x1,y1,scale (px of this 2752 x 1536 sheet; Gemini's 4K sheet is twice this)"
+    val s = 2.4
+    var y = 40.0; val gapY = 46.0
+    fun stroke(gg: Graphics2D, w: Double) { gg.stroke = BasicStroke(w.toFloat(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND) }
+    fun arc(gg: Graphics2D, x: Double, yy: Double, w: Double, h: Double, k: Double, up: Boolean, t: Double = 5.0) {
+        gg.color = INK; stroke(gg, t * k)
+        gg.draw(java.awt.geom.Arc2D.Double(x + t * k, yy + (if (up) 0.0 else h * k / 2), w * k - 2 * t * k, h * k, if (up) 200.0 else 20.0, 140.0, java.awt.geom.Arc2D.OPEN))
+    }
+    fun brow(name: String, tilt: Double, lift: Double) = Slot(name, 56.0, 30.0, s) { gg, x, yy, k ->
+        gg.color = INK; stroke(gg, 8 * k)
+        val cy = yy + 18 * k - lift * k
+        gg.draw(Line2D.Double(x + 6 * k, cy + tilt * k, x + 50 * k, cy - tilt * k))
+    }
+    // Row 1: eye white, pupil (iris and pupil, apart), half, closed, happy, wide; brows.
+    val eyes = listOf(
+        Slot("eye_white", 44.0, 34.0, s) { gg, x, yy, k -> g.color = LIGHT; gg.color = LIGHT; gg.fill(Ellipse2D.Double(x, yy, 44 * k, 34 * k)) },
+        Slot("eye_pupil", 22.0, 22.0, s) { gg, x, yy, k -> disc(gg, INK, x + 11 * k, yy + 11 * k, 11 * k) },
+        Slot("eye_half", 44.0, 34.0, s) { gg, x, yy, k ->
+            gg.color = LIGHT; gg.fill(Ellipse2D.Double(x, yy, 44 * k, 34 * k))
+            gg.color = GREY; gg.fill(java.awt.geom.Arc2D.Double(x, yy, 44 * k, 34 * k, 0.0, 180.0, java.awt.geom.Arc2D.CHORD))
+        },
+        Slot("eye_closed", 44.0, 20.0, s) { gg, x, yy, k -> gg.color = INK; stroke(gg, 5 * k); gg.draw(Line2D.Double(x + 4 * k, yy + 10 * k, x + 40 * k, yy + 10 * k)) },
+        Slot("eye_happy", 44.0, 26.0, s) { gg, x, yy, k -> arc(gg, x, yy, 44.0, 26.0, k, up = true) },
+        Slot("eye_wide", 50.0, 42.0, s) { gg, x, yy, k -> gg.color = LIGHT; gg.fill(Ellipse2D.Double(x, yy, 50 * k, 42 * k)) },
+        brow("brow", 0.0, 0.0), brow("brow_raised", -3.0, 6.0), brow("brow_frown", 6.0, 0.0), brow("brow_sad", -6.0, 0.0),
+    )
+    y += row(g, eyes, y, rows) + gapY
+    // Row 2: the 12 front mouths (phonics), grey placeholders of their shapes.
+    fun mouth(name: String, w: Double, h: Double, kind: Int) = Slot(name, w, h, s) { gg, x, yy, k ->
+        when (kind) {
+            0 -> { gg.color = INK; stroke(gg, 6 * k); gg.draw(Line2D.Double(x + 4 * k, yy + h * k / 2, x + (w - 4) * k, yy + h * k / 2)) }
+            1 -> arc(gg, x, yy, w, h, k, up = false, t = 6.0)
+            2 -> arc(gg, x, yy, w, h, k, up = true, t = 6.0)
+            else -> { gg.color = DARK; gg.fill(Ellipse2D.Double(x, yy, w * k, h * k)) }
+        }
+    }
+    val mouths = listOf(
+        mouth("mouth_rest_mbp", 56.0, 20.0, 0), mouth("mouth_a_i", 60.0, 38.0, 3), mouth("mouth_e", 62.0, 20.0, 3),
+        mouth("mouth_o", 36.0, 36.0, 3), mouth("mouth_u_w", 24.0, 24.0, 3), mouth("mouth_f_v", 58.0, 22.0, 3),
+        mouth("mouth_l_th", 52.0, 30.0, 3), mouth("mouth_s_t", 60.0, 18.0, 3), mouth("mouth_smile", 58.0, 26.0, 1),
+        mouth("mouth_laugh", 64.0, 42.0, 3), mouth("mouth_sad", 50.0, 24.0, 2), mouth("mouth_surprised", 34.0, 46.0, 3),
+    )
+    y += row(g, mouths, y, rows) + gapY
+    // Row 3: side face: eye open, closed, happy, wide, brow, then the 12 mouths in profile (about half as wide).
+    val sideFace = listOf(
+        Slot("side_eye_open", 24.0, 34.0, s) { gg, x, yy, k -> gg.color = LIGHT; gg.fill(Ellipse2D.Double(x, yy, 24 * k, 34 * k)) },
+        Slot("side_eye_closed", 24.0, 16.0, s) { gg, x, yy, k -> gg.color = INK; stroke(gg, 5 * k); gg.draw(Line2D.Double(x + 3 * k, yy + 8 * k, x + 21 * k, yy + 8 * k)) },
+        Slot("side_eye_happy", 24.0, 20.0, s) { gg, x, yy, k -> arc(gg, x, yy, 24.0, 20.0, k, up = true) },
+        Slot("side_eye_wide", 28.0, 40.0, s) { gg, x, yy, k -> gg.color = LIGHT; gg.fill(Ellipse2D.Double(x, yy, 28 * k, 40 * k)) },
+        Slot("side_brow", 30.0, 20.0, s) { gg, x, yy, k -> gg.color = INK; stroke(gg, 8 * k); gg.draw(Line2D.Double(x + 4 * k, yy + 12 * k, x + 26 * k, yy + 8 * k)) },
+    ) + mouths.map { m -> Slot("side_" + m.name, maxOf(16.0, m.w / 2), m.h, s) { gg, x, yy, k -> m.draw(gg, x, yy, k * .5); } }
+    y += row(g, sideFace, y, rows) + gapY
+    // Rows 4 and 5: the right hand, front then side.
+    fun hand(name: String, fingers: List<Double>, thumb: Double?, palmLight: Boolean = false, fist: Boolean = false, edge: Boolean = false) =
+        Slot(name, 90.0, 110.0, s) { gg, x, yy, k ->
+            val cx = x + 45 * k; val cy = yy + 72 * k
+            val c = if (palmLight) LIGHT else GREY
+            if (edge) { box(gg, c, cx - 12 * k, yy + 10 * k, cx + 12 * k, yy + 106 * k, 20 * k); return@Slot }
+            box(gg, c, cx - 26 * k, cy - 26 * k, cx + 26 * k, cy + 32 * k, 26 * k)
+            if (fist) { box(gg, c, cx - 28 * k, cy - 34 * k, cx + 28 * k, cy - 6 * k, 22 * k) }
+            gg.color = c; stroke(gg, 13 * k)
+            for ((i, a) in fingers.withIndex()) {
+                val fx = cx + (-19 + i * 12.7) * k; val r = Math.toRadians(a)
+                gg.draw(Line2D.Double(fx, cy - 20 * k, fx + sin(r) * 44 * k, cy - 20 * k - cos(r) * 44 * k))
+            }
+            if (thumb != null) { val r = Math.toRadians(thumb); gg.draw(Line2D.Double(cx + 22 * k, cy, cx + 22 * k + sin(r) * 34 * k, cy - cos(r) * 34 * k)) }
+        }
+    val handsFront = listOf(
+        hand("hand_relaxed", listOf(-8.0, -3.0, 3.0, 8.0), 70.0),
+        hand("hand_fist", emptyList(), 30.0, fist = true),
+        hand("hand_point", listOf(0.0), null, fist = true),
+        hand("hand_thumb_up", emptyList(), 0.0, fist = true),
+        hand("hand_wave_palm", listOf(-14.0, -5.0, 5.0, 14.0), 60.0, palmLight = true),
+        hand("hand_wave_back", listOf(-14.0, -5.0, 5.0, 14.0), 60.0),
+        hand("hand_palm_up", listOf(70.0, 75.0, 80.0, 85.0), 30.0, palmLight = true),
+        hand("hand_grip_c", listOf(40.0, 45.0, 50.0, 55.0), 100.0),
+    )
+    y += row(g, handsFront, y, rows) + gapY
+    val handsMore = listOf(
+        hand("hand_count_1", listOf(0.0), null, fist = true),
+        hand("hand_count_2", listOf(-8.0, 8.0), null, fist = true),
+        hand("hand_count_3", listOf(-10.0, 0.0, 10.0), null, fist = true),
+        hand("hand_count_4", listOf(-12.0, -4.0, 4.0, 12.0), null),
+        hand("hand_clap_edge", emptyList(), null, edge = true),
+        hand("side_hand_relaxed", emptyList(), null, edge = true),
+        hand("side_hand_fist", emptyList(), 20.0, fist = true),
+    )
+    y += row(g, handsMore, y, rows) + gapY
+    // Row 6 at body scale: the head without hair, back hair, front hair (fringe), the accessory (a backpack).
+    val heads = listOf(
+        Slot("head_bald", 290.0, 260.0) { gg, x, yy, k ->
+            disc(gg, GREY.darker(), x + 25 * k, yy + 130 * k, 22 * k); disc(gg, GREY.darker(), x + 265 * k, yy + 130 * k, 22 * k)
+            disc(gg, GREY, x + 145 * k, yy + 130 * k, 125 * k)
+        },
+        Slot("hair_back", 280.0, 260.0) { gg, x, yy, k -> box(gg, DARK, x, yy, x + 280 * k, yy + 250 * k, 160 * k) },
+        Slot("hair_front", 270.0, 120.0) { gg, x, yy, k ->
+            gg.color = DARK; gg.fill(java.awt.geom.Arc2D.Double(x, yy, 270 * k, 220 * k, 0.0, 180.0, java.awt.geom.Arc2D.CHORD))
+        },
+        Slot("accessory", 200.0, 240.0) { gg, x, yy, k ->
+            box(gg, GREY, x + 10 * k, yy + 30 * k, x + 190 * k, yy + 240 * k, 50 * k)
+            gg.color = DARK; stroke(gg, 12 * k); gg.draw(java.awt.geom.Arc2D.Double(x + 60 * k, yy, 80 * k, 70 * k, 0.0, 180.0, java.awt.geom.Arc2D.OPEN))
+        },
+    )
+    row(g, heads, y, rows)
+    g.dispose()
+    out.parentFile?.mkdirs()
+    ImageIO.write(img, "png", out)
+    File(out.path.removeSuffix(".png") + ".csv").writeText(rows.joinToString("\n") + "\n")
+    println("wrote $out")
+}
