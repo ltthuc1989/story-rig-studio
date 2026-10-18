@@ -188,7 +188,7 @@ Plan đầy đủ: bộ kit 2 tờ (mục 2), lắp rig từ bộ phận rời (
 | 0c | **Dừng sau mục vai (2026-10-18):** nách vẫn rách, chỉ bộ kit sửa được; các mục code còn lại làm sau khi Kai có bộ kit. Đã xong: quả cầu vai (selftest 15/15, lệch màu tư thế đứng tối đa 0,26 %, `motionCheck` đạt). Còn lại → thứ tự vẽ tay xa → gối theo hình nộm → cổ giày → tóc và dây buộc → váy Hana → mặt sau (quần đùi khi ngồi, đá chân) → cổ tay → nắp tô trơn (cổ, khuỷu, đùi, quai balo trên tay) → kính Bo | chưa |
 | 1 | 2 tờ mẫu (`rig_body.png`, `rig_face_hands.png`, kèm `.csv` ô) trong `MannequinSheet.kt` (`mannequin kit <dir>`). 2 prompt (`body_sheet.txt`, `face_hands_sheet.txt`) nói rõ phần phải vẽ dư, 12 miệng, bàn tay đếm số | xong 2026-10-18, **chờ người dùng duyệt**. Tờ thân: hàng A 5 góc, hàng B bộ phận rời trực diện và nghiêng, hàng C bộ phận rời 3/4 (vừa 2 tờ, không cần tờ 3). Cỡ ở 4K: người toàn thân 1411 px, miệng 146–246 px, mắt 180 px, bàn tay 368×448 px, đầu không tóc 494 px (mặt và tay vẽ gấp 2,4 lần cỡ thân, `splitsheet` thu về). Prompt của Kai: `assets/kai/prompts/5_body_sheet.txt`, `6_face_hands_sheet.txt` |
 | 2 | `splitsheet` và `sheetcheck` (10 mục ở mục 3), thử trên `turnaround_v1.jpg` | chưa |
-| 3 | Gemini cho **Kai**: 2 lượt, 4K, **người dùng duyệt riêng**. Chạy `sheetcheck`, báo bằng lời thường kèm ảnh khoanh lỗi | chờ duyệt |
+| 3 | Gemini cho **Kai**: 2 lượt, 4K, **người dùng duyệt riêng**. Chạy `sheetcheck`, báo bằng lời thường kèm ảnh khoanh lỗi | đang làm. 2026-10-18 tờ thân 2 lần ra hình (`attempts/kit_body_v1.jpg`, `v2`) cộng 3 lượt `NO_IMAGE` (model hay từ chối ngẫu nhiên với prompt dài kèm 3 ảnh; thêm câu đầu "Generate one image" và thử lại thì ra). Hàng 5 góc đẹp và đồng nhất; tay rời có đầu tay áo tròn; chân rời có đầu ống quần tròn và tất vẽ dư; v2 thân trực diện đúng dáng không tay (vai tròn, nách, hông áo đủ). Lỗi do tờ mẫu: đĩa vai sáng trên thân thành mảng da (đã bỏ, thân một khối xám vai tròn); ô chân giống ô tay nên nhóm trực diện ra 2 tay, thiếu chân và giày (ô chân giờ là khối ống quần rộng). Quần rời vẫn có 2 ống (tool cắt bỏ dưới đáy quần). Chân 3/4 vẫn dính giày. **Tiếp: gọi tờ thân v3 với tờ mẫu mới (free tier, người dùng duyệt), rồi tờ mặt và tay** |
 | 4 | `cutparts` cho Kai: lắp rig trực diện và nghiêng từ bộ phận rời (mục 4). Engine đọc thêm: tròng mắt tách (đảo mắt), 12 miệng, bàn tay hoán đổi, tóc tách lớp, góc SIDE 90 và Q3_BACK 135, clip đi ở góc nghiêng | chưa |
 | 5 | Kai: góc 3/4, 3/4 sau, sau lưng cắt từ hàng A (dự phòng). Đưa đủ các góc của Kai vào app | chưa |
 | 6 | **Người dùng xem Kai trong app và xác nhận ổn hết.** Chưa xác nhận thì không gọi Gemini cho nhân vật khác | chưa |
@@ -196,7 +196,7 @@ Plan đầy đủ: bộ kit 2 tờ (mục 2), lắp rig từ bộ phận rời (
 
 Mỗi bước: soi `tools/joint_sheet.sh` (cả 11 bộ cắt), selftest, `motionCheck`, rồi mở lại app desktop cho người dùng xem.
 
-Lượt Gemini ngày 2026-10-18: 12/20 paid (11 hình trực diện, 1 tờ thử 5 góc). Từ 2026-10-19 dùng `STORYRIG_TIER=free`.
+Lượt Gemini ngày 2026-10-18: 12 hình paid buổi sáng (11 hình trực diện, 1 tờ thử 5 góc), tối thêm 2 tờ thân bộ kit ra hình và 3 lượt `NO_IMAGE` (chạy `STORYRIG_TIER=free`, người dùng cho nâng trần có chủ ý). Bộ đếm của script ghi 44 (tính cả lượt lỗi). Từ 2026-10-19 dùng `STORYRIG_TIER=free`.
 
 ## 8. Rà soát khớp (2026-10-18)
 

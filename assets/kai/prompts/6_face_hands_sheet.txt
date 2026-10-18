@@ -2,6 +2,7 @@
 # (2) assets/kai/gemini/view_front.png, (3) assets/templates/rig_face_hands.png (tờ mẫu).
 # Bố cục phải giữ đúng tờ mẫu: tool đọc từng mảnh theo ô trong assets/templates/rig_face_hands.csv.
 # Bản chung cho mọi nhân vật: assets/templates/prompts/face_hands_sheet.txt (chỉ khác đoạn "Character notes").
+Generate one image: a 16:9 character parts sheet, drawn as described below.
 Three images are attached.
 Image 1 and Image 2 are the approved design of ONE character, Kai: keep exactly the same face design, eye design, skin color, hair, colors and art style. Ignore their poses.
 Image 3 is a grey mannequin sheet that shows only the layout: every grey shape is one piece to draw, at the same position and size, in strict rows read left to right, with wide empty background between all the pieces. Do not draw the grey shapes themselves.

@@ -1,5 +1,6 @@
 # Bộ kit tờ 2 (mặt, tay, tóc), bản chung: chép ra assets/<tên>/prompts/, thay "Kai" và đoạn "Character notes" bằng mô tả của nhân vật.
 # Đính kèm ref.png, view_front.png, assets/templates/rig_face_hands.png. Mẫu đã điền: assets/kai/prompts/6_face_hands_sheet.txt.
+Generate one image: a 16:9 character parts sheet, drawn as described below.
 Three images are attached.
 Image 1 and Image 2 are the approved design of ONE character, Kai: keep exactly the same face design, eye design, skin color, hair, colors and art style. Ignore their poses.
 Image 3 is a grey mannequin sheet that shows only the layout: every grey shape is one piece to draw, at the same position and size, in strict rows read left to right, with wide empty background between all the pieces. Do not draw the grey shapes themselves.

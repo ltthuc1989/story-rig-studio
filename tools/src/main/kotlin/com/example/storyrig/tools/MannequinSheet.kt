@@ -245,15 +245,11 @@ private fun partSet(view: String, yaw: Int): List<Slot> {
     val torso = Slot("${view}_torso", 2 * halfT, 310.0) { g, x, y, k ->
         val cx = x + halfT * k
         fun Y(u: Double) = y + (u - 325) * k
-        // Neck reaching up under the chin, torso, shoulder balls (the far one behind, the near one over it).
+        // Neck reaching up under the chin; the torso one grey shape with round shoulders (the shoulder balls drawn in
+        // the torso's own grey: a lighter disc there came back as a patch of skin).
         box(g, GREY, cx - 30 * k, Y(330.0), cx + 30 * k, Y(420.0), 20 * k)
-        val order = listOf(-1, 1).sortedBy { v.z(it * 82.0, 0.0) }
-        // Seen square on, both shoulders face the viewer alike (both over the torso); turned, the far one is behind it.
-        val square = abs(v.s) < 1e-6
-        if (!square) disc(g, DARK, cx + v.x(order[0] * 82.0, 0.0) * k, Y(425.0), 40 * k)
+        for (side in listOf(-1, 1)) disc(g, GREY, cx + v.x(side * 82.0, 0.0) * k, Y(425.0), 40 * k)
         box(g, GREY, cx - tw / 2 * k, Y(385.0), cx + tw / 2 * k, Y(635.0), 70 * k)
-        if (square) disc(g, LIGHT, cx + v.x(order[0] * 82.0, 0.0) * k, Y(425.0), 40 * k)
-        disc(g, LIGHT, cx + v.x(order[1] * 82.0, 0.0) * k, Y(425.0), 40 * k)
     }
     val pelvis = Slot("${view}_pelvis", pw, 130.0) { g, x, y, k ->
         // Reaching up 40 units under the shirt's hem (the waistband drawn in full).
@@ -265,11 +261,12 @@ private fun partSet(view: String, yaw: Int): List<Slot> {
         limb(g, c, cx, y + 40 * k, cx, y + 300 * k, 31 * k)
         disc(g, c, cx, y + 320 * k, 35 * k)
     }
-    val leg = Slot("${view}_leg", 80.0, 360.0) { g, x, y, k ->
-        val cx = x + 40 * k
-        disc(g, LIGHT, cx, y + 40 * k, 40 * k)
-        // Down past the ankle: the part inside the shoe.
-        limb(g, LIGHT, cx, y + 40 * k, cx, y + 329 * k, 31 * k)
+    val leg = Slot("${view}_leg", 100.0, 360.0) { g, x, y, k ->
+        val cx = x + 50 * k
+        // The leg of the shorts: a wide round-topped block (unlike an arm's narrow sleeve), then the leg down past the
+        // ankle (the part inside the shoe), cut flat.
+        box(g, GREY, cx - 50 * k, y, cx + 50 * k, y + 120 * k, 90 * k)
+        g.color = LIGHT; g.fill(java.awt.geom.Rectangle2D.Double(cx - 31 * k, y + 110 * k, 62 * k, 220 * k))
     }
     val fw = 44 * abs(v.c) + 84 * abs(v.s) + 16
     val shoe = Slot("${view}_shoe", fw, 50.0) { g, x, y, k ->
