@@ -7,11 +7,12 @@ import kotlin.math.sqrt
 /**
  * How a bone pulls on mesh vertices when weights are computed automatically ([MeshData.grid]), bind space.
  * The bone is a capsule: segment ([x0], [y0]) to ([x1], [y1]) with [radius] (0 for a limb bone, about the body's
- * half width for a torso or pelvis). A vertex's distance to it is measured along the bone (how far past either
- * end) plus across it (beyond the radius), not straight to the nearest point: a vertex on a limb's outline is then
+ * half width for a torso or pelvis). For a limb bone (radius 0) a vertex's distance is measured along the bone
+ * (how far past either end) plus across it, not straight to the nearest point: a vertex on a limb's outline is then
  * as far from the next bone as its centre line is, so the joint blends over the same short stretch across the
  * whole width, and the limb segments stay straight (the usual rule in 2D rigs: each segment fully on its bone,
- * a narrow blend at the joint). Another bone fades in over [blend] units of that distance.
+ * a narrow blend at the joint). A body capsule (radius > 0) is a round blob: straight distance minus the radius.
+ * Another bone fades in over [blend] units of that distance.
  *
  * [parent] >= 0 attaches the bone's start to its parent across the joint (a sleeve to the shirt, a shorts leg to
  * the pelvis): along the bone's axis, vertices more than [attachBand]/2 behind the start follow [parent] only,
@@ -188,16 +189,20 @@ class MeshData(
             return c * c * (3f - 2f * c)
         }
 
-        /** Along the bone past its ends, plus across it beyond the radius; see [MeshInfluence]. */
+        /** Limb: along the bone past its ends plus across it; body capsule: straight, minus the radius. See [MeshInfluence]. */
         private fun capsuleDistance(px: Float, py: Float, f: MeshInfluence): Float {
             val dx = f.x1 - f.x0; val dy = f.y1 - f.y0
             val len = sqrt(dx * dx + dy * dy)
             val qx = px - f.x0; val qy = py - f.y0
-            if (len == 0f) return (sqrt(qx * qx + qy * qy) - f.radius).coerceAtLeast(0f)
-            val along = (qx * dx + qy * dy) / len
+            val along = if (len == 0f) 0f else (qx * dx + qy * dy) / len
+            if (len == 0f || f.radius > 0f) {
+                val t = if (len == 0f) 0f else (along / len).coerceIn(0f, 1f)
+                val ex = qx - t * dx; val ey = qy - t * dy
+                return (sqrt(ex * ex + ey * ey) - f.radius).coerceAtLeast(0f)
+            }
             val across = kotlin.math.abs(qx * dy - qy * dx) / len
             val past = if (along < 0f) -along else if (along > len) along - len else 0f
-            return past + (across - f.radius).coerceAtLeast(0f)
+            return past + across
         }
 
         /** Cells whose pixels are all below this alpha (0..255) are dropped. */
