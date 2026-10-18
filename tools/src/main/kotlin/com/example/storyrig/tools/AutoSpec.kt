@@ -30,6 +30,9 @@ import kotlin.math.roundToInt
 
 private val TEMPLATE = File("assets/templates/rig_3q_right.png")
 
+/** AutoSpec arm: a fitted axis this many degrees off the arm's own pixels is replaced by theirs. */
+private const val AXIS_TRUST_DEG = 15.0
+
 /** Mannequin joints (template pixels) and the box of its silhouette. */
 class RigTemplate(val pts: Map<String, Pt>, val box: Box) {
     operator fun get(n: String) = pts[n] ?: error("template has no point $n")
@@ -233,6 +236,47 @@ fun autoSpec(img: Img, template: RigTemplate = RigTemplate.load(TEMPLATE), debug
             var nd = Pt(kotlin.math.cos(ang), kotlin.math.sin(ang))
             if (nd.x * d.x + nd.y * d.y < 0) nd = Pt(-nd.x, -nd.y)
             d = nd; origin = Pt(mx, my)
+        }
+        // Check against the arm's own pixels: from the fingertips (the figure's outermost part on this side between the
+        // neck and the crotch) flood the silhouette without crossing the armpit's vertical; the principal axis of that
+        // blob is the arm. A thin arm held at another angle than the mannequin's sends the cross-sections above onto
+        // the body (the axis flips); then the blob's axis is used.
+        run {
+            val left = hand.x < bodyX
+            val y1 = guess("crotch").y.roundToInt()
+            var ext = if (left) Int.MAX_VALUE else Int.MIN_VALUE; var ey = 0
+            for (y in neckY..y1) for (x in 0 until sil.w) if (sil.at(x, y) && (if (left) x < ext else x > ext)) { ext = x; ey = y }
+            if (ext == Int.MAX_VALUE || ext == Int.MIN_VALUE) return@run
+            val limit = if (left) apex.x - 2f else apex.x + 2f
+            val seen = BooleanArray(sil.w * sil.h)
+            val st = ArrayDeque<Int>(); st += ey * sil.w + ext; seen[ey * sil.w + ext] = true
+            var mx = 0.0; var my = 0.0; var cnt = 0
+            val px = ArrayList<Int>()
+            while (st.isNotEmpty()) {
+                val q = st.removeLast(); px += q
+                val x = q % sil.w; val y = q / sil.w
+                mx += x; my += y; cnt++
+                for ((dx, dy) in NEIGH4) {
+                    val nx = x + dx; val ny = y + dy
+                    if (!sil.at(nx, ny) || (if (left) nx > limit else nx < limit)) continue
+                    val k = ny * sil.w + nx
+                    if (!seen[k]) { seen[k] = true; st += k }
+                }
+            }
+            if (cnt < 200) return@run
+            mx /= cnt; my /= cnt
+            var sxx = 0.0; var sxy = 0.0; var syy = 0.0
+            for (q in px) { val x = q % sil.w - mx; val y = q / sil.w - my; sxx += x * x; sxy += x * y; syy += y * y }
+            val ang = 0.5 * kotlin.math.atan2(2 * sxy, sxx - syy)
+            var bd = Pt(kotlin.math.cos(ang).toFloat(), kotlin.math.sin(ang).toFloat())
+            // Point from the shoulder towards the hand.
+            if (bd.x * (ext - mx).toFloat() + bd.y * (ey - my).toFloat() < 0) bd = Pt(-bd.x, -bd.y)
+            val dot = (bd.x * d.x + bd.y * d.y).coerceIn(-1f, 1f)
+            val off = Math.toDegrees(kotlin.math.acos(dot).toDouble())
+            if (off > AXIS_TRUST_DEG) {
+                log("arm $side axis: fitted ${"%.2f".format(d.x)},${"%.2f".format(d.y)} is ${off.roundToInt()} deg off the arm's pixels; using ${"%.2f".format(bd.x)},${"%.2f".format(bd.y)}")
+                d = bd; origin = Pt(mx.toFloat(), my.toFloat())
+            }
         }
         val n0 = Pt(-d.y, d.x)
         // Normal pointing from the axis to the armpit side.

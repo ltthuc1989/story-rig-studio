@@ -20,6 +20,9 @@ import kotlin.math.max
  * carries stray bits; the skirt rule fires only where expected; Kai matches the app's data byte for byte;
  * variants find their joints within tolerance of the moved hand measurements.
  */
+/** Shoulder to wrist, as a share of the figure's height, below which an arm counts as not found. */
+private const val ARM_MIN = .15f
+
 internal fun selfTest(outRoot: File): Boolean {
     outRoot.mkdirs()
     val cases = ArrayList<Case>()
@@ -27,7 +30,7 @@ internal fun selfTest(outRoot: File): Boolean {
         val gem = File(dir, "gemini")
         if (File(gem, "ref.png").exists()) cases += Case(dir.name, gem, "3q", skirt = dir.name == "hana",
             golden = File("shared/src/commonMain/composeResources/files/${dir.name}").takeIf { dir.name == "kai" })
-        for (v in listOf("front", "back")) if (File(gem, "view_$v.png").exists()) cases += Case("${dir.name}_$v", gem, v)
+        for (v in listOf("front", "back")) if (File(gem, "view_$v.png").exists()) cases += Case("${dir.name}_$v", gem, v, skirt = dir.name == "hana")
     }
     // Synthetic variants of Kai: other colours, smaller and moved, stretched.
     val kaiDir = File("assets/kai/gemini")
@@ -111,6 +114,18 @@ private fun runCase(c: Case, outRoot: File): Row {
         }
     }
     check(File(out, "mesh.csv").exists(), "mesh.csv")
+    // Arms really found: shoulder to wrist at least ARM_MIN of the figure's height, and limbs measured as thick
+    // (mesh.csv's cell is limb half width / 3.25; a failed arm cut gives cell 2). A collapsed arm still cuts "fine".
+    run {
+        val at = bones.associate { it[0] to (it[2].toFloat() to it[3].toFloat()) }
+        val top = parts.filter { it[6] == "1" }.minOf { it[3].toInt() }; val bottom = parts.filter { it[6] == "1" }.maxOf { it[3].toInt() + it[5].toInt() }
+        val arms = listOf("near", "far").map { sd ->
+            val (sx, sy) = at.getValue("shoulder_$sd"); val (wx, wy) = at.getValue("wrist_$sd")
+            hypot(wx - sx, wy - sy) / (bottom - top)
+        }
+        val cell = File(out, "mesh.csv").readLines().firstOrNull { it.startsWith("group,") }?.split(',')?.get(2)?.toIntOrNull() ?: 0
+        check(arms.min() >= ARM_MIN && cell >= 4, "arms %.2f,%.2f of height, mesh cell $cell".format(arms[0], arms[1]))
+    }
 
     // Rest pose from the parts vs the keyed reference.
     val image = if (c.view == "3q") "ref.png" else "view_${c.view}.png"

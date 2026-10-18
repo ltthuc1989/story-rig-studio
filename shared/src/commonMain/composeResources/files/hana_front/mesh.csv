@@ -1,0 +1,24 @@
+# Skinned meshes (art=mesh), ref.png pixels. Written by :tools (MeshSpec.kt); see there for how each number is derived.
+# group,name,cell,parts (;),bones (;)
+group,arm_far,12,arm_upper_far;arm_fore_far;hand_far,shoulder_far;elbow_far;wrist_far
+group,leg_far,12,shin_far;thigh_far,hip_far;knee_far;ankle_far
+group,leg_near,12,shin_near;thigh_near,hip_near;knee_near;ankle_near
+group,pelvis,12,pelvis,skirt;hip_near;hip_far
+group,torso,12,torso,torso;shoulder_near;shoulder_far;root
+group,arm_near,12,arm_upper_near;arm_fore_near;hand_near,shoulder_near;elbow_near;wrist_near
+# influence,bone,x0,y0,x1,y1,radius,blend,attachTo,band
+influence,torso,513.0,410.7,513.0,407.0,99.5,45.7,,0
+influence,root,491.9,633.5,534.1,633.5,38.0,45.7,,0
+influence,skirt,491.9,633.5,534.1,633.5,38.0,45.7,,0
+influence,shoulder_near,409.9,440.0,311.7,501.0,0.0,19.9,torso,61.6
+influence,elbow_near,311.7,501.0,237.3,550.3,0.0,19.9,,0
+influence,wrist_near,237.3,550.3,207.5,571.0,0.0,19.9,,0
+influence,shoulder_far,616.8,440.9,714.0,502.2,0.0,19.9,torso,61.6
+influence,elbow_far,714.0,502.2,787.5,551.5,0.0,19.9,,0
+influence,wrist_far,787.5,551.5,816.5,571.5,0.0,19.9,,0
+influence,hip_near,471.3,686.0,461.3,796.0,0.0,19.9,root,61.6
+influence,knee_near,461.3,796.0,456.5,881.2,0.0,19.9,,0
+influence,ankle_near,456.5,881.2,430.5,913.5,0.0,19.9,,0
+influence,hip_far,555.8,686.0,563.3,796.0,0.0,19.9,root,61.6
+influence,knee_far,563.3,796.0,568.5,881.2,0.0,19.9,,0
+influence,ankle_far,568.5,881.2,596.0,913.5,0.0,19.9,,0
