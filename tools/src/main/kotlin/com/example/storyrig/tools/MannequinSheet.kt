@@ -251,9 +251,12 @@ private fun partSet(view: String, yaw: Int): List<Slot> {
         for (side in listOf(-1, 1)) disc(g, GREY, cx + v.x(side * 82.0, 0.0) * k, Y(425.0), 40 * k)
         box(g, GREY, cx - tw / 2 * k, Y(385.0), cx + tw / 2 * k, Y(635.0), 70 * k)
     }
-    val pelvis = Slot("${view}_pelvis", pw, 130.0) { g, x, y, k ->
-        // Reaching up 40 units under the shirt's hem (the waistband drawn in full).
-        box(g, GREY, x, y, x + pw * k, y + 130 * k, 50 * k)
+    val pelvis = Slot("${view}_pelvis", pw, 110.0) { g, x, y, k ->
+        // The top of the shorts only: the waistband (darker, reaching up under the shirt's hem), then the seat down to
+        // just below the crotch, cut straight across; the legs of the shorts belong to the leg pieces. A plain box
+        // came back as the whole shorts, legs and all.
+        box(g, DARK, x, y, x + pw * k, y + 30 * k, 16 * k)
+        g.color = GREY; g.fill(java.awt.geom.Rectangle2D.Double(x + 4 * k, y + 26 * k, (pw - 8) * k, 84 * k))
     }
     fun arm(name: String, c: Color) = Slot(name, 80.0, 360.0) { g, x, y, k ->
         val cx = x + 40 * k
