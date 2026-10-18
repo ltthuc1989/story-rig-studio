@@ -61,7 +61,7 @@ Hai tờ, không phải một: gộp tất cả vào một tờ thì các ô mi�
   - không hình cũ nào có bộ phận rời có vẽ phần khuất, bộ phận nghiêng, tóc tách lớp, mắt tách tròng, 12 khẩu hình, bàn tay đếm số;
   - vẽ chung 2 tờ thì mọi góc và bộ phận cùng nét, cùng tỉ lệ, cùng màu.
 - **Chi phí:** 10 lượt × $0,151 ≈ $1,51; nếu mỗi tờ phải gọi lại 1 lần, tối đa khoảng $3.
-- **Thứ tự:** Kai (2 lượt) → chạy `sheetcheck` → người dùng duyệt → Mia, Leo, Hana, Bo, mỗi đợt người dùng duyệt.
+- **Thứ tự: làm trọn một nhân vật trước (Kai).** Gồm 2 tờ, `sheetcheck`, lắp rig, mọi góc, engine, rồi xem trong app. Người dùng thấy ổn hết mới gọi Gemini cho nhân vật tiếp theo, mỗi lần một nhân vật. Nếu quy trình còn lỗi thì chỉ tốn lượt gọi của Kai, không tốn cho cả 5.
 - Dữ liệu cắt hiện có trong app giữ lại làm dự phòng cho tới khi kit mới của nhân vật đó đạt `sheetcheck` và bảng kiểm tra vai và nách.
 - Tờ thử cũ (`rig_sheet.png` 21:9, `turnaround_sheet.txt`, `assets/kai/gemini/turnaround_v1.jpg`) dùng để thử `splitsheet` và `sheetcheck`.
 
@@ -149,7 +149,7 @@ Dùng cho 5 bộ hình hiện có, cho các góc chưa có bộ phận rời (3/
 
 ## 7. Tiến độ
 
-Plan đầy đủ: bộ kit 2 tờ (mục 2), lắp rig từ bộ phận rời (mục 4). Làm ở session riêng, theo thứ tự dưới đây.
+Plan đầy đủ: bộ kit 2 tờ (mục 2), lắp rig từ bộ phận rời (mục 4). Làm ở session riêng (`NEXT_SESSION.md`), theo thứ tự dưới đây: làm trọn Kai, người dùng xác nhận, rồi mới sang nhân vật khác.
 
 | Bước | Việc | Trạng thái |
 | --- | --- | --- |
@@ -157,9 +157,11 @@ Plan đầy đủ: bộ kit 2 tờ (mục 2), lắp rig từ bộ phận rời (
 | 0 | Giữ app dùng được trong lúc làm kit. Nắp vai lấy hoa văn tay áo: đi dọc hướng sọc tay áo (vuông góc trục tay) tới điểm tay áo gần nhất có màu chính, thay vì chép ngực áo. Sửa lỗi Leo "mảng ngực xoay theo tay". Nếu Leo lệch màu ở tư thế đứng vượt 1 %, loại điểm thuộc nắp vai khỏi phép so màu và ghi lý do. Soi `pose_sheet.sh` trực diện và 3/4, so với `e677b7f` | chưa |
 | 1 | 2 tờ mẫu (`rig_body.png`, `rig_face_hands.png`, kèm `.csv` ô) trong `MannequinSheet.kt`. 2 prompt (`body_sheet.txt`, `face_hands_sheet.txt`) nói rõ phần phải vẽ dư, 12 miệng, bàn tay đếm số | chưa |
 | 2 | `splitsheet` và `sheetcheck` (10 mục ở mục 3), thử trên `turnaround_v1.jpg` | chưa |
-| 3 | Gemini cho Kai: 2 lượt, 4K, **người dùng duyệt riêng**. Chạy `sheetcheck`, báo bằng lời thường kèm ảnh khoanh lỗi | chờ duyệt |
-| 4 | `cutparts`: lắp rig trực diện và nghiêng từ bộ phận rời (mục 4). Engine đọc thêm: tròng mắt tách (đảo mắt), 12 miệng, bàn tay hoán đổi, tóc tách lớp, góc SIDE 90 và Q3_BACK 135, clip đi ở góc nghiêng | chưa |
-| 5 | Góc 3/4, 3/4 sau, sau lưng cắt từ hàng A (dự phòng). Rồi Mia, Leo, Hana, Bo: mỗi nhân vật 2 lượt, mỗi đợt người dùng duyệt | chưa |
+| 3 | Gemini cho **Kai**: 2 lượt, 4K, **người dùng duyệt riêng**. Chạy `sheetcheck`, báo bằng lời thường kèm ảnh khoanh lỗi | chờ duyệt |
+| 4 | `cutparts` cho Kai: lắp rig trực diện và nghiêng từ bộ phận rời (mục 4). Engine đọc thêm: tròng mắt tách (đảo mắt), 12 miệng, bàn tay hoán đổi, tóc tách lớp, góc SIDE 90 và Q3_BACK 135, clip đi ở góc nghiêng | chưa |
+| 5 | Kai: góc 3/4, 3/4 sau, sau lưng cắt từ hàng A (dự phòng). Đưa đủ các góc của Kai vào app | chưa |
+| 6 | **Người dùng xem Kai trong app và xác nhận ổn hết.** Chưa xác nhận thì không gọi Gemini cho nhân vật khác | chưa |
+| 7 | Lần lượt Mia → Leo → Hana → Bo: mỗi nhân vật 2 lượt, người dùng duyệt trước khi gọi, xong và xem trong app rồi mới sang nhân vật sau | chưa |
 
 Mỗi bước: soi `tools/pose_sheet.sh` (trực diện và 3/4), selftest, `motionCheck`, rồi mở lại app desktop cho người dùng xem.
 
