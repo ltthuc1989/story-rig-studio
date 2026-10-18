@@ -282,6 +282,9 @@ private fun eraseFeature(p: Piece, area: Box, isSkin: (Int) -> Boolean, contrast
     return Box(bx0, by0, bx1 + 1, by1 + 1) to Piece(feature, bx0 - 2, by0 - 2)
 }
 
+/** How far a shoulder cut runs past the arm's top and the armpit (AutoSpec, KaiRefSpec). */
+internal const val SHOULDER_MARGIN = 6f
+
 /** How far (degrees, either way) the app may swing a skirt on its bone without opening a gap over the thighs. */
 internal const val SKIRT_SWING = 8.0
 
@@ -391,14 +394,16 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
     )) {
         val mask = data[0] as BooleanArray; val sh = data[1] as Seg; val el = data[2] as Pt; val wr = data[3] as Pt
         var arm = pieceOf(img, mask)
-        arm = capInto(arm, jointOn(sh, S.seedTorso.x, S.seedTorso.y), img)
+        // Round shoulder end under the shirt: the cut runs SHOULDER_MARGIN past the arm's edges, the cap must not,
+        // or it pokes above the shoulder line once the arm hangs down.
+        arm = capInto(arm, jointOn(sh, S.seedTorso.x, S.seedTorso.y).let { Joint(it.x, it.y, it.ux, it.uy, it.radius - SHOULDER_MARGIN) }, img)
         val shoulder = mid(sh)
         val elbow = jointAcross(arm, el.x, el.y, el.x - shoulder.x, el.y - shoulder.y)
         val (upper, rest) = cutAt(arm, elbow, ref = img)
         val wrist = jointAcross(rest, wr.x, wr.y, wr.x - el.x, wr.y - el.y)
         val (fore, hand) = cutAt(rest, wrist, ref = img)
         elbowHalf += elbow.radius
-        bones += Bone("shoulder_$side", "torso", shoulder.x, shoulder.y + 8f)
+        bones += Bone("shoulder_$side", "torso", shoulder.x, shoulder.y)
         bones += Bone("elbow_$side", "shoulder_$side", elbow.x, elbow.y)
         bones += Bone("wrist_$side", "elbow_$side", wrist.x, wrist.y)
         parts["arm_upper_$side"] = Part("arm_upper_$side", "shoulder_$side", upper)

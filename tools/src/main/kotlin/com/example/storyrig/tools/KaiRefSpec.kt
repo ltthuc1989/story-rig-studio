@@ -9,8 +9,9 @@ package com.example.storyrig.tools
 object KaiRefSpec {
     // Cut lines between parts (each spans the full width of the joint, a few px past both edges).
     val neck = Seg(478f, 392f, 552f, 392f)
-    val shoulderNear = Seg(370f, 416f, 432f, 510f)
-    val shoulderFar = Seg(650f, 416f, 598f, 510f)
+    // Shoulder cuts: straight up from the armpit along the body's side (see AutoSpec); the joint is their middle.
+    val shoulderNear = Seg(432f, 391f, 432f, 510f)
+    val shoulderFar = Seg(600f, 400f, 600f, 510f)
     val hipNear = Seg(412f, 690f, 523f, 690f)
     val hipFar = Seg(521f, 690f, 614f, 690f)
     /** Inner seam between the two shorts legs, from the crotch down. */

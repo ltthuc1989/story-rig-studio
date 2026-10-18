@@ -18,8 +18,9 @@ import kotlin.math.roundToInt
  *    copies the mannequin's pose and framing, so mapping the template's silhouette box onto the character's gives a
  *    first guess for each joint (off by up to ~50 px: heads, hair and sleeves differ).
  * 2. Each guess is then refined on the character's own silhouette (alpha after keying), by shape only:
- *    neck = bottom of the narrow part between head and shoulders; shoulder cut = through the armpit (the top of the
- *    background gap under the arm), across the arm axis; wrist = narrowest cross-section before the hand; elbow =
+ *    neck = bottom of the narrow part between head and shoulders; shoulder cut = up from the armpit (the top of the
+ *    background gap under the arm) along the body's side to the top of the shoulder, so the whole sleeve goes with
+ *    the arm and the shoulder joint sits at the centre of the arm where it meets the body; wrist = narrowest cross-section before the hand; elbow =
  *    halfway; seam and shoe split = the background gap between the legs; knee = where the thigh garment's edge ends
  *    (a step in leg width), ankle = where the foot widens. Capsule radii are measured arm widths.
  * 3. Colour is used only where two parts are drawn over each other with no gap, and only relative to the character:
@@ -236,12 +237,18 @@ fun autoSpec(img: Img, template: RigTemplate = RigTemplate.load(TEMPLATE), debug
         val n0 = Pt(-d.y, d.x)
         // Normal pointing from the axis to the armpit side.
         val n = if ((apex.x - origin.x) * n0.x + (apex.y - origin.y) * n0.y > 0) n0 else Pt(-n0.x, -n0.y)
-        // Shoulder cut: through the armpit, across the arm, out past the top of the shoulder.
+        // Where the arm starts, for the elbow: across the arm axis through the armpit (mid-sleeve on an arm held out).
         var t = 0f
         while (t < 10f && !sil.at(apex.x - n.x * t, apex.y - n.y * t)) t += .5f
         t += sil.reach(apex.x - n.x * t, apex.y - n.y * t, -n.x, -n.y)
-        val shoulder = Seg(apex.x - n.x * (t + 6f), apex.y - n.y * (t + 6f), apex.x + n.x * 6f, apex.y + n.y * 6f)
-        val shMid = mid(shoulder)
+        val shMid = Pt(apex.x - n.x * t / 2, apex.y - n.y * t / 2)
+        // Shoulder cut: straight up from the armpit along the body's side to the top of the shoulder. Cutting across
+        // the arm instead leaves the inner half of a sleeve on the shirt, which sticks out as a square pad once the
+        // arm hangs down. The joint is the middle of this cut: the centre of the arm where it meets the body.
+        var top = apex.y
+        while (top > apex.y - 12f && !sil.at(apex.x, top)) top -= .5f
+        while (top > 0f && sil.at(apex.x, top)) top -= .5f
+        val shoulder = Seg(apex.x, top - SHOULDER_MARGIN, apex.x, apex.y + SHOULDER_MARGIN)
         // Axis parameter of a point, and the axis point at a parameter.
         fun tOf(p: Pt) = (p.x - origin.x) * d.x + (p.y - origin.y) * d.y
         fun at(tt: Float) = Pt(origin.x + d.x * tt, origin.y + d.y * tt)
