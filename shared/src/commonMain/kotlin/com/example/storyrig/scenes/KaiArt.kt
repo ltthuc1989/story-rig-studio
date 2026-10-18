@@ -8,6 +8,7 @@ import com.example.storyrig.engine.Atlas
 import com.example.storyrig.engine.MeshData
 import com.example.storyrig.engine.MeshInfluence
 import com.example.storyrig.engine.MeshPart
+import com.example.storyrig.engine.PseudoYaw
 import com.example.storyrig.engine.SoftMesh
 import com.example.storyrig.engine.Clip
 import com.example.storyrig.engine.ClipPlayer
@@ -213,6 +214,10 @@ class KaiRig(
     useMeshes: Boolean = false,
     /** Show the clips the way they look in the cut's view (DanceClips.FRONT/BACK); false plays them as written. */
     adaptView: Boolean = true,
+    /** Turning actors: the yaw this cut is shown at (radians, see [PseudoYaw]); null = no pseudo-3D turn. */
+    facingYaw: Float? = null,
+    /** Turning actors: this rig is always drawn mirrored (the three-quarter cut facing left). */
+    facingMirror: Boolean = false,
 ) {
     val sk = Skeleton(a.boneNames.size)
     private val restX = FloatArray(sk.size)
@@ -248,6 +253,15 @@ class KaiRig(
     val mouths: Array<Sprite>
     val eyesNear: Array<Sprite>
     val eyesFar: Array<Sprite>
+
+    /** Pseudo-3D turn of this cut; null unless [facingYaw] was given. */
+    val yaw: PseudoYaw?
+    /**
+     * Items headFrom until headTo of [rig] are the head and what rides on it (face, hair), contiguous in the draw
+     * order; -1 when they are not, and then the head can't be drawn on another rig's body.
+     */
+    val headFrom: Int
+    val headTo: Int
 
     init {
         for (i in 0 until sk.size) {
@@ -288,6 +302,22 @@ class KaiRig(
             zeroDeg = { when (it) { "shoulder_near" -> hangNear; "shoulder_far" -> hangFar; else -> 0f } },
             adapt = if (adaptView) DanceClips.adaptFor(a.view) else null,
         )
+        val inHead = BooleanArray(sk.size) { b -> var x = b; while (x >= 0 && x != head) x = sk.parent[x]; x == head }
+        val hi = rig.items.indices.filter { val it = rig.items[it]; it is BitmapPart && inHead[it.bone] }
+        val contiguous = hi.isNotEmpty() && hi.last() - hi.first() + 1 == hi.size
+        headFrom = if (contiguous) hi.first() else -1
+        headTo = if (contiguous) hi.last() + 1 else -1
+        yaw = facingYaw?.let { fy ->
+            val lateral = listOf("shoulder_near", "shoulder_far", "hip_near", "hip_far").map { a.boneOrNull(it) }
+                .filter { it >= 0 && (sk.parent[it] == torso || sk.parent[it] == root) }.toIntArray()
+            val features = byName.filter { (n, p) -> p.bone == head && n != "head" }.values.toTypedArray()
+            val headPart = a.parts.firstOrNull { it.name == "head" }
+            PseudoYaw(
+                sk, fy, facingMirror, root, torso, head, a.boneOrNull("hair"),
+                lateral, FloatArray(lateral.size) { restX[lateral[it]] }, features,
+                headR = (headPart?.w ?: 300) * HEAD_R,
+            )
+        }
         mouths = if (mouth == null) emptyArray() else MOUTHS.map { spriteOr(it, "mouth_smile") }.toTypedArray()
         eyesNear = if (eyeNear == null) emptyArray() else EYES.map { spriteOr("eye_near_$it", "eye_near_open") }.toTypedArray()
         eyesFar = if (eyeFar == null) emptyArray() else EYES.map { spriteOr("eye_far_$it", "eye_far_open") }.toTypedArray()
@@ -353,6 +383,7 @@ class KaiRig(
     fun reset(x: Float, y: Float, scale: Float, mirror: Boolean = false) {
         for (i in 0 until sk.size) sk.set(i, restX[i], restY[i])
         sk.fore.fill(1f)
+        sk.wide.fill(1f)
         sk.set(root, x, y, 0f, if (mirror) -scale else scale, scale)
     }
 
@@ -377,6 +408,8 @@ class KaiRig(
 
         /** Rest-pose height in ref.png pixels (hair top to sole). */
         const val HEIGHT = 850f
+        /** Head sphere radius for face features turning, as a share of the head picture's width (ears included). */
+        private const val HEAD_R = .42f
         private const val DEG2RAD = (kotlin.math.PI / 180.0).toFloat()
     }
 }

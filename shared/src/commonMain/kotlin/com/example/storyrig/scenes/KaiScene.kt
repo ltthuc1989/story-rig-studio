@@ -19,26 +19,28 @@ import com.example.storyrig.engine.View
 import com.example.storyrig.engine.Viewport
 import com.example.storyrig.engine.drawAll
 import com.example.storyrig.engine.MeshPart
+import com.example.storyrig.engine.PseudoYaw
+import com.example.storyrig.engine.TurnMove
 import com.example.storyrig.engine.hex
 import com.example.storyrig.engine.logInfo
 import com.example.storyrig.engine.meshDrawSupported
 import com.example.storyrig.engine.uptimeMillis
 import kotlin.math.PI
 import kotlin.math.abs
-import kotlin.math.floor
+import kotlin.math.cos
 import kotlin.math.min
-import kotlin.math.round
 import kotlin.math.sin
 
 /**
  * `kai`: first look at bitmap characters (SPIKE.md P5 groundwork, not the full P5 yet: no audio clock, karaoke
  * or confetti). [SceneConfig.count] actors dance to a 120 BPM beat, swap mouths every 80-120 ms and blink.
  *
- * [cast]: one list per kind of actor, holding the views it was cut in (one, unless `--es turn`). An actor with
- * several views has one rig per view; all of them play the same clip on the same beat every frame, so the one shown
- * can be swapped at any time. Turning (`--es turn kai`): every [TURN_BEATS] the actor goes three-quarter right ->
- * front -> three-quarter left (the three-quarter rig mirrored) -> back, the swap hidden in the middle of a quick
- * cartoon squash (drawn narrower and a little higher for [TURN_SEC]).
+ * [cast]: one list per kind of actor, holding the views it was cut in (one, unless `--es turn`).
+ * Turning (`--es turn kai`), the pseudo-3D turn of reference/bobo.html: the actor has one rig per facing it was cut
+ * in (three-quarter right, front, three-quarter left = that cut mirrored, back), all playing the same clip on the
+ * same beat. Every [TURN_BEATS] it turns to the next yaw of [TURN_PLAN] with [TurnMove] (wind-up, head first, hops,
+ * overshoot); each rig bends towards the current yaw with [PseudoYaw], the body is drawn by the rig nearest the
+ * body's yaw and the head by the rig nearest the head's, so cuts change where the figure is narrowest (side on).
  */
 class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, private val cast: List<List<KaiAssets>>) : Scene {
     /** First of the cast: what the complexity line reports. */
@@ -74,12 +76,15 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
     private val nextBlink = FloatArray(n)
     private val blinkEnd = FloatArray(n)
 
-    /** Per actor: the facings it turns through, as the rig to show and whether it is mirrored. */
-    private val stepRig: Array<IntArray>
-    private val stepMirror: Array<BooleanArray>
-    /** Per actor: the facing shown now (index into [stepRig]). */
-    private val step = IntArray(n)
-    /** Per actor, this frame: turn squash (draw-time scaleX, scaleY, lift in stage px). */
+    /** Per rig: the yaw its cut is shown at (radians), when turning. */
+    private val rigYaw: FloatArray
+    /** Per actor, this frame: body and head yaw, the rigs drawing body and head, and whether a turn is under way. */
+    private val bodyYaw = FloatArray(n)
+    private val headYaw = FloatArray(n)
+    private val bodyRig = IntArray(n)
+    private val headRig = IntArray(n)
+    private val inTurn = BooleanArray(n)
+    /** Per actor, this frame: draw-time scaleX, scaleY and lift (stage px) from the turn's squash and hops. */
     private val squashX = FloatArray(n) { 1f }
     private val squashY = FloatArray(n) { 1f }
     private val hop = FloatArray(n)
@@ -104,29 +109,32 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
     init {
         val start = uptimeMillis()
         if (cfg.art == "mesh" && !mesh) logInfo("art=mesh unavailable (drawVertices needs API 29+), drawing bitmap parts")
-        for (i in 0 until n) actorFirst[i + 1] = actorFirst[i] + views(i).size
+        // Turning: one rig per facing the actor has the cut for (only a three-quarter cut: right and mirrored left).
+        val facings = Array(n) { i ->
+            if (!turning) intArrayOf(-1) else FACINGS.indices.filter { f -> views(i).any { it.view == FACINGS[f] } }
+                .ifEmpty { listOf(-1) }.toIntArray()
+        }
+        for (i in 0 until n) actorFirst[i + 1] = actorFirst[i] + facings[i].size
         val rigs = actorFirst[n]
         val rigActor = IntArray(rigs)
-        for (i in 0 until n) for (r in actorFirst[i] until actorFirst[i + 1]) rigActor[r] = i
+        val rigFacing = IntArray(rigs)
+        for (i in 0 until n) for (r in actorFirst[i] until actorFirst[i + 1]) { rigActor[r] = i; rigFacing[r] = facings[i][r - actorFirst[i]] }
+        rigYaw = FloatArray(rigs) { val f = rigFacing[it]; if (f < 0) 0f else FACING_YAW[f] * DEG }
+        mirrored = BooleanArray(rigs) { val f = rigFacing[it]; f >= 0 && FACING_MIRROR[f] }
         kais = Array(rigs) {
             val i = rigActor[it]
-            KaiRig(views(i)[it - actorFirst[i]], cfg.antiAlias, phase = i * .7f, useMeshes = mesh, adaptView = adaptViews)
+            val f = rigFacing[it]
+            val a = if (f < 0) views(i)[0] else views(i).first { v -> v.view == FACINGS[f] }
+            KaiRig(
+                a, cfg.antiAlias, phase = i * .7f, useMeshes = mesh, adaptView = adaptViews,
+                facingYaw = if (f < 0) null else rigYaw[it], facingMirror = mirrored[it],
+            )
         }
         rootY = FloatArray(rigs) { kais[it].rootToSole + SOLE_LIFT }
-        mirrored = BooleanArray(rigs)
         // Seen from the front or back, a straight leg's knee goes out to its own side when it bends.
         feetNear = Array(rigs) { val k = kais[it]; FootLock(k.sk, k.hipN, k.kneeN, k.ankleN, bend = if (k.view == View.Q3) 1 else -1) }
         feetFar = Array(rigs) { val k = kais[it]; FootLock(k.sk, k.hipF, k.kneeF, k.ankleF, bend = 1) }
-        // Facings an actor lacks the view for are skipped (only a three-quarter cut: it turns by mirroring).
-        val plans = Array(n) { i ->
-            val f = if (turning) FACINGS.indices.filter { f -> views(i).any { it.view == FACINGS[f] } } else emptyList()
-            if (f.isEmpty()) intArrayOf(actorFirst[i]) to booleanArrayOf(false)
-            else IntArray(f.size) { j -> actorFirst[i] + views(i).indexOfFirst { it.view == FACINGS[f[j]] } } to
-                BooleanArray(f.size) { FACING_MIRROR[f[it]] }
-        }
-        stepRig = Array(n) { plans[it].first }
-        stepMirror = Array(n) { plans[it].second }
-        for (i in 0 until n) setStep(i, 0)
+        for (i in 0 until n) { bodyRig[i] = actorFirst[i]; headRig[i] = actorFirst[i] }
 
         val art = ArtBuilder(PathCache(), cfg.antiAlias)
         val l = -Stage.BLEED_W / 2f + Stage.SAFE_W / 2f
@@ -192,47 +200,64 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
             val b = beat - i * .04f
             turn(i, b)
             face(i)
-            val shown = stepRig[i][step[i]]
-            for (r in actorFirst[i] until actorFirst[i + 1]) pose(r, i, b, r == shown)
+            for (r in actorFirst[i] until actorFirst[i + 1]) pose(r, i, b, r == bodyRig[i] || r == headRig[i])
         }
-    }
-
-    /** Which facing actor [i] shows at beat [b], and the squash around each swap. */
-    private fun turn(i: Int, b: Float) {
-        val steps = stepRig[i].size
-        val s = if (steps > 1) (floor(b / TURN_BEATS).toInt().coerceAtLeast(0)) % steps else 0
-        if (s != step[i]) setStep(i, s)
-        squashX[i] = 1f; squashY[i] = 1f; hop[i] = 0f
-        if (steps < 2) return
-        val k = round(b / TURN_BEATS)
-        val half = TURN_SEC * 500f / BEAT_MS
-        val d = b - k * TURN_BEATS
-        if (k < 1f || abs(d) >= half) return
-        val e = sin(PI.toFloat() * (d + half) / (2f * half))
-        squashX[i] = 1f - (1f - TURN_MIN_X) * e
-        squashY[i] = 1f + TURN_STRETCH * e
-        hop[i] = TURN_HOP * kaiScale[i] * e
     }
 
     /**
-     * Shows facing [s] of actor [i]. Each of its rigs faces the way it will next be shown: one that has to flip does
-     * it now while hidden (or at the thinnest point of the squash) and forgets its springs, squash and planted feet,
-     * so nothing jumps.
+     * Actor [i] at beat [b]: body and head yaw from [TURN_PLAN] and [TurnMove], the rigs that draw body and head
+     * (nearest yaw), and the squash and hops of the move.
      */
-    private fun setStep(i: Int, s: Int) {
-        step[i] = s
-        val steps = stepRig[i].size
-        for (r in actorFirst[i] until actorFirst[i + 1]) {
-            var want = mirrored[r]
-            for (k in 0 until steps) {
-                val j = (s + k) % steps
-                if (stepRig[i][j] == r) { want = stepMirror[i][j]; break }
-            }
-            if (want != mirrored[r]) {
-                mirrored[r] = want
-                kais[r].resetMotion(); feetNear[r].reset(); feetFar[r].reset()
+    private fun turn(i: Int, b: Float) {
+        squashX[i] = 1f; squashY[i] = 1f; hop[i] = 0f; inTurn[i] = false
+        val first = actorFirst[i]
+        if (actorFirst[i + 1] - first < 2) return
+        val steps = TURN_PLAN.size - 1
+        val t = b - TURN_START
+        var yaw = TURN_PLAN[0] * DEG
+        var lead = 0f
+        if (t >= 0f) {
+            val local = t % (steps * TURN_BEATS)
+            val s = (local / TURN_BEATS).toInt()
+            val from = TURN_PLAN[s] * DEG
+            val delta = TURN_PLAN[s + 1] * DEG - from
+            val u = (local - s * TURN_BEATS) / TurnMove.beats(delta)
+            yaw = from + TurnMove.yaw(u, delta)
+            if (u < 1f) {
+                inTurn[i] = true
+                lead = TurnMove.lead(u, delta)
+                hop[i] = TurnMove.hop(u, delta) * HOP_SCALE * kaiScale[i]
+                val sq = TurnMove.squash(u, delta)
+                squashX[i] = 1f + sq; squashY[i] = 1f - sq
             }
         }
+        bodyYaw[i] = yaw
+        headYaw[i] = yaw + lead
+        bodyRig[i] = nearest(i, yaw)
+        headRig[i] = nearest(i, yaw + lead)
+        // Side on, the figure narrows a little more, so the change of cut happens on a thin shape.
+        val side = 1f - abs(cos(yaw)) / SIDE_BAND
+        if (side > 0f) squashX[i] *= 1f - SIDE_SQUEEZE * side
+    }
+
+    /** Actor [i]'s rig whose cut is nearest [yaw]. */
+    private fun nearest(i: Int, yaw: Float): Int {
+        var best = actorFirst[i]
+        var bestD = Float.MAX_VALUE
+        for (r in actorFirst[i] until actorFirst[i + 1]) {
+            val d = abs(wrap(yaw - rigYaw[r]))
+            if (d < bestD) { bestD = d; best = r }
+        }
+        return best
+    }
+
+    /** Angle in -PI..PI. */
+    private fun wrap(a: Float): Float {
+        val tau = 2f * PI.toFloat()
+        var x = a % tau
+        if (x > PI.toFloat()) x -= tau
+        if (x < -PI.toFloat()) x += tau
+        return x
     }
 
     private fun pose(r: Int, i: Int, beat: Float, shown: Boolean) {
@@ -244,6 +269,7 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
             val clip = if (dance >= 0) dance else (i + bar) % DanceClips.ALL.size
             k.player.play(clip, bar * SWITCH_BEATS, fadeBeats = .5f)
             k.reset(homeX[i], y, kaiScale[i], mirrored[r])
+            k.yaw?.apply(bodyYaw[i], headYaw[i])
             feetNear[r].captureGround(); feetFar[r].captureGround()
             k.player.apply(beat)
         } else {
@@ -254,8 +280,9 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
             k.auto.apply(dtSec)
         }
         if (useClips) {
-            feetNear[r].apply(dtSec, pinFeet)
-            feetFar[r].apply(dtSec, pinFeet)
+            // Mid-turn the feet step round with the body instead of staying planted.
+            feetNear[r].apply(dtSec, pinFeet && !inTurn[i])
+            feetFar[r].apply(dtSec, pinFeet && !inTurn[i])
         }
         // Hidden views keep their springs and feet running (above) but skip skinning: nobody sees them.
         if (shown) k.rig.pose(stats)
@@ -329,7 +356,16 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
                 canvas.scale(sx, squashY[i])
             }
             canvas.translate(-homeX[i], -GROUND_Y)
-            kais[stepRig[i][step[i]]].rig.draw(canvas, 1f, m, stats)
+            val body = kais[bodyRig[i]]
+            val head = kais[headRig[i]]
+            if (head === body || body.headFrom < 0 || head.headFrom < 0) {
+                body.rig.draw(canvas, 1f, m, stats)
+            } else {
+                // Head leads the turn: the next cut's head on this cut's body, in the body's draw order.
+                body.rig.draw(canvas, 1f, m, stats, 0, body.headFrom)
+                head.rig.draw(canvas, 1f, m, stats, head.headFrom, head.headTo)
+                body.rig.draw(canvas, 1f, m, stats, body.headTo, body.rig.items.size)
+            }
             canvas.restore()
         }
         canvas.restore()
@@ -353,14 +389,23 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
         /** Soles sit this far (character px) above the shadow's centre line, so the shadow shows under them. */
         private const val SOLE_LIFT = 11f
 
-        /** Turning: a new facing every 4 beats, in this order (the three-quarter rig mirrored to face left). */
-        private const val TURN_BEATS = 4f
+        /** Facings a turning actor can be cut in: view, yaw it stands for (degrees, > 0 = towards screen right), mirrored. */
         private val FACINGS = arrayOf(View.Q3, View.FRONT, View.Q3, View.BACK)
+        private val FACING_YAW = floatArrayOf(30f, 0f, -30f, 180f)
         private val FACING_MIRROR = booleanArrayOf(false, false, true, false)
-        /** The squash that hides the swap: its length, thinnest width, stretch and hop (character px) at the middle. */
-        private const val TURN_SEC = .25f
-        private const val TURN_MIN_X = .15f
-        private const val TURN_STRETCH = .05f
-        private const val TURN_HOP = 28f
+        /**
+         * Turning: yaw (degrees) after each turn, one turn every [TURN_BEATS] from beat [TURN_START]: to the front,
+         * three-quarter left, round to the back, on to three-quarter right, then a full spin. Ends where it starts
+         * (30 = -330 = 30 + 360 on the circle).
+         */
+        private val TURN_PLAN = floatArrayOf(30f, 0f, -30f, -180f, -330f, 30f)
+        private const val TURN_BEATS = 4f
+        private const val TURN_START = 2f
+        /** Bobo's hop heights are in his ~300 px figure; Kai is ~850 character px. */
+        private const val HOP_SCALE = 2.5f
+        /** Extra narrowing side on: |cos(yaw)| below SIDE_BAND, down to 1 - SIDE_SQUEEZE exactly side on. */
+        private const val SIDE_BAND = .3f
+        private const val SIDE_SQUEEZE = .15f
+        private const val DEG = (PI / 180.0).toFloat()
     }
 }

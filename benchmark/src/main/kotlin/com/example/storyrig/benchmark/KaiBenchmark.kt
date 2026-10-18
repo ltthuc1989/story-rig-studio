@@ -33,8 +33,16 @@ class KaiBenchmark {
     @Test
     fun kai_12_mesh() = run(12, "mesh")
 
+    /** Five different characters (Mia, Leo, Hana with the skirt bone, Bo), all cut in the 3q view. */
+    @Test
+    fun cast_5_mesh() = run(5, "mesh", "char" to "kai,mia,leo,hana,bo")
+
+    /** Five Kai actors turning between 3q, front and back (three cuts loaded per actor). */
+    @Test
+    fun turn_5_mesh() = run(5, "mesh", "turn" to "kai")
+
     @OptIn(ExperimentalMetricApi::class)
-    private fun run(count: Int, art: String = "bitmap") = rule.measureRepeated(
+    private fun run(count: Int, art: String = "bitmap", vararg extra: Pair<String, String>) = rule.measureRepeated(
         packageName = PKG,
         metrics = listOf(FrameTimingMetric()),
         compilationMode = CompilationMode.None(),
@@ -49,6 +57,7 @@ class KaiBenchmark {
             val intent = Intent().setClassName(PKG, "$PKG.MainActivity")
                 .putExtra("scene", "kai").putExtra("count", count.toString()).putExtra("hud", "0")
                 .putExtra("art", art)
+            for ((k, v) in extra) intent.putExtra(k, v)
             startActivityAndWait(intent)
             device.wait(Until.hasObject(By.res("stage")), 5_000)
             Thread.sleep(2_000) // SPIKE.md: judged after the first 2 s

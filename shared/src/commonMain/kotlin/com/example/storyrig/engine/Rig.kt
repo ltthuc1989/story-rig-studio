@@ -28,14 +28,28 @@ class BitmapPart(val bone: Int, val atlas: Atlas, var sprite: Sprite, antiAlias:
         filterQuality = FilterQuality.Low
     }
     private var lastAlpha = 1f
+    /**
+     * Per-frame slide along the bone's local x and width about the sprite's centre, plus an opacity: a face feature
+     * moving round the head when it turns ([PseudoYaw]). 0, 1, 1 = as cut.
+     */
+    var shiftX = 0f
+    var scaleX = 1f
+    var alpha = 1f
 
     fun draw(canvas: Canvas, sk: Skeleton, alphaMul: Float, stats: RenderStats) {
-        if (alphaMul <= 0.003f) return
-        if (alphaMul != lastAlpha) { paint.alpha = alphaMul; lastAlpha = alphaMul }
+        val al = alphaMul * alpha
+        if (al <= 0.003f) return
+        if (al != lastAlpha) { paint.alpha = al; lastAlpha = al }
         val s = sprite
         val r = s.region
         canvas.save()
         sk.concat(canvas, bone)
+        if (shiftX != 0f || scaleX != 1f) {
+            val cx = s.dx + r.w * .5f
+            canvas.translate(cx + shiftX, 0f)
+            canvas.scale(scaleX, 1f)
+            canvas.translate(-cx, 0f)
+        }
         canvas.drawImageRect(atlas.image, IntOffset(r.x, r.y), IntSize(r.w, r.h), IntOffset(s.dx, s.dy), IntSize(r.w, r.h), paint)
         canvas.restore()
         stats.draws++
@@ -84,8 +98,9 @@ class Rig(val sk: Skeleton, val items: Array<DrawItem>) {
         }
     }
 
-    fun draw(canvas: Canvas, alphaMul: Float, m: Matrix, stats: RenderStats) {
-        for (i in items.indices) {
+    /** Draws items [from] until [to] (all by default), so two rigs can share one figure (head of one, body of another). */
+    fun draw(canvas: Canvas, alphaMul: Float, m: Matrix, stats: RenderStats, from: Int = 0, to: Int = items.size) {
+        for (i in from until to) {
             val it = items[i]
             if (!it.visible) continue
             if (it is Part) {

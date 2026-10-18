@@ -29,6 +29,12 @@ class Skeleton(val size: Int) {
     val fore = FloatArray(size) { 1f }
     val axisX = FloatArray(size)
     val axisY = FloatArray(size) { 1f }
+    /**
+     * Width per bone: its parts (and its children's pivots) shrink by this factor along the bone's rest local x
+     * (a torso seen turning sideways, [PseudoYaw]). 1 = none. Like [fore], children do not inherit it. Whoever
+     * writes it resets it each frame.
+     */
+    val wide = FloatArray(size) { 1f }
 
     init {
         for (i in 0 until size) {
@@ -77,6 +83,8 @@ class Skeleton(val size: Int) {
                 val nc = la * a01 + lc * a11; val nd = lb * a01 + ld * a11
                 la = na; lb = nb; lc = nc; ld = nd
             }
+            val wd = wide[i]
+            if (wd != 1f) { la *= wd; lb *= wd }
             if (p >= 0 && fore[p] != 1f) {
                 // L = A_parent^-1 * L: the child's own frame is not squashed with its parent (its pivot still is).
                 val ux = axisX[p]; val uy = axisY[p]; val g = 1f / fore[p] - 1f
@@ -84,6 +92,10 @@ class Skeleton(val size: Int) {
                 val na = b00 * la + b01 * lb; val nb = b01 * la + b11 * lb
                 val nc = b00 * lc + b01 * ld; val nd = b01 * lc + b11 * ld
                 la = na; lb = nb; lc = nc; ld = nd
+            }
+            if (p >= 0 && wide[p] != 1f) {
+                val iw = 1f / wide[p]
+                la *= iw; lc *= iw
             }
             if (p < 0) {
                 world[w] = la; world[w + 1] = lb; world[w + 2] = lc; world[w + 3] = ld; world[w + 4] = le; world[w + 5] = lf
