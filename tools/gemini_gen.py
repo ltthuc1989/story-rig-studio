@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Gemini image generation for character assets (stdlib only). Same rules as opw_audio_project:
 
-- One key, GEMINI_API_KEY: from the environment, else Storyrig/.env (gitignored), else the opw project's .env.
+- One key, GEMINI_API_KEY, on StoryRig's own Google AI Studio project (its own billing and monthly spend cap): from
+  the environment, else Storyrig/.env (gitignored). Never another project's key, so StoryRig never spends opw's credits.
 - Tier mode STORYRIG_TIER, "free" by default (like OPW_TIER): waits between calls, waits 60 s / 120 s on 429,
   2 attempts at most, and a daily cap. "paid" only when set explicitly.
-- "free" is only the pacing (waits, retries, daily cap); it does not make calls free. The opw key is on a prepaid
-  project: image calls spend its credits (they ran out on 2026-10-18). Ask before calling.
+- "free" is only the pacing (waits, retries, daily cap); it does not make calls free on a billed project. Ask before
+  calling, and report the number of calls.
 - Model gemini-3.1-flash-image by default (2.5 copies the pose of an attached character image); reference images go first, then the prompt; aspect ratio set in imageConfig.
 
 Usage (from the repo root):
@@ -27,7 +28,6 @@ from pathlib import Path
 
 API = "https://generativelanguage.googleapis.com/v1beta"
 ROOT = Path(__file__).resolve().parent.parent
-OPW_ENV = Path("/Volumes/Entertainment/GeminiGenerator/opw_audio_project/.env")
 USAGE = ROOT / "tools" / ".gemini_usage.json"
 MODEL = "gemini-3.1-flash-image"  # follows a pose template; 2.5 copied the reference pose
 
@@ -60,12 +60,11 @@ def api_key():
     for source, value in (
         ("environment", os.environ.get("GEMINI_API_KEY")),
         ("Storyrig/.env", read_env(ROOT / ".env").get("GEMINI_API_KEY")),
-        ("opw .env", read_env(OPW_ENV).get("GEMINI_API_KEY")),
     ):
         if value:
             print(f"key from {source}, tier={TIER}", file=sys.stderr)
             return value
-    sys.exit("GEMINI_API_KEY not found")
+    sys.exit("GEMINI_API_KEY not found: put StoryRig's own key in Storyrig/.env (GEMINI_API_KEY=...)")
 
 
 def usage_today():
