@@ -10,7 +10,7 @@ torso,torso,399,327,227,310,1
 arm_upper_far,shoulder_far,600,393,136,169,1
 arm_fore_far,elbow_far,671,497,116,118,1
 hand_far,wrist_far,741,568,95,98,1
-arm_upper_near,shoulder_near,289,397,135,164,1
+arm_upper_near,shoulder_near,289,397,167,164,1
 arm_fore_near,elbow_near,236,496,117,118,1
 hand_near,wrist_near,188,573,90,93,1
 head,head,368,109,289,265,1

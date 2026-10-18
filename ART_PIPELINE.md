@@ -59,10 +59,13 @@ tờ mẫu → Gemini (1 lượt, người dùng duyệt) → splitsheet → she
   7. cắt thử qua `cutauto` và selftest;
   8. góc nghiêng chỉ có 1 mắt, góc sau lưng không có mặt.
 - **Cắt:** `./gradlew :tools:run --args="cutauto <geminiDir> <outDir> <previewDir>"`. Kiểm tra: `./gradlew :tools:run --args="selftest <dir>"`.
+- **Bảng kiểm tra vai và nách (bắt buộc sau mỗi lần sửa tool cắt, rig hay clip):** `tools/pose_sheet.sh <out.png> [chars]`. Mỗi nhân vật một hàng gồm đứng yên, vẫy tay, dang tay, đang giơ và chữ V, phóng to phần vai. Phải mở ra xem cả bộ trực diện lẫn 3/4 trước khi báo là đã sửa xong. Đã có lần sửa lỗi này lại làm hỏng lại lỗi cũ vì chỉ soi một tư thế.
 
 ## 4. Quy tắc cắt (tools/…/AutoSpec.kt, RefCut.kt)
 
-- **Vai:** đường cắt dọc theo hông áo, từ đỉnh nách lên đỉnh vai, vượt ra mỗi đầu `SHOULDER_MARGIN` (6 px). Khớp vai nằm cao trong bầu vai, ở 20 % đường cắt tính từ đỉnh (`SHOULDER_PIVOT`). Nếu để khớp ở giữa đường cắt (ngang nách), hạ tay từ dáng chữ A sẽ làm đỉnh tay áo văng ra khoảng 30 px như độn vai, và tay trông gãy ở vai.
+- **Vai:** đường cắt dọc theo hông áo, từ đỉnh nách lên đỉnh vai, vượt ra mỗi đầu `SHOULDER_MARGIN` (6 px).
+- **Khớp vai trượt:** khi tay ở góc vẽ hoặc giơ lên, tay xoay quanh giữa đường cắt (ngang nách), nhờ vậy mặt dưới tay vẫn áp vào hông áo. Khi tay buông, tay xoay quanh điểm ở 20 % đường cắt tính từ đỉnh (`SHOULDER_HANG_PIVOT`, ghi ở cột `hangX,hangY` của `bones.csv`), nên đỉnh tay áo không văng ra như độn vai. Engine trượt dần giữa hai điểm theo góc tay (`KaiRig.slideShoulders`), giống xương bả vai. Một điểm xoay cố định không làm được cả hai việc: đặt thấp thì vai phồng khi buông tay, đặt cao thì rách nách khi giơ tay.
+- **Vai cứng trong mesh:** lưới thân không lấy trọng số theo xương vai, và cánh tay không neo vào thân. Nếu có, khi giơ tay cao (chữ V, khoảng 150°) vải hông áo bị kéo rách thành vạt.
 - **Đầu cánh tay:** đĩa cắt theo dây cung từ đầu nách của đường cắt lên mép đĩa: nửa trên che đường vai khi tay buông, mặt dưới tay chạy thẳng từ nách khi giơ. Bán kính trừ `SHOULDER_MARGIN`.
 - **Mặt trong ống tay:** điểm ảnh trên thân sát đường cắt vai, có màu là sắc sẫm hơn của màu áo (mặt trong ống tay, đầu viền tay áo chạy vào nách), được chuyển sang tay. Khác tông màu (quai balo, hình in) thì giữ trên thân.
 - **Thân:** chỉ tô `ARM_FILL` (2 px) sau tay để khử răng cưa. Tô sâu hơn sẽ lộ ra như một cục áo khi giơ tay.

@@ -134,7 +134,9 @@ private fun capInto(p: Piece, j: Joint, ref: Img, keep: Pt? = null): Piece {
         // Colour of the piece just before the cut on this line.
         val sx = (fx - (t + 2f) * j.ux).roundToInt(); val sy = (fy - (t + 2f) * j.uy).roundToInt()
         val c = p.colourAt(sx, sy)
-        if (a(c) > 127) out[x - x0, y - y0] = capColour(ref, x, y, band, c or (0xFF shl 24))
+        // A shoulder cap lies over the shirt's front: where the reference shows a print there (a heart, a strap), leave a
+        // hole so the torso's own print shows instead of being painted over with plain shirt.
+        if (a(c) > 127) out[x - x0, y - y0] = capColour(ref, x, y, band, c or (0xFF shl 24), dropOther = keep != null)
     }
     return Piece(out, x0, y0).trimmed()
 }
@@ -371,12 +373,13 @@ private const val ARM_FILL = 2
 internal const val SHOULDER_MARGIN = 6f
 
 /**
- * Where on a shoulder cut the arm pivots, from its top end (0) to its armpit end (1). A rig's shoulder joint sits high
- * in the shoulder ball, close under the shoulder's top: turning about it, the top of the sleeve stays put when the arm
- * comes down from the A-pose. Turning about the middle of the cut (level with the armpit) swings the top of the sleeve
- * ~30 px out, like shoulder pads, and the arm looks broken at the shoulder.
+ * Where on a shoulder cut (0 top end, 1 armpit end) the arm pivots once it hangs down. A raised arm turns about the
+ * middle of the cut (level with the armpit), so its underside stays against the shirt's side; a hanging arm turns
+ * about a point high in the shoulder ball, so the top of the sleeve stays put instead of swinging ~30 px out like a
+ * shoulder pad. One fixed pivot can't do both (high tears the armpit open when the arm goes up); the app slides the
+ * pivot between the two with the arm's angle (KaiRig.slideShoulders), like a shoulder blade.
  */
-internal const val SHOULDER_PIVOT = .2f
+internal const val SHOULDER_HANG_PIVOT = .2f
 
 /** How far (degrees, either way) the app may swing a skirt on its bone without opening a gap over the thighs. */
 internal const val SKIRT_SWING = 8.0
@@ -494,18 +497,16 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
         // pokes above the shoulder line once the arm hangs down. Cut by a chord towards the armpit (capInto): the
         // arm's underside then runs straight into the shirt's side when it is raised.
         val up = hypot(sh.x1 - sh.x2, sh.y1 - sh.y2).let { l -> Pt((sh.x1 - sh.x2) / l, (sh.y1 - sh.y2) / l) }
-        // The pivot (SHOULDER_PIVOT down the cut); the cap is centred on it, out to the shoulder's top.
-        val shoulder = Pt(sh.x1 + (sh.x2 - sh.x1) * SHOULDER_PIVOT, sh.y1 + (sh.y2 - sh.y1) * SHOULDER_PIVOT)
-        val shJoint = jointOn(sh, S.seedTorso.x, S.seedTorso.y).let {
-            Joint(shoulder.x, shoulder.y, it.ux, it.uy, hypot(shoulder.x - sh.x1, shoulder.y - sh.y1) - SHOULDER_MARGIN)
-        }
+        val shJoint = jointOn(sh, S.seedTorso.x, S.seedTorso.y).let { Joint(it.x, it.y, it.ux, it.uy, it.radius - SHOULDER_MARGIN) }
         arm = capInto(arm, shJoint, img, keep = up)
-        val elbow = jointAcross(arm, el.x, el.y, el.x - mid(sh).x, el.y - mid(sh).y)
+        val shoulder = mid(sh)
+        val hang = Pt(sh.x1 + (sh.x2 - sh.x1) * SHOULDER_HANG_PIVOT, sh.y1 + (sh.y2 - sh.y1) * SHOULDER_HANG_PIVOT)
+        val elbow = jointAcross(arm, el.x, el.y, el.x - shoulder.x, el.y - shoulder.y)
         val (upper, rest) = cutAt(arm, elbow, ref = img)
         val wrist = jointAcross(rest, wr.x, wr.y, wr.x - el.x, wr.y - el.y)
         val (fore, hand) = cutAt(rest, wrist, ref = img)
         elbowHalf += elbow.radius
-        bones += Bone("shoulder_$side", "torso", shoulder.x, shoulder.y)
+        bones += Bone("shoulder_$side", "torso", shoulder.x, shoulder.y, hang.x, hang.y)
         bones += Bone("elbow_$side", "shoulder_$side", elbow.x, elbow.y)
         bones += Bone("wrist_$side", "elbow_$side", wrist.x, wrist.y)
         parts["arm_upper_$side"] = Part("arm_upper_$side", "shoulder_$side", upper)

@@ -4,15 +4,15 @@ group,arm_far,9,arm_upper_far;arm_fore_far,shoulder_far;elbow_far;wrist_far
 group,leg_far,9,shin_far;thigh_far,hip_far;knee_far;ankle_far
 group,leg_near,9,shin_near;thigh_near,hip_near;knee_near;ankle_near
 group,pelvis,9,pelvis,root;hip_near;hip_far
-group,torso,9,torso,torso;shoulder_near;shoulder_far;root
+group,torso,9,torso,torso;root
 group,arm_near,9,arm_upper_near;arm_fore_near,shoulder_near;elbow_near;wrist_near
 # influence,bone,x0,y0,x1,y1,radius,blend,attachTo,band
-influence,torso,514.0,395.4,514.0,553.8,101.0,34.6,,0
+influence,torso,514.0,408.6,514.0,553.8,101.0,34.6,,0
 influence,root,488.0,632.0,540.0,632.0,46.8,34.6,,0
-influence,shoulder_near,407.5,408.9,316.5,490.5,0.0,15.1,torso,46.7
+influence,shoulder_near,407.5,435.3,316.5,490.5,0.0,15.1,,0
 influence,elbow_near,316.5,490.5,244.5,537.3,0.0,15.1,,0
 influence,wrist_near,244.5,537.3,204.0,564.5,0.0,15.1,,0
-influence,shoulder_far,621.0,408.8,710.5,490.2,0.0,15.1,torso,46.7
+influence,shoulder_far,621.0,434.9,710.5,490.2,0.0,15.1,,0
 influence,elbow_far,710.5,490.2,780.9,537.3,0.0,15.1,,0
 influence,wrist_far,780.9,537.3,823.0,564.0,0.0,15.1,,0
 influence,hip_near,462.8,684.0,446.8,791.0,0.0,15.1,root,46.7

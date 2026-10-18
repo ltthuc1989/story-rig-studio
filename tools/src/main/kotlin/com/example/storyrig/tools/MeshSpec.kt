@@ -53,7 +53,9 @@ internal fun writeMesh(outDir: File, bones: List<Bone>, parts: Map<String, Part>
         "leg_near" to (listOf("shin_near", "thigh_near") to listOf("hip_near", "knee_near", "ankle_near")),
         // A skirt follows its own bone (the pelvis part is on it), not the root.
         "pelvis" to (listOf("pelvis") to listOf(if ("skirt" in byName) "skirt" else "root", "hip_near", "hip_far")),
-        "torso" to (listOf("torso") to listOf("torso", "shoulder_near", "shoulder_far", "root")),
+        // Not the shoulders: a raised arm (a V, ~150 degrees) dragged the shirt's side round with it and tore it. The
+        // shoulder joint is a rigid cut joint (round cap, sliding pivot), as in the bitmap art.
+        "torso" to (listOf("torso") to listOf("torso", "root")),
         "arm_near" to (listOf("arm_upper_near", "arm_fore_near") to listOf("shoulder_near", "elbow_near", "wrist_near")),
     )
 
@@ -85,7 +87,9 @@ internal fun writeMesh(outDir: File, bones: List<Bone>, parts: Map<String, Part>
         infs += Inf(bone, p.px, p.py, end.first, end.second, attachTo = attachTo)
     }
     for (side in listOf("near", "far")) {
-        limb("shoulder_$side", "elbow_$side", attachTo = "torso"); limb("elbow_$side", "wrist_$side"); limb("wrist_$side", null)
+        // The upper arm turns rigidly at the shoulder (no attach band to the torso): pinning its top to the torso folded
+        // the sleeve into ragged flaps when the arm went up.
+        limb("shoulder_$side", "elbow_$side"); limb("elbow_$side", "wrist_$side"); limb("wrist_$side", null)
     }
     for (side in listOf("near", "far")) {
         limb("hip_$side", "knee_$side", attachTo = "root"); limb("knee_$side", "ankle_$side"); limb("ankle_$side", null)

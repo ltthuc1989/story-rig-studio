@@ -289,6 +289,7 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
             feetNear[r].apply(dtSec, pinFeet && !inTurn[i])
             feetFar[r].apply(dtSec, pinFeet && !inTurn[i])
         }
+        k.slideShoulders()
         // Hidden views keep their springs and feet running (above) but skip skinning: nobody sees them.
         if (shown) k.rig.pose(stats)
     }

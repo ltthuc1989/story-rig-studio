@@ -73,7 +73,8 @@ private fun scan(sheet: File, outDir: File) {
     for (c in comps) println("$name #${c.id}: box ${c.x0},${c.y0}-${c.x1},${c.y1} area ${c.area}")
 }
 
-class Bone(val name: String, val parent: String?, val px: Float, val py: Float)
+/** [hangX], [hangY]: shoulders only, the pivot the arm turns about once it hangs down (see SHOULDER_HANG_PIVOT). */
+class Bone(val name: String, val parent: String?, val px: Float, val py: Float, val hangX: Float = Float.NaN, val hangY: Float = Float.NaN)
 class Part(val name: String, val bone: String, val piece: Piece)
 
 internal class Sheet(file: File) {
@@ -315,8 +316,11 @@ internal fun writeOut(outDir: File, bones: List<Bone>, parts: Map<String, Part>,
     partsDir.deleteRecursively()
     for (p in parts.values) p.piece.img.save(File(partsDir, "${p.name}.png"))
     File(outDir, "bones.csv").writeText(
-        "# bone,parent,pivotX,pivotY (ref.png pixels, rest pose)\n" +
-            bones.joinToString("\n") { "${it.name},${it.parent ?: ""},${"%.1f".format(it.px)},${"%.1f".format(it.py)}" } + "\n",
+        "# bone,parent,pivotX,pivotY[,hangX,hangY] (ref.png pixels, rest pose; hang: a shoulder's pivot when the arm hangs)\n" +
+            bones.joinToString("\n") {
+                "${it.name},${it.parent ?: ""},${"%.1f".format(it.px)},${"%.1f".format(it.py)}" +
+                    if (it.hangX.isNaN()) "" else ",${"%.1f".format(it.hangX)},${"%.1f".format(it.hangY)}"
+            } + "\n",
     )
     val drawn = drawOrder.filter { it in parts }
     val order = drawn + parts.keys.filter { it !in drawn }.sorted()

@@ -52,6 +52,9 @@ class KaiAssets(
     val view: View = View.Q3,
     /** character.csv `yaw` (degrees), when the cut says how far it is turned; see [yawDeg]. */
     private val yawOverride: Float? = null,
+    /** bones.csv hangX/hangY: a shoulder's pivot once its arm hangs down (NaN for other bones); see KaiRig.slideShoulders. */
+    val hangPivotX: FloatArray = FloatArray(boneNames.size) { Float.NaN },
+    val hangPivotY: FloatArray = FloatArray(boneNames.size) { Float.NaN },
 ) {
     /** Rest pose, from the data (ref.png pixels): root pivot to the soles, and hair top to the soles. */
     val rootToSole: Float
@@ -128,6 +131,8 @@ class KaiAssets(
             val parent = IntArray(names.size) { i -> if (boneRows[i][1].isEmpty()) -1 else names.indexOf(boneRows[i][1]) }
             val px = FloatArray(names.size) { boneRows[it][2].toFloat() }
             val py = FloatArray(names.size) { boneRows[it][3].toFloat() }
+            val hx = FloatArray(names.size) { boneRows[it].getOrNull(4)?.toFloatOrNull() ?: Float.NaN }
+            val hy = FloatArray(names.size) { boneRows[it].getOrNull(5)?.toFloatOrNull() ?: Float.NaN }
             val parts = partRows.map { PartRow(it[0], names.indexOf(it[1]), it[2].toInt(), it[3].toInt(), it[4].toInt(), it[5].toInt(), it[6] == "1") }
             val images = parts.map { it.name to Res.readBytes("$dir/parts/${it.name}.png").decodeToImageBitmap() }
             val atlas = Atlas.pack(images)
@@ -163,7 +168,7 @@ class KaiAssets(
             val view = View.parse(facts["view"]) ?: viewFromName(name)
             return KaiAssets(
                 atlas, names, parent, px, py, parts, meshes, meshAtlas, (uptimeMillis() - t0).toFloat(), heightScale, name, view,
-                facts["yaw"]?.toFloatOrNull(),
+                facts["yaw"]?.toFloatOrNull(), hx, hy,
             )
         }
 
@@ -266,6 +271,11 @@ class KaiRig(
     /** Shoulder angles (degrees) that make each arm hang straight down; poses are written relative to that. */
     val hangNear: Float
     val hangFar: Float
+    /** Hang pivot minus rest pivot per shoulder (ref.png px, the torso's rest space); 0 without bones.csv hang data. */
+    private val slideNX: Float
+    private val slideNY: Float
+    private val slideFX: Float
+    private val slideFY: Float
 
     /** Springs and auto layers (engine, shared by every humanoid); run them after the base pose. */
     val motion: SecondaryMotion
@@ -323,6 +333,12 @@ class KaiRig(
         auto = AutoLayers(sk, root, torso, phase = phase, soleBelow = a.rootToSole)
         hangNear = hang(shoulderN, wristN)
         hangFar = hang(shoulderF, wristF)
+        fun slideOf(b: Int, y: Boolean): Float {
+            val h = if (y) a.hangPivotY.getOrNull(b) else a.hangPivotX.getOrNull(b)
+            return if (b < 0 || h == null || h.isNaN()) 0f else h - if (y) a.pivotY[b] else a.pivotX[b]
+        }
+        slideNX = slideOf(shoulderN, false); slideNY = slideOf(shoulderN, true)
+        slideFX = slideOf(shoulderF, false); slideFY = slideOf(shoulderF, true)
         lengthAxes()
         player = ClipPlayer(
             sk, clips, { a.boneOrNull(it) },
@@ -425,6 +441,30 @@ class KaiRig(
 
     /** Shoulder rotation relative to the arm hanging straight down. */
     fun arm(near: Boolean, deg: Float) = if (near) rot(shoulderN, hangNear + deg) else rot(shoulderF, hangFar + deg)
+
+    /**
+     * Slides each shoulder's pivot with its arm's angle, like a shoulder blade: about the rest pivot (level with the
+     * armpit) while the arm is at its drawn angle or raised, about bones.csv's hang pivot (high in the shoulder ball)
+     * once it hangs down, smoothly in between. Turning about a point H instead of the pivot M is the same turn plus a
+     * shift of (I - R)(H - M) in the parent's space. After the clip, springs and feet, before [Rig.pose].
+     */
+    fun slideShoulders() {
+        slide(shoulderN, hangNear, slideNX, slideNY)
+        slide(shoulderF, hangFar, slideFX, slideFY)
+    }
+
+    private fun slide(bone: Int, hangDeg: Float, dx: Float, dy: Float) {
+        if (bone < 0 || (dx == 0f && dy == 0f) || hangDeg == 0f) return
+        val o = bone * 5
+        val r = sk.local[o + 2]
+        val t = (r / (hangDeg * DEG2RAD)).coerceIn(0f, 1f)
+        val w = t * t * (3f - 2f * t)
+        if (w == 0f) return
+        val vx = w * dx; val vy = w * dy
+        val c = kotlin.math.cos(r); val sn = kotlin.math.sin(r)
+        sk.local[o] += vx - (c * vx - sn * vy)
+        sk.local[o + 1] += vy - (sn * vx + c * vy)
+    }
 
     companion object {
         /** Lip-sync shapes, in the order the scene picks from. */

@@ -1,11 +1,11 @@
-# bone,parent,pivotX,pivotY (ref.png pixels, rest pose)
+# bone,parent,pivotX,pivotY[,hangX,hangY] (ref.png pixels, rest pose; hang: a shoulder's pivot when the arm hangs)
 root,,514.0,649.3
 torso,root,514.0,614.7
 head,torso,514.5,382.0
-shoulder_near,torso,407.5,408.9
+shoulder_near,torso,407.5,435.3,407.5,408.9
 elbow_near,shoulder_near,316.5,490.5
 wrist_near,elbow_near,244.5,537.3
-shoulder_far,torso,621.0,408.8
+shoulder_far,torso,621.0,434.9,621.0,408.8
 elbow_far,shoulder_far,710.5,490.2
 wrist_far,elbow_far,780.9,537.3
 hip_near,root,462.8,684.0
