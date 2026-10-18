@@ -22,10 +22,13 @@ Bộ kit gồm 2 tờ:
 
 1. Mở **một cuộc trò chuyện mới** cho mỗi tờ, để Gemini không lẫn tờ này với tờ kia.
 2. Chọn chế độ tạo ảnh. Nếu có model Pro ("Nano Banana Pro" hoặc chế độ Thinking), chọn nó, vì nó giữ bố cục tốt hơn.
-3. Đính kèm 3 ảnh, **đúng thứ tự này**:
-   1. `assets/<char>/gemini/ref.png` (góc 3/4 đã duyệt)
-   2. `assets/<char>/gemini/view_front.png` (trực diện đã duyệt)
-   3. tờ mẫu của tờ đó (xem bảng trên)
+3. Đính kèm **cả 3 ảnh** cho tờ nào cũng vậy, **đúng thứ tự này**. Hai tờ chỉ khác nhau ở ảnh thứ 3:
+
+   | Thứ tự | Tờ thân | Tờ mặt và tay |
+   |---|---|---|
+   | 1 | `assets/<char>/gemini/ref.png` | `assets/<char>/gemini/ref.png` |
+   | 2 | `assets/<char>/gemini/view_front.png` | `assets/<char>/gemini/view_front.png` |
+   | 3 | `assets/templates/rig_body.png` | `assets/templates/rig_face_hands.png` |
 4. Dán toàn bộ prompt đã điền (`web_body.txt` hoặc `web_face_hands.txt`).
 5. Tải hình **kích thước lớn nhất** (nút "Download full size" nếu có), lưu thành `assets/<char>/gemini/web/<body|face>_<n>.png`, với n = 1, 2, 3… theo từng lần. Lưu cả hình chưa đạt.
 6. Gửi Claude soi. Claude đo kích thước, kiểm từng ô, đo màu, rồi chọn tin nhắn sửa trong file fixes, điền vị trí sẵn.
