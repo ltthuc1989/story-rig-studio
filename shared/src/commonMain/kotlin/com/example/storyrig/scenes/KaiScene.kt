@@ -131,9 +131,10 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
             )
         }
         rootY = FloatArray(rigs) { kais[it].rootToSole + SOLE_LIFT }
-        // Seen from the front or back, a straight leg's knee goes out to its own side when it bends.
-        feetNear = Array(rigs) { val k = kais[it]; FootLock(k.sk, k.hipN, k.kneeN, k.ankleN, bend = if (k.view == View.Q3) 1 else -1) }
-        feetFar = Array(rigs) { val k = kais[it]; FootLock(k.sk, k.hipF, k.kneeF, k.ankleF, bend = 1) }
+        // Knees bend across the picture only as far as the cut is side on (|sin yaw|); from the front, at the viewer.
+        fun side(k: KaiRig) = if (adaptViews) kotlin.math.abs(kotlin.math.sin(k.yawDeg * DEG)) else 1f
+        feetNear = Array(rigs) { val k = kais[it]; FootLock(k.sk, k.hipN, k.kneeN, k.ankleN, bend = 1, side = side(k)) }
+        feetFar = Array(rigs) { val k = kais[it]; FootLock(k.sk, k.hipF, k.kneeF, k.ankleF, bend = 1, side = side(k)) }
         for (i in 0 until n) { bodyRig[i] = actorFirst[i]; headRig[i] = actorFirst[i] }
 
         val art = ArtBuilder(PathCache(), cfg.antiAlias)
@@ -172,6 +173,10 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
     }
 
     private fun views(actor: Int) = cast[actor % cast.size]
+
+    /** Actors on stage, and the rig drawing actor [i]'s body this frame (for checks: desktop MotionCheck). */
+    val actorCount get() = n
+    fun bodyRigOf(i: Int): KaiRig = kais[bodyRig[i]]
 
     override fun complexity(): String {
         val img = assets.atlas.image

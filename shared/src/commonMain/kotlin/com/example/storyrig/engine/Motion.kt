@@ -101,6 +101,11 @@ class AutoLayers(
     private val breathAmp: Float = .012f,
     private val breathPeriodSec: Float = 3.4f,
     phase: Float = 0f,
+    /**
+     * Root pivot to the soles (character px): the squash then pivots at the soles, so planted feet stay on the
+     * ground (a straight standing leg has no slack for [FootLock] to take up). 0 squashes about the root.
+     */
+    private val soleBelow: Float = 0f,
 ) {
     private var lastY = Float.NaN
     private var lastVy = 0f
@@ -121,6 +126,7 @@ class AutoLayers(
         val target = (-ay * squashGain).coerceIn(-squashMax, squashMax)
         squashVel += (400f * (target - squash) - 28f * squashVel) * dt
         squash += squashVel * dt
+        sk.local[o + 1] += squash * soleBelow * sk.local[o + 4]
         sk.local[o + 3] *= 1f + squash * .6f
         sk.local[o + 4] *= 1f - squash
         val breath = 1f + breathAmp * sin(2f * PI.toFloat() * t / breathPeriodSec)
@@ -136,14 +142,20 @@ class AutoLayers(
 /**
  * Keeps one foot on the ground. When the pose so far puts the ankle on (or below) the ground, the foot is pinned
  * where it touched down: two-bone IK turns hip and knee so the ankle stays there, and the ankle turns so the foot
- * stays flat. Lifting the ankle more than [liftPx] (character pixels) above the ground releases it; pinning and
- * releasing fade over [fadeSec] so nothing pops. Runs last, after [AutoLayers], whose squash changes leg length.
+ * stays flat. Lifting the ankle more than [liftPx] (character pixels) above the ground releases it; releasing,
+ * and pinning again after [apply] was disabled, fade over [fadeSec] so nothing pops (a landing pins at once). Runs last, after [AutoLayers], whose squash changes leg length.
  *
  * Call [captureGround] right after resetting to the standing pose each frame (it records where the ankle is when
  * standing), then let clips and the other layers move the bones, then [apply].
- * The knee bends to the side it is already on in the pose so far (forward in three-quarter view, out in front view);
+ * The knee bends to the side it is already on in the pose so far (forward when side on);
  * [bend] picks the side when the leg is straight: 1 = towards +x (facing right), -1 towards -x. Works on a
  * mirrored rig (root scaleX < 0): [bend] flips with it, and corrections are turned into the rig's local angles.
+ *
+ * [side]: how side on the cut is, |sin yaw| (1 = side on, 0 = front or back). Side on, the knee bends across the
+ * picture (two-bone IK). From the front it bends towards the viewer: the leg leans from the hip to point at the
+ * pinned spot and shortens along its length ([Skeleton.fore] on thigh and shin) instead of the knee kinking
+ * sideways. In between, the IK bend is applied [side] of the way and the lean-and-shorten step finishes the reach,
+ * so a three-quarter knee shows that share of the sideways bend.
  */
 class FootLock(
     private val sk: Skeleton,
@@ -151,6 +163,7 @@ class FootLock(
     private val knee: Int,
     private val ankle: Int,
     private val bend: Int = 1,
+    private val side: Float = 1f,
     private val liftPx: Float = 4f,
     private val fadeSec: Float = .08f,
 ) {
@@ -176,10 +189,12 @@ class FootLock(
         // Character pixels to world: the root's scale.
         val scale = hypot(wd[0], wd[1])
         val lift = groundY - ay
-        if (!planted && lift <= liftPx * scale) { planted = true; lockX = ax }
+        var touchdown = false
+        if (!planted && lift <= liftPx * scale) { planted = true; lockX = ax; touchdown = true }
         else if (planted && lift > 2f * liftPx * scale) planted = false
         val target = if (planted && enabled) 1f else 0f
-        w = if (w < 0f) target else {
+        // A foot pins at once where it lands (it is already there, nothing pops): fading in would let it slide on.
+        w = if (w < 0f || (touchdown && enabled)) target else {
             val step = dtSec.coerceIn(0f, 1f / 30f) / fadeSec
             if (w < target) minOf(target, w + step) else maxOf(target, w - step)
         }
@@ -188,20 +203,37 @@ class FootLock(
         val ty = lerp(ay, groundY, w)
         val hx = wd[h + 4]; val hy = wd[h + 5]
         val kx = wd[k + 4]; val ky = wd[k + 5]
-        val l1 = hypot(kx - hx, ky - hy)
-        val l2 = hypot(ax - kx, ay - ky)
         // Local angle -> screen angle: -1 on a mirrored rig.
         val flip = if (wd[h] * wd[h + 3] - wd[h + 1] * wd[h + 2] < 0f) -1f else 1f
-        // Which side of the hip-ankle line the knee is on now (the leg points down: + is towards +x).
-        val dy = ay - hy
-        val side = if (abs(dy) > 1f) kx - (hx + (ax - hx) * (ky - hy) / dy) else 0f
-        val eps = SIDE_PX * scale
-        val out2 = if (side > eps) 1 else if (side < -eps) -1 else if (flip < 0f) -bend else bend
-        ik2(hx, hy, tx, ty, l1, l2, out2, out)
-        sk.local[hip * 5 + 2] += flip * angleTo(kx - hx, ky - hy, out[0] - hx, out[1] - hy)
-        sk.updateWorld()
-        sk.local[knee * 5 + 2] += flip * angleTo(wd[a + 4] - wd[k + 4], wd[a + 5] - wd[k + 5], out[2] - wd[k + 4], out[3] - wd[k + 5])
-        sk.updateWorld()
+        if (side > 0f) {
+            val l1 = hypot(kx - hx, ky - hy)
+            val l2 = hypot(ax - kx, ay - ky)
+            // Which side of the hip-ankle line the knee is on now (the leg points down: + is towards +x).
+            val dy = ay - hy
+            val off = if (abs(dy) > 1f) kx - (hx + (ax - hx) * (ky - hy) / dy) else 0f
+            val eps = SIDE_PX * scale
+            val out2 = if (off > eps) 1 else if (off < -eps) -1 else if (flip < 0f) -bend else bend
+            ik2(hx, hy, tx, ty, l1, l2, out2, out)
+            sk.local[hip * 5 + 2] += side * flip * angleTo(kx - hx, ky - hy, out[0] - hx, out[1] - hy)
+            sk.updateWorld()
+            sk.local[knee * 5 + 2] += side * flip *
+                angleTo(wd[a + 4] - wd[k + 4], wd[a + 5] - wd[k + 5], out[2] - wd[k + 4], out[3] - wd[k + 5])
+            sk.updateWorld()
+        }
+        if (side < 1f) {
+            // Lean the leg at the spot, then shorten it to reach: thigh and shin pivots lie on their length axes,
+            // so shortening both by s puts the ankle at s of the way.
+            val px = wd[a + 4]; val py = wd[a + 5]
+            sk.local[hip * 5 + 2] += flip * angleTo(px - hx, py - hy, tx - hx, ty - hy)
+            val have = hypot(px - hx, py - hy)
+            val want = hypot(tx - hx, ty - hy)
+            if (want < have && have > 0f) {
+                val s = want / have
+                sk.fore[hip] *= s
+                sk.fore[knee] *= s
+            }
+            sk.updateWorld()
+        }
         sk.local[ankle * 5 + 2] += flip * w * wrap(footRot - atan2(wd[a + 1], wd[a]))
     }
 

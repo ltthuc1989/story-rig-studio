@@ -33,3 +33,10 @@ tasks.register<JavaExec>("snapshot") {
     classpath = sourceSets["main"].runtimeClasspath
     systemProperty("java.awt.headless", "true")
 }
+// Leg check, no drawing: ./gradlew :desktopApp:motionCheck --args="out=<file> char=kai,mia"
+tasks.register<JavaExec>("motionCheck") {
+    group = "verification"
+    mainClass = "com.example.storyrig.MotionCheckKt"
+    classpath = sourceSets["main"].runtimeClasspath
+    systemProperty("java.awt.headless", "true")
+}

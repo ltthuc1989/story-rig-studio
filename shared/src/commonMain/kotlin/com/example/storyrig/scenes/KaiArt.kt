@@ -50,10 +50,30 @@ class KaiAssets(
     val name: String = "",
     /** Which way the cut faces (character.csv `view`; else the folder's _front/_back suffix; else 3q). */
     val view: View = View.Q3,
+    /** character.csv `yaw` (degrees), when the cut says how far it is turned; see [yawDeg]. */
+    private val yawOverride: Float? = null,
 ) {
     /** Rest pose, from the data (ref.png pixels): root pivot to the soles, and hair top to the soles. */
     val rootToSole: Float
     val height: Float
+
+    /**
+     * How far the cut is turned from facing the viewer (degrees, > 0 = towards screen right; ClipPlayer draws
+     * forward swings with it). character.csv `yaw`, else from the face: the eyes' midpoint off the head's centre
+     * is R sin(yaw) on a head of radius R; seen from behind 180; else the view's default.
+     */
+    val yawDeg: Float by lazy {
+        yawOverride ?: run {
+            if (view == View.BACK) return@run 180f
+            val head = parts.firstOrNull { it.name == "head" }
+            val e1 = parts.firstOrNull { it.name == "eye_near_open" }
+            val e2 = parts.firstOrNull { it.name == "eye_far_open" }
+            if (head == null || e1 == null || e2 == null) return@run view.yawDeg
+            val mid = (e1.x + e1.w / 2f + e2.x + e2.w / 2f) / 2f
+            val off = (mid - (head.x + head.w / 2f)) / (head.w * FACE_R)
+            kotlin.math.asin(off.coerceIn(-1f, 1f)) * 180f / kotlin.math.PI.toFloat()
+        }
+    }
 
     init {
         val drawn = parts.filter { it.drawn }
@@ -92,6 +112,8 @@ class KaiAssets(
     fun part(name: String) = parts.first { it.name == name }
 
     companion object {
+        /** Face sphere radius as a share of the head picture's width (ears included). */
+        private const val FACE_R = .42f
         /**
          * [screenScale]: ref.png pixels to stage units for this scene; with [cellPx] > 0 the mesh cell is chosen so
          * it is about [cellPx] stage units on screen (never finer than the group's own cell). [block]: see
@@ -139,7 +161,10 @@ class KaiAssets(
                 .associate { it[0] to it.getOrElse(1) { "" } }
             val heightScale = facts["heightScale"]?.toFloatOrNull() ?: 1f
             val view = View.parse(facts["view"]) ?: viewFromName(name)
-            return KaiAssets(atlas, names, parent, px, py, parts, meshes, meshAtlas, (uptimeMillis() - t0).toFloat(), heightScale, name, view)
+            return KaiAssets(
+                atlas, names, parent, px, py, parts, meshes, meshAtlas, (uptimeMillis() - t0).toFloat(), heightScale, name, view,
+                facts["yaw"]?.toFloatOrNull(),
+            )
         }
 
         /** Fallback before character.csv says `view`: kai_front, kai_back. */
@@ -212,7 +237,7 @@ class KaiRig(
     clips: Array<Clip> = DanceClips.ALL,
     /** Draw [KaiAssets.meshes] (skinned limbs, torso, pelvis) instead of their rigid parts. */
     useMeshes: Boolean = false,
-    /** Show the clips the way they look in the cut's view (DanceClips.FRONT/BACK); false plays them as written. */
+    /** Draw the clips' forward swings as seen from the cut's yaw ([KaiAssets.yawDeg]); false draws them side on. */
     adaptView: Boolean = true,
     /** Turning actors: the yaw this cut is shown at (radians, see [PseudoYaw]); null = no pseudo-3D turn. */
     facingYaw: Float? = null,
@@ -233,6 +258,8 @@ class KaiRig(
     val hipF = a.bone("hip_far"); val kneeF = a.bone("knee_far"); val ankleF = a.bone("ankle_far")
 
     val view get() = a.view
+    /** The cut's yaw (degrees), see [KaiAssets.yawDeg]. */
+    val yawDeg get() = a.yawDeg
     /** Root pivot to the soles in the rest pose (ref.png px). */
     val rootToSole get() = a.rootToSole
 
@@ -293,14 +320,14 @@ class KaiRig(
         val springs = HumanoidMotion.springs { a.boneOrNull(it) }
         for (s in springs) massDir(s)
         motion = SecondaryMotion(sk, springs)
-        auto = AutoLayers(sk, root, torso, phase = phase)
+        auto = AutoLayers(sk, root, torso, phase = phase, soleBelow = a.rootToSole)
         hangNear = hang(shoulderN, wristN)
         hangFar = hang(shoulderF, wristF)
         lengthAxes()
         player = ClipPlayer(
             sk, clips, { a.boneOrNull(it) },
             zeroDeg = { when (it) { "shoulder_near" -> hangNear; "shoulder_far" -> hangFar; else -> 0f } },
-            adapt = if (adaptView) DanceClips.adaptFor(a.view) else null,
+            yawDeg = if (adaptView) a.yawDeg else null,
         )
         val inHead = BooleanArray(sk.size) { b -> var x = b; while (x >= 0 && x != head) x = sk.parent[x]; x == head }
         val hi = rig.items.indices.filter { val it = rig.items[it]; it is BitmapPart && inHead[it.bone] }

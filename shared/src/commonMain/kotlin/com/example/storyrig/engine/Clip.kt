@@ -1,12 +1,18 @@
 package com.example.storyrig.engine
 
+import kotlin.math.atan2
 import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 /**
  * Motion clips as data, shared by every character with the same bone names.
  * A clip is a set of channels (bone name + property); each channel is a list of keys in **beats**, and each key
  * carries the [Ease] of the segment that starts at it. Values are offsets added to the base pose (rotations in
  * degrees, translations in the character's own pixels, scales as multipliers), so the same clip fits any rig.
+ * Two kinds of rotation: [ROT] turns a bone in the picture plane (an arm raised to the side), [PITCH] swings it
+ * forwards (> 0) or back round the body's left-right axis (a knee lift, an arm swing); [ClipPlayer] draws a pitch
+ * the way it looks from the cut's yaw, so one clip is right seen from the front, the side or behind.
  * Clips loop: the last key eases back to the first across the loop point.
  * Built once at load; [ClipPlayer] samples them without allocating.
  */
@@ -72,6 +78,8 @@ class Clip private constructor(
         fun ty(bone: String, block: Keys.() -> Unit) = channel(bone, TY, block)
         fun sx(bone: String, block: Keys.() -> Unit) = channel(bone, SX, block)
         fun sy(bone: String, block: Keys.() -> Unit) = channel(bone, SY, block)
+        /** Forwards (> 0) or back swing, degrees; see [ClipPlayer]. */
+        fun pitch(bone: String, block: Keys.() -> Unit) = channel(bone, PITCH, block)
 
         fun build(): Clip {
             val start = IntArray(keys.size + 1)
@@ -96,14 +104,19 @@ class Clip private constructor(
         const val ROT = 2
         const val SX = 3
         const val SY = 4
+        /** Not a [Skeleton.local] slot: a swing round the body's left-right axis, projected by [ClipPlayer]. */
+        const val PITCH = 5
 
         fun build(name: String, beats: Float, block: Builder.() -> Unit) = Builder(name, beats).apply(block).build()
     }
 }
 
-/** Which way a character's cut faces. Clips are written for [Q3] (three-quarter, facing right). */
-enum class View {
-    Q3, FRONT, BACK;
+/** Which way a character's cut faces. */
+enum class View(
+    /** Yaw it stands for when the cut doesn't say (degrees, 0 = facing the viewer, > 0 = turned to screen right). */
+    val yawDeg: Float,
+) {
+    Q3(30f), FRONT(0f), BACK(180f);
 
     companion object {
         /** character.csv `view` value (3q, front, back); null when unknown. */
@@ -117,79 +130,51 @@ enum class View {
 }
 
 /**
- * How clips written for the three-quarter view show in another [view], per bone name (data: one table per view,
- * shared by every character with the same bone names; see DanceClips.VIEWS).
- *
- * A clip rotation r of a listed bone is split in two: [Gain.keep] * r stays a rotation on screen (signed, so the
- * near and far leg can mirror each other), and [Gain.depth] * r is the part that turns towards or away from the
- * viewer. That depth angle adds up down the chain (thigh, then shin, then foot) and each bone is foreshortened
- * along its length by cos(depth angle) ([Skeleton.fore]): a knee lift seen from the front is a shorter thigh, not
- * a sideways kick. Angles > 0 may use their own gains ([Gain.keepPos], [Gain.depthPos]): an elbow bends forward
- * (towards the viewer) with negative angles but waves in the picture plane with positive ones.
- * Bones not listed keep their rotation.
- */
-class ViewAdapt private constructor(val view: View, val gains: Map<String, Gain>) {
-    class Gain(val keep: Float, val depth: Float, val keepPos: Float = keep, val depthPos: Float = depth)
-
-    class Builder(private val view: View) {
-        private val gains = LinkedHashMap<String, Gain>()
-        fun bone(name: String, keep: Float, depth: Float, keepPos: Float = keep, depthPos: Float = depth) {
-            gains[name] = Gain(keep, depth, keepPos, depthPos)
-        }
-        /** Same gains as another view (front and back differ only in which side is near). */
-        fun copy(from: ViewAdapt) = gains.putAll(from.gains)
-        fun build() = ViewAdapt(view, gains.toMap())
-    }
-
-    companion object {
-        fun build(view: View, block: Builder.() -> Unit) = Builder(view).apply(block).build()
-    }
-}
-
-/**
  * Plays [clips] on one skeleton, driven by a beat clock (scene time / beat length, or the audio clock), so the
  * motion stays on the music whatever the tempo. Switching clips crossfades over [play]'s fadeBeats.
  * Call [apply] after resetting the base pose and before [SecondaryMotion].
  *
  * [zeroDeg] lets a rig say where 0 degrees is for a bone (e.g. shoulders measured from the arm hanging down),
  * so clips are written in the same terms for every character.
- * [adapt]: how the clips show in the rig's view (front/back); null or a [View.Q3] table plays them as written.
- * An adapted player writes [Skeleton.fore] for every bone, so the rig resets that each frame.
+ *
+ * [yawDeg]: how far the cut is turned from facing the viewer (0 = front, 90 = side on facing screen right, 180 =
+ * back). A [Clip.PITCH] swing adds up down the chain (thigh, then shin, then foot: absolute pitch P), and a bone
+ * hanging down and pitched by P is seen from that yaw as turned by -atan2(sin P sin yaw, cos P) in the picture and
+ * shortened along its length to sqrt(cos^2 P + sin^2 P sin^2 yaw) ([Skeleton.fore]): from the front a knee lift is
+ * a shorter thigh, from the side a forward kick. null draws pitches as plain picture rotations (side on, as
+ * before views existed). The player writes [Skeleton.fore], so the rig resets it each frame.
  */
 class ClipPlayer(
     private val sk: Skeleton,
     private val clips: Array<Clip>,
     boneIndex: (String) -> Int,
     zeroDeg: (String) -> Float = { 0f },
-    adapt: ViewAdapt? = null,
+    yawDeg: Float? = null,
 ) {
-    /** Per clip, per channel: index into [Skeleton.local], or -1 when the rig lacks that bone. */
+    /** Per clip, per channel: index into [acc] (a [Skeleton.local] slot, or the pitch slot), -1 when the rig lacks that bone. */
     private val slot = Array(clips.size) { ci ->
         val c = clips[ci]
-        IntArray(c.channels) { ch -> boneIndex(c.channelBone[ch]).let { b -> if (b < 0) -1 else b * 5 + c.channelProp[ch] } }
+        IntArray(c.channels) { ch ->
+            boneIndex(c.channelBone[ch]).let { b ->
+                when {
+                    b < 0 -> -1
+                    c.channelProp[ch] == Clip.PITCH -> sk.size * 5 + b
+                    else -> b * 5 + c.channelProp[ch]
+                }
+            }
+        }
     }
     private val zero = Array(clips.size) { ci ->
         val c = clips[ci]
         FloatArray(c.channels) { ch -> if (c.channelProp[ch] == Clip.ROT) zeroDeg(c.channelBone[ch]) else 0f }
     }
-    private val acc = FloatArray(sk.size * 5)
-    /** The [zeroDeg] part of [acc], so view gains apply to the clip's own angle only. */
-    private val zacc = FloatArray(sk.size * 5)
-    private val adapted = adapt != null && adapt.view != View.Q3
-    private val keepNeg = FloatArray(sk.size) { 1f }
-    private val depthNeg = FloatArray(sk.size)
-    private val keepPos = FloatArray(sk.size) { 1f }
-    private val depthPos = FloatArray(sk.size)
-    /** Accumulated depth angle (radians) per bone, this frame. */
+    /** Local offsets per bone (5 slots), then one pitch per bone. */
+    private val acc = FloatArray(sk.size * 6)
+    private val sinYaw = if (yawDeg == null) 1f else sin(yawDeg * DEG)
+    private val projected = yawDeg != null
+    /** Absolute pitch (radians) per bone and its picture angle, this frame. */
     private val pitch = FloatArray(sk.size)
-
-    init {
-        if (adapt != null && adapted) for ((name, g) in adapt.gains) {
-            val b = boneIndex(name)
-            if (b < 0) continue
-            keepNeg[b] = g.keep; depthNeg[b] = g.depth; keepPos[b] = g.keepPos; depthPos[b] = g.depthPos
-        }
-    }
+    private val shown = FloatArray(sk.size)
 
     var current = -1
         private set
@@ -210,13 +195,13 @@ class ClipPlayer(
     fun apply(beat: Float) {
         if (current < 0) return
         acc.fill(0f)
-        zacc.fill(0f)
         var w = 1f
         if (prev >= 0) {
             w = Ease.apply(Ease.SINE, clamp((beat - fadeStart) / fadeBeats))
             if (w >= 1f) prev = -1 else add(prev, beat - prevStart, 1f - w)
         }
         add(current, beat - startBeat, w)
+        val po = sk.size * 5
         for (b in 0 until sk.size) {
             val o = b * 5
             // Root translations are in the character's pixels: scale them like its parts.
@@ -224,18 +209,23 @@ class ClipPlayer(
             val tsy = if (sk.parent[b] < 0) sk.local[o + 4] else 1f
             sk.local[o] += acc[o] * tsx
             sk.local[o + 1] += acc[o + 1] * tsy
-            if (adapted) {
-                val z = zacc[o + 2]
-                val r = acc[o + 2] - z
-                val pos = r > 0f
-                val p = sk.parent[b]
-                val pt = (if (pos) depthPos[b] else depthNeg[b]) * r * DEG + (if (p >= 0) pitch[p] else 0f)
-                pitch[b] = pt
-                sk.local[o + 2] += (z + (if (pos) keepPos[b] else keepNeg[b]) * r) * DEG
-                sk.fore[b] = if (pt == 0f) 1f else maxOf(cos(pt), MIN_FORE)
+            var r = acc[o + 2] * DEG
+            val p = sk.parent[b]
+            val pp = if (p >= 0) pitch[p] else 0f
+            val pt = pp + acc[po + b] * DEG
+            pitch[b] = pt
+            if (pt == 0f && pp == 0f) {
+                shown[b] = 0f
+            } else if (!projected) {
+                shown[b] = -pt
+                r += shown[b] - (if (p >= 0) shown[p] else 0f)
             } else {
-                sk.local[o + 2] += acc[o + 2] * DEG
+                val sp = sin(pt); val cp = cos(pt)
+                shown[b] = -atan2(sp * sinYaw, cp)
+                r += shown[b] - (if (p >= 0) shown[p] else 0f)
+                if (pt != 0f) sk.fore[b] *= maxOf(sqrt(cp * cp + sp * sp * sinYaw * sinYaw), MIN_FORE)
             }
+            sk.local[o + 2] += r
             sk.local[o + 3] *= 1f + acc[o + 3]
             sk.local[o + 4] *= 1f + acc[o + 4]
         }
@@ -251,9 +241,9 @@ class ClipPlayer(
             val j = s[ch]
             if (j < 0) continue
             var v = c.sample(ch, t) + z[ch]
-            if (c.channelProp[ch] >= Clip.SX) v -= 1f
+            val prop = c.channelProp[ch]
+            if (prop == Clip.SX || prop == Clip.SY) v -= 1f
             acc[j] += v * w
-            zacc[j] += z[ch] * w
         }
     }
 

@@ -2,17 +2,18 @@ package com.example.storyrig.scenes
 
 import com.example.storyrig.engine.Clip
 import com.example.storyrig.engine.Ease
-import com.example.storyrig.engine.View
-import com.example.storyrig.engine.ViewAdapt
 import kotlin.math.asin
 import kotlin.math.cos
 import kotlin.math.sin
 
 /**
  * Dance clips for the standard humanoid skeleton (bone names from `:tools` cutref). Pure data: any character
- * with these bones plays them. Rotations in degrees, positive = clockwise on screen; shoulders are measured
- * from the arm hanging straight down (see KaiRig.hang*). Characters face right, so "forward" is negative
- * for hips and shoulders.
+ * with these bones plays them. Degrees. Two kinds of rotation (see [Clip]):
+ * - `rot`: in the picture plane, positive = clockwise on screen; arms raised to the side (near arm: + is out,
+ *   far arm: - is out). Shoulders are measured from the arm hanging straight down (KaiRig.hang*).
+ * - `pitch`: forward (> 0) or back round the body's left-right axis: knee lifts, knee bends (negative), arm and
+ *   forearm swings. Drawn the way they look from the cut's yaw, so they are right from the front, side or back.
+ * The near leg and arm are on the viewer's left.
  */
 object DanceClips {
     val WAVE = Clip.build("wave", 4f) {
@@ -24,8 +25,9 @@ object DanceClips {
         rot("shoulder_near") { at(0f, 112f); at(2f, 120f) }
         rot("elbow_near") { for (b in 0 until 4) { at(b + 0f, 18f); at(b + .5f, 62f) } }
         rot("wrist_near") { for (b in 0 until 4) { at(b + .1f, -22f); at(b + .6f, 18f) } }
-        rot("shoulder_far") { at(0f, -18f); at(2f, -26f) }
-        rot("elbow_far") { at(0f, -45f) }
+        rot("shoulder_far") { at(0f, -4f) }
+        pitch("shoulder_far") { at(0f, 18f); at(2f, 26f) }
+        pitch("elbow_far") { at(0f, 45f) }
     }
 
     /** Arms fling out (overshoot, hold), pump in, up in a V, pump in; a small squeeze before each fling. */
@@ -36,24 +38,32 @@ object DanceClips {
         rot("torso") { at(0f, 0f); at(2.3f, -4f); at(3.25f, 2f) }
         armHits("shoulder_near", 1f)
         armHits("shoulder_far", -1f)
-        for (side in listOf("elbow_near", "elbow_far")) rot(side) {
-            at(0f, -60f, Ease.BACK); at(.3f, -8f); at(.85f, -8f, Ease.IO)
-            at(1.25f, -65f); at(1.85f, -65f, Ease.BACK); at(2.3f, -5f); at(2.85f, -5f, Ease.IO)
-            at(3.25f, -60f); at(3.85f, -72f)
+        for (side in listOf("elbow_near", "elbow_far")) pitch(side) {
+            at(0f, 60f, Ease.BACK); at(.3f, 8f); at(.85f, 8f, Ease.IO)
+            at(1.25f, 65f); at(1.85f, 65f, Ease.BACK); at(2.3f, 5f); at(2.85f, 5f, Ease.IO)
+            at(3.25f, 60f); at(3.85f, 72f)
         }
     }
 
-    /** Knees up in turn, arms swinging against the legs. */
+    /**
+     * Knees up in turn, arms swinging against the legs. The weight goes onto the standing leg before the other
+     * lifts (hips over it), the lifted side's hip rises and the chest leans back against it; the body dips as each
+     * foot lands, never rising off the standing leg.
+     */
     val MARCH = Clip.build("march", 2f) {
-        ty("root") { for (b in 0 until 2) { at(b + 0f, 5f, Ease.OUT); at(b + .5f, -7f, Ease.IN) } }
+        ty("root") { for (b in 0 until 2) { at(b + 0f, 6f, Ease.OUT); at(b + .5f, 0f, Ease.IN) } }
+        tx("root") { at(.35f, 6f); at(.9f, 0f); at(1.35f, -6f); at(1.9f, 0f) }
+        rot("root") { at(.35f, 2.5f); at(.9f, 0f); at(1.35f, -2.5f); at(1.9f, 0f) }
+        rot("torso") { at(.35f, -4f); at(.9f, 0f); at(1.35f, 4f); at(1.9f, 0f) }
         nod(2)
-        rot("torso") { at(0f, -2f); at(1f, 2f) }
         knee("near", 0f)
         knee("far", 1f)
-        rot("shoulder_near") { at(0f, 25f); at(1f, -32f) }
-        rot("elbow_near") { at(0f, -10f); at(1f, -48f) }
-        rot("shoulder_far") { at(0f, -32f); at(1f, 25f) }
-        rot("elbow_far") { at(0f, -48f); at(1f, -10f) }
+        rot("shoulder_near") { at(0f, 4f) }
+        rot("shoulder_far") { at(0f, -4f) }
+        pitch("shoulder_near") { at(.45f, -25f); at(1.45f, 32f) }
+        pitch("elbow_near") { at(.45f, 10f); at(1.45f, 40f) }
+        pitch("shoulder_far") { at(.45f, 32f); at(1.45f, -25f) }
+        pitch("elbow_far") { at(.45f, 40f); at(1.45f, 10f) }
     }
 
     /**
@@ -67,42 +77,12 @@ object DanceClips {
         rot("torso") { at(0f, 1.5f); at(4f, -1.5f) }
         rot("head") { at(0f, 2f); at(1.2f, -6f); at(3.4f, -6f); at(4.6f, 4f); at(6.8f, 4f) }
         rot("shoulder_near") { at(0f, 5f); at(4f, 8f) }
-        rot("elbow_near") { at(0f, -8f); at(4f, -14f) }
+        pitch("elbow_near") { at(0f, 8f); at(4f, 14f) }
         rot("shoulder_far") { at(0f, -8f); at(4f, -5f) }
-        rot("elbow_far") { at(0f, -14f); at(4f, -8f) }
+        pitch("elbow_far") { at(0f, 14f); at(4f, 8f) }
     }
 
     val ALL = arrayOf(WAVE, PUMP, MARCH, IDLE)
-
-    /**
-     * How these clips (written for the three-quarter view) show from the front: hips, knees and ankles swing the
-     * legs forward and back, so from the front they are foreshortening (depth 1) with a small mirrored remainder
-     * that turns the knees out (near leg is on the viewer's left: + turns it out, so near gains are negative, far
-     * positive, for the clips' negative hip angles). Elbows bend forward with negative angles (the forearm comes
-     * at the viewer, a little inward) and wave in the picture plane with positive ones (the raised arm in WAVE).
-     * Shoulders, torso, head and wrists are not listed: arm raises to the side stay rotations.
-     */
-    val FRONT: ViewAdapt = ViewAdapt.build(View.FRONT) {
-        for (bone in listOf("hip", "knee", "ankle")) {
-            bone("${bone}_near", keep = -.15f, depth = 1f)
-            bone("${bone}_far", keep = .15f, depth = 1f)
-        }
-        bone("elbow_near", keep = .25f, depth = 1f, keepPos = 1f, depthPos = 0f)
-        bone("elbow_far", keep = .25f, depth = 1f, keepPos = 1f, depthPos = 0f)
-    }
-
-    /**
-     * From behind: the same, since near is still the viewer's left (now the character's left side) and forward is
-     * now away from the viewer, which foreshortens just the same.
-     */
-    val BACK: ViewAdapt = ViewAdapt.build(View.BACK) { copy(FRONT) }
-
-    /** Table for a rig cut in [view]; null for the three-quarter view the clips are written for. */
-    fun adaptFor(view: View): ViewAdapt? = when (view) {
-        View.Q3 -> null
-        View.FRONT -> FRONT
-        View.BACK -> BACK
-    }
 
     /** Thigh and shin in the cut (ref.png px): used to keep the feet on the ground while the knees bend. */
     private const val THIGH = 62f
@@ -120,9 +100,9 @@ object DanceClips {
         val ankle = -c / D2R
         ty("root") { for (b in 0 until beats) { at(b + 0f, drop, Ease.OUT); at(b + .5f, 0f, Ease.IN) } }
         for (side in listOf("near", "far")) {
-            rot("hip_$side") { for (b in 0 until beats) { at(b + 0f, -hipDeg, Ease.OUT); at(b + .5f, 0f, Ease.IN) } }
-            rot("knee_$side") { for (b in 0 until beats) { at(b + 0f, knee, Ease.OUT); at(b + .5f, 0f, Ease.IN) } }
-            rot("ankle_$side") { for (b in 0 until beats) { at(b + 0f, ankle, Ease.OUT); at(b + .5f, 0f, Ease.IN) } }
+            pitch("hip_$side") { for (b in 0 until beats) { at(b + 0f, hipDeg, Ease.OUT); at(b + .5f, 0f, Ease.IN) } }
+            pitch("knee_$side") { for (b in 0 until beats) { at(b + 0f, -knee, Ease.OUT); at(b + .5f, 0f, Ease.IN) } }
+            pitch("ankle_$side") { for (b in 0 until beats) { at(b + 0f, -ankle, Ease.OUT); at(b + .5f, 0f, Ease.IN) } }
         }
     }
 
@@ -143,11 +123,11 @@ object DanceClips {
         at(3.25f, 18f * sign); at(3.85f, 8f * sign)
     }
 
-    /** Knee lift starting at [beat], lasting one beat. */
+    /** Knee lift starting at [beat], lasting one beat: thigh well up, shin hanging a little back, foot level. */
     private fun Clip.Builder.knee(side: String, beat: Float) {
-        rot("hip_$side") { at(beat, 0f); at(beat + .45f, -42f); at(beat + .95f, 0f, Ease.HOLD) }
-        rot("knee_$side") { at(beat, 0f); at(beat + .45f, 72f); at(beat + .95f, 0f, Ease.HOLD) }
-        rot("ankle_$side") { at(beat, 0f); at(beat + .45f, -18f); at(beat + .95f, 0f, Ease.HOLD) }
+        pitch("hip_$side") { at(beat, 0f); at(beat + .45f, 60f); at(beat + .95f, 0f, Ease.HOLD) }
+        pitch("knee_$side") { at(beat, 0f); at(beat + .45f, -85f); at(beat + .95f, 0f, Ease.HOLD) }
+        pitch("ankle_$side") { at(beat, 0f); at(beat + .45f, 25f); at(beat + .95f, 0f, Ease.HOLD) }
     }
 
     private const val D2R = (kotlin.math.PI / 180.0).toFloat()
