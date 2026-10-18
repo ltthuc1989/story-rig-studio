@@ -19,8 +19,10 @@ import kotlin.math.roundToInt
  *  - pelvis: a short horizontal capsule halfway between waist and root, half as long as the hips are apart, radius
  *    just under half the hip spacing (so the hip bones win on the thighs); with a skirt bone the pelvis group follows
  *    `skirt` instead of `root`, through the same capsule;
- *  - blend, attach band and cell scale with the limbs' thickness (the elbows' half width w): blend 1.15 w,
- *    band 1.55 w, cell w / 3.25 (tuned on Kai: w = 26 px gives 30, 40, 8).
+ *  - blend, attach band and cell scale with the limbs' thickness (the elbows' half width w): blend 0.5 w,
+ *    band 1.55 w, cell w / 3.25 (Kai: w = 26 px gives 13, 40, 8). The engine measures the blend along the bone,
+ *    so 0.5 w is a joint crease about one limb width long and the segments either side stay straight (with
+ *    1.15 w measured straight to the bone, limb outlines blended over most of their length and bowed).
  */
 
 /** What the cut measured for the mesh, ref.png pixels. */
@@ -37,7 +39,7 @@ internal fun writeMesh(outDir: File, bones: List<Bone>, parts: Map<String, Part>
     val byName = bones.associateBy { it.name }
     fun b(n: String) = byName.getValue(n)
     val w = m.limbHalfWidth
-    val blend = 1.15f * w
+    val blend = .5f * w
     val band = 1.55f * w
     val cell = (w / 3.25f).roundToInt().coerceAtLeast(2)
 
