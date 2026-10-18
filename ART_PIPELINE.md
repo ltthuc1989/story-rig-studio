@@ -78,6 +78,7 @@ tờ mẫu → Gemini (1 lượt, người dùng duyệt) → splitsheet → she
   - `ROT`: xoay trong mặt phẳng ảnh;
   - `PITCH`: đưa ra trước hoặc sau, chiếu theo góc nhìn: rot = −atan2(sin P·sin yaw, cos P); độ dài = √(cos²P + sin²P·sin²yaw);
   - `ROLL`: xoay quanh trục dài của xương; 180° là lật mặt kia, ví dụ lật bàn tay.
+- **Lệch pha giữa vai và khuỷu (overlap):** khi dang hay giơ tay, khuỷu duỗi thẳng trước rồi vai mới vung (ease `IN` rồi `BACK`); khi hạ tay, vai dẫn với tay thẳng, khuỷu gập sau cùng. Vai và khuỷu chạy cùng lúc thì cẳng tay gập ngược chiều vung, trông như tay gãy (`DanceClips.PUMP`).
 - **Góc nhìn của mỗi bộ cắt:** đo từ vị trí hai mắt so với đầu; ghi đè được bằng `yaw` trong `character.csv`.
 - **FootLock** (`Motion.kt`): khoá bàn chân trên đất khi chạm đất; nhìn nghiêng thì trộn IK theo |sin yaw|.
 - **AutoLayers:** co giãn lấy gốc ở lòng bàn chân, nên bàn chân không trượt.

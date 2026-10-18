@@ -47,10 +47,13 @@ object DanceClips {
         // Elbows bend in the picture: the arms are out to the sides, so seen from the front a pump folds the forearms
         // up or in across the picture, not towards the viewer (that would shorten forearm and hand to stubs). Near
         // arm: - folds up from an arm held out; the far arm mirrors it.
+        // Overlap with the shoulders (armHits): an arm that opens out or goes up straightens at the elbow first, the
+        // shoulder swinging after it; an arm coming down stays straight until it is near the side and folds last.
+        // Both moving together bends the forearm against the swing, like a broken arm.
         for ((side, sign) in listOf("elbow_near" to 1f, "elbow_far" to -1f)) rot(side) {
-            at(0f, -60f * sign, Ease.BACK); at(.3f, -8f * sign); at(.85f, -8f * sign, Ease.IO)
-            at(1.25f, -65f * sign); at(1.85f, -65f * sign, Ease.BACK); at(2.3f, -5f * sign); at(2.85f, -5f * sign, Ease.IO)
-            at(3.25f, -60f * sign); at(3.85f, -72f * sign)
+            at(0f, -60f * sign, Ease.OUT); at(.12f, -10f * sign); at(.3f, -8f * sign); at(.95f, -8f * sign, Ease.IO)
+            at(1.25f, -65f * sign); at(1.85f, -65f * sign, Ease.OUT); at(1.97f, -10f * sign); at(2.3f, -5f * sign)
+            at(3.05f, -6f * sign, Ease.IO); at(3.3f, -60f * sign); at(3.85f, -72f * sign)
         }
     }
 
@@ -128,11 +131,14 @@ object DanceClips {
         for (b in 0 until beats) { at(b + .15f, 5f); at(b + .65f, -1.5f) }
     }
 
-    /** sign = 1 for the near arm (out is clockwise), -1 for the far arm. */
+    /**
+     * sign = 1 for the near arm (out is clockwise), -1 for the far arm. Opening out and going up start slowly while
+     * the elbow straightens (PUMP's elbow keys), then swing with an overshoot; coming down leads with a straight arm.
+     */
     private fun Clip.Builder.armHits(bone: String, sign: Float) = rot(bone) {
-        at(0f, 8f * sign, Ease.BACK); at(.3f, 95f * sign); at(.85f, 95f * sign, Ease.IO)
-        at(1.25f, 15f * sign); at(1.85f, 15f * sign, Ease.BACK); at(2.3f, 150f * sign); at(2.85f, 150f * sign, Ease.IO)
-        at(3.25f, 18f * sign); at(3.85f, 8f * sign)
+        at(0f, 8f * sign, Ease.IN); at(.12f, 22f * sign, Ease.BACK); at(.35f, 95f * sign); at(.85f, 95f * sign, Ease.IO)
+        at(1.25f, 15f * sign); at(1.85f, 15f * sign, Ease.IN); at(1.97f, 30f * sign, Ease.BACK); at(2.35f, 150f * sign)
+        at(2.85f, 150f * sign, Ease.IO); at(3.2f, 22f * sign, Ease.OUT); at(3.3f, 18f * sign); at(3.85f, 8f * sign)
     }
 
     /** Knee lift starting at [beat], lasting one beat: thigh well up, shin hanging a little back, foot level. */
