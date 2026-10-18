@@ -111,10 +111,14 @@ private fun jointOn(s: Seg, towardX: Float, towardY: Float): Joint {
  * armpit up the cut) the cap is the disc cut by a chord from the cut's armpit end to the cap's tip: its top half
  * covers the shoulder line when the arm hangs, and the arm's underside runs straight from the armpit to the tip when
  * it is raised. A full bottom half sticks out under the armpit as a lump of shirt; a plain top half leaves a step.
+ * With [axis] (a shoulder: the arm's direction, shoulder to elbow) the cap takes the sleeve's pattern instead of the
+ * reference's ([sleeveColour]): the reference there is the chest, whose stripes would turn with the arm.
  */
-private fun capInto(p: Piece, j: Joint, ref: Img, keep: Pt? = null): Piece {
+private fun capInto(p: Piece, j: Joint, ref: Img, keep: Pt? = null, axis: Pt? = null): Piece {
     val r = j.radius
     val band = bandColours(p, j, -r, -2f)
+    // The sleeve's main colours, past the cut line's shared pixels and the inside of the sleeve next to it.
+    val sleeve = if (axis == null) band else bandColours(p, j, -2 * r, -4f)
     val x0 = min(p.ox, (j.x - r).toInt() - 2); val y0 = min(p.oy, (j.y - r).toInt() - 2)
     val x1 = max(p.ox + p.w, (j.x + r).toInt() + 3); val y1 = max(p.oy + p.h, (j.y + r).toInt() + 3)
     val out = Img(x1 - x0, y1 - y0)
@@ -134,9 +138,29 @@ private fun capInto(p: Piece, j: Joint, ref: Img, keep: Pt? = null): Piece {
         // Colour of the piece just before the cut on this line.
         val sx = (fx - (t + 2f) * j.ux).roundToInt(); val sy = (fy - (t + 2f) * j.uy).roundToInt()
         val c = p.colourAt(sx, sy)
-        if (a(c) > 127) out[x - x0, y - y0] = capColour(ref, x, y, band, c or (0xFF shl 24))
+        if (a(c) <= 127) continue
+        out[x - x0, y - y0] = if (axis != null) sleeveColour(p, fx, fy, axis, sleeve, 2 * r) ?: (c or (0xFF shl 24))
+        else capColour(ref, x, y, band, c or (0xFF shl 24))
     }
     return Piece(out, x0, y0).trimmed()
+}
+
+/**
+ * Colour of a shoulder cap pixel at (fx, fy): the nearest pixel of the sleeve [p] along its stripes (across the arm's
+ * [axis], either way, at most [reach] px) whose colour is one of the sleeve's [main] colours, so stripes run on into
+ * the cap. Null when neither way reaches the sleeve (the cap's tip past the arm's top).
+ */
+private fun sleeveColour(p: Piece, fx: Float, fy: Float, axis: Pt, main: List<Int>, reach: Float): Int? {
+    val nx = -axis.y; val ny = axis.x
+    var t = 1f
+    while (t <= reach) {
+        for (s in intArrayOf(1, -1)) {
+            val c = p.colourAt((fx + s * t * nx - .5f).roundToInt(), (fy + s * t * ny - .5f).roundToInt())
+            if (a(c) > 200 && main.any { colourDist(c, it) <= SAME_GARMENT / 2 }) return c or (0xFF shl 24)
+        }
+        t += .5f
+    }
+    return null
 }
 
 /**
@@ -584,11 +608,13 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
         var arm = pieceOf(img, mask)
         // Round shoulder end under the shirt: the cut runs SHOULDER_MARGIN past the arm's top, the cap must not, or it
         // pokes above the shoulder line once the arm hangs down. Cut by a chord towards the armpit (capInto): the
-        // arm's underside then runs straight into the shirt's side when it is raised.
+        // arm's underside then runs straight into the shirt's side when it is raised. Its colours follow the sleeve's
+        // stripes, not the chest under it.
         val up = hypot(sh.x1 - sh.x2, sh.y1 - sh.y2).let { l -> Pt((sh.x1 - sh.x2) / l, (sh.y1 - sh.y2) / l) }
         val shJoint = jointOn(sh, S.seedTorso.x, S.seedTorso.y).let { Joint(it.x, it.y, it.ux, it.uy, it.radius - SHOULDER_MARGIN) }
-        arm = capInto(arm, shJoint, img, keep = up)
         val shoulder = mid(sh)
+        val axis = hypot(el.x - shoulder.x, el.y - shoulder.y).let { l -> Pt((el.x - shoulder.x) / l, (el.y - shoulder.y) / l) }
+        arm = capInto(arm, shJoint, img, keep = up, axis = axis)
         val hang = Pt(sh.x1 + (sh.x2 - sh.x1) * SHOULDER_HANG_PIVOT, sh.y1 + (sh.y2 - sh.y1) * SHOULDER_HANG_PIVOT)
         val elbow = jointAcross(arm, el.x, el.y, el.x - shoulder.x, el.y - shoulder.y)
         val (upper, rest) = cutAt(arm, elbow, ref = img)
