@@ -105,9 +105,13 @@ private fun jointOn(s: Seg, towardX: Float, towardY: Float): Joint {
     return Joint(mx, my, nx, ny, hypot(s.x2 - s.x1, s.y2 - s.y1) / 2)
 }
 
-/** Round cap past a cut on the +u side of [j], filled by smearing the piece's colours at the cut along u. */
-private fun capInto(p: Piece, j: Joint): Piece {
+/**
+ * Round cap past a cut on the +u side of [j], filled by smearing the piece's colours at the cut along u; over the same
+ * garment in [ref] it takes the reference's pixels ([capColour]).
+ */
+private fun capInto(p: Piece, j: Joint, ref: Img): Piece {
     val r = j.radius
+    val band = bandColours(p, j, -r, -2f)
     val x0 = min(p.ox, (j.x - r).toInt() - 2); val y0 = min(p.oy, (j.y - r).toInt() - 2)
     val x1 = max(p.ox + p.w, (j.x + r).toInt() + 3); val y1 = max(p.oy + p.h, (j.y + r).toInt() + 3)
     val out = Img(x1 - x0, y1 - y0)
@@ -120,7 +124,7 @@ private fun capInto(p: Piece, j: Joint): Piece {
         // Colour of the piece just before the cut on this line.
         val sx = (fx - (t + 2f) * j.ux).roundToInt(); val sy = (fy - (t + 2f) * j.uy).roundToInt()
         val c = p.colourAt(sx, sy)
-        if (a(c) > 127) out[x - x0, y - y0] = c or (0xFF shl 24)
+        if (a(c) > 127) out[x - x0, y - y0] = capColour(ref, x, y, band, c or (0xFF shl 24))
     }
     return Piece(out, x0, y0).trimmed()
 }
@@ -137,12 +141,18 @@ private fun extendUp(p: Piece, px: Int): Piece {
     return Piece(out, p.ox, p.oy - px)
 }
 
-/** Fills pixels of [hole] that touch [p] (up to [depth] px in) with the nearest colour of [p]: behind a removed arm. */
-private fun fillBehind(p: Piece, hole: BooleanArray, w: Int, depth: Int): Piece {
+/**
+ * Fills pixels of [hole] that touch [p] (up to [depth] px in) with the nearest colour of [p]: behind a removed arm.
+ * Where [ref] shows the same garment as the edge of [p] the fill grew from (a sleeve of the shirt), it takes the
+ * reference's pixels, so a torso drawn over that arm keeps the sleeve's stripes.
+ */
+private fun fillBehind(p: Piece, hole: BooleanArray, w: Int, depth: Int, ref: Img): Piece {
     val x0 = p.ox - depth; val y0 = p.oy - depth
     val out = Img(p.w + 2 * depth, p.h + 2 * depth)
     for (y in 0 until p.h) for (x in 0 until p.w) out[x + depth, y + depth] = p.img[x, y]
-    repeat(depth) {
+    val filled = BooleanArray(out.px.size)
+    val edge = ArrayList<Int>()
+    repeat(depth) { step ->
         val next = out.px.copyOf()
         for (y in 0 until out.h) for (x in 0 until out.w) {
             if (a(out[x, y]) > 0) continue
@@ -150,11 +160,17 @@ private fun fillBehind(p: Piece, hole: BooleanArray, w: Int, depth: Int): Piece 
             if (gx < 0 || gy < 0 || gx >= w || !hole.indices.contains(gy * w + gx) || !hole[gy * w + gx]) continue
             for ((dx, dy) in NEIGH4) {
                 val nx = x + dx; val ny = y + dy
-                if (out.inside(nx, ny) && a(out[nx, ny]) > 200) { next[y * out.w + x] = out[nx, ny]; break }
+                if (out.inside(nx, ny) && a(out[nx, ny]) > 200) {
+                    next[y * out.w + x] = out[nx, ny]; filled[y * out.w + x] = true
+                    if (step == 0) edge += out[nx, ny]
+                    break
+                }
             }
         }
         System.arraycopy(next, 0, out.px, 0, next.size)
     }
+    val band = mainColours(edge)
+    for (i in filled.indices) if (filled[i]) out.px[i] = capColour(ref, i % out.w + x0, i / out.w + y0, band, out.px[i])
     return Piece(out, x0, y0).trimmed()
 }
 
@@ -266,6 +282,9 @@ private fun eraseFeature(p: Piece, area: Box, isSkin: (Int) -> Boolean, contrast
     return Box(bx0, by0, bx1 + 1, by1 + 1) to Piece(feature, bx0 - 2, by0 - 2)
 }
 
+/** How far (degrees, either way) the app may swing a skirt on its bone without opening a gap over the thighs. */
+internal const val SKIRT_SWING = 8.0
+
 internal fun cutRef(dir: File, outDir: File, previewDir: File) = cutWith(dir, outDir, previewDir, KaiRefSpec.spec())
 
 internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
@@ -354,11 +373,17 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
 
     // Torso: fill in a little behind the removed arms, cap the neck (all hidden in the rest pose).
     var torso = pieceOf(img, torsoM)
-    torso = fillBehind(torso, armNearM, img.w, 8)
-    torso = fillBehind(torso, armFarM, img.w, 8)
-    torso = capInto(torso, jointOn(S.neck, S.seedHead.x, S.seedHead.y))
+    torso = fillBehind(torso, armNearM, img.w, 8, img)
+    torso = fillBehind(torso, armFarM, img.w, 8, img)
+    torso = capInto(torso, jointOn(S.neck, S.seedHead.x, S.seedHead.y), img)
     parts["torso"] = Part("torso", "torso", torso)
-    parts["pelvis"] = Part("pelvis", "root", extendUp(pieceOf(img, pelvisM), 18))
+    val pelvis = pieceOf(img, pelvisM)
+    // A skirt swings on its own bone, pivoting where it starts at the waist on the body's centre line.
+    val skirt = if (S.hipPivotY == null) null else {
+        val top = (0 until pelvis.h).first { y -> (0 until pelvis.w).any { a(pelvis.img[it, y]) > 127 } } + pelvis.oy
+        Bone("skirt", "root", S.root.x, top.toFloat()).also { bones += it }
+    }
+    parts["pelvis"] = Part("pelvis", skirt?.name ?: "root", extendUp(pelvis, 18))
 
     for ((side, data) in listOf(
         "near" to listOf(armNearM, S.shoulderNear, S.elbowNear, S.wristNear),
@@ -366,12 +391,12 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
     )) {
         val mask = data[0] as BooleanArray; val sh = data[1] as Seg; val el = data[2] as Pt; val wr = data[3] as Pt
         var arm = pieceOf(img, mask)
-        arm = capInto(arm, jointOn(sh, S.seedTorso.x, S.seedTorso.y))
+        arm = capInto(arm, jointOn(sh, S.seedTorso.x, S.seedTorso.y), img)
         val shoulder = mid(sh)
         val elbow = jointAcross(arm, el.x, el.y, el.x - shoulder.x, el.y - shoulder.y)
-        val (upper, rest) = cutAt(arm, elbow)
+        val (upper, rest) = cutAt(arm, elbow, ref = img)
         val wrist = jointAcross(rest, wr.x, wr.y, wr.x - el.x, wr.y - el.y)
-        val (fore, hand) = cutAt(rest, wrist)
+        val (fore, hand) = cutAt(rest, wrist, ref = img)
         elbowHalf += elbow.radius
         bones += Bone("shoulder_$side", "torso", shoulder.x, shoulder.y + 8f)
         bones += Bone("elbow_$side", "shoulder_$side", elbow.x, elbow.y)
@@ -387,16 +412,21 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
     )) {
         val hip = data[2] as Seg; val kn = data[3] as Pt; val an = data[4] as Pt
         val pivotY = S.hipPivotY ?: mid(hip).y
-        // Under a skirt the thigh reaches up, hidden, to the real hip, so lifting the leg shows no gap at the hem.
-        val thigh = if (S.hipPivotY != null) extendUp(pieceOf(img, data[0] as BooleanArray), (mid(hip).y - pivotY).roundToInt().coerceAtLeast(0))
-            else capInto(pieceOf(img, data[0] as BooleanArray), jointOn(hip, S.seedPelvis.x, S.seedPelvis.y))
+        // Under a skirt the thigh reaches up, hidden, to the real hip, so lifting the leg shows no gap at the hem, and
+        // at least as far as the hem rises above it when the skirt swings SKIRT_SWING degrees either way.
+        val thigh = if (skirt != null) {
+            val p = pieceOf(img, data[0] as BooleanArray)
+            val dx = max(abs(p.ox - skirt.px), abs(p.ox + p.w - skirt.px))
+            val rise = (dx * kotlin.math.tan(Math.toRadians(SKIRT_SWING)).toFloat()).roundToInt() + 4
+            extendUp(p, max(rise, (mid(hip).y - pivotY).roundToInt()))
+        } else capInto(pieceOf(img, data[0] as BooleanArray), jointOn(hip, S.seedPelvis.x, S.seedPelvis.y), img)
         var leg = pieceOf(img, data[1] as BooleanArray)
         // Shin top hides under the shorts cuff: cap it upward.
         val knee = jointAcross(leg, kn.x, leg.oy + 4f, 0f, 1f)
         // Start the cap inside the opaque rows: the top row or two are the cut line's soft edge.
-        leg = capInto(leg, Joint(knee.x, leg.oy + 4f, 0f, -1f, knee.radius))
+        leg = capInto(leg, Joint(knee.x, leg.oy + 4f, 0f, -1f, knee.radius), img)
         val ankle = jointAcross(leg, an.x, an.y, an.x - kn.x, an.y - kn.y)
-        val (shin, shoe) = cutAt(leg, ankle, capAfter = false)
+        val (shin, shoe) = cutAt(leg, ankle, capAfter = false, ref = img)
         bones += Bone("hip_$side", "root", mid(hip).x, pivotY)
         bones += Bone("knee_$side", "hip_$side", knee.x, kn.y)
         bones += Bone("ankle_$side", "knee_$side", ankle.x, ankle.y)
@@ -439,10 +469,19 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
     }
 
     writeOut(outDir, bones, parts, if (S.view == "3q") drawOrder else drawOrderFrontBack)
-    // Character facts for the app (height), kept next to the character's prompts.
-    File(dir.parentFile, "character.csv").takeIf { it.exists() }?.copyTo(File(outDir, "character.csv"), overwrite = true)
+    writeCharacter(File(dir.parentFile, "character.csv"), File(outDir, "character.csv"), S.view)
     writeMesh(outDir, bones, parts, BodyMeasure(torsoHalf, hemY, elbowHalf.average().toFloat()))
     renderPreviews(previewDir, ref, bones, parts, if (S.view == "3q") drawOrder else drawOrderFrontBack)
+}
+
+/**
+ * character.csv for the app: the character's facts kept next to its prompts ([src], e.g. heightScale), plus the view
+ * this cut faces (`view,3q|front|back`; the app takes 3q when it is missing).
+ */
+private fun writeCharacter(src: File, out: File, view: String) {
+    val kept = if (src.exists()) src.readLines().filter { it.isNotBlank() && !it.startsWith("view,") && !it.startsWith("# view:") } else
+        listOf("# key,value: data for the app about this character (written by cutauto/cutref next to bones.csv)")
+    out.writeText((kept + "# view: which way this cut faces: 3q (three-quarter, facing right), front or back" + "view,$view").joinToString("\n") + "\n")
 }
 
 /** regions.png: every region in its own colour, cut lines in black, unassigned pixels as they are. */

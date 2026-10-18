@@ -159,12 +159,25 @@ private fun runCase(c: Case, outRoot: File): Row {
     check(worstShare >= .95f, if (worst.isEmpty()) "no stray bits" else "least whole: $worst %.0f%%".format(worstShare * 100))
 
     // Skirt rule.
+    // Skirt rule: fires where expected, and then the skirt swings on its own bone (pelvis on `skirt`, parent root).
     val skirt = spec?.hipPivotY != null
-    check(skirt == c.skirt, if (skirt) "skirt" else "no skirt")
+    val pelvisBone = parts.firstOrNull { it[0] == "pelvis" }?.get(1)
+    val skirtBone = bones.firstOrNull { it[0] == "skirt" }
+    val skirtOk = if (skirt) skirtBone?.get(1) == "root" && pelvisBone == "skirt" else skirtBone == null && pelvisBone == "root"
+    check(skirt == c.skirt && skirtOk, when {
+        skirt && skirtOk -> "skirt (bone skirt)"
+        skirt -> "skirt but pelvis on ${pelvisBone}, skirt bone ${skirtBone?.joinToString(",") ?: "missing"}"
+        skirtOk -> "no skirt"
+        else -> "no skirt but pelvis on $pelvisBone${if (skirtBone != null) ", has a skirt bone" else ""}"
+    })
+
+    // View the app reads from character.csv.
+    val view = File(out, "character.csv").takeIf { it.exists() }?.readLines()?.firstOrNull { it.startsWith("view,") }?.substringAfter(",")?.trim()
+    check(view == c.view, if (view == c.view) "view $view" else "character.csv view ${view ?: "missing"}, expected ${c.view}")
 
     // Byte-for-byte against the app's data.
     c.golden?.let { g ->
-        val files = (listOf("bones.csv", "parts.csv", "mesh.csv") + File(out, "parts").list().orEmpty().map { "parts/$it" })
+        val files = (listOf("bones.csv", "parts.csv", "mesh.csv", "character.csv") + File(out, "parts").list().orEmpty().map { "parts/$it" })
         val diff = files.filter { f -> !File(g, f).exists() || !File(g, f).readBytes().contentEquals(File(out, f).readBytes()) }
         check(diff.isEmpty(), if (diff.isEmpty()) "same as app data (${files.size} files)" else "differs from app data: ${diff.take(4).joinToString(",")}${if (diff.size > 4) "…" else ""}")
     }

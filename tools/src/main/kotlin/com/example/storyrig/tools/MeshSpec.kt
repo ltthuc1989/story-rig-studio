@@ -17,7 +17,8 @@ import kotlin.math.roundToInt
  *  - torso: a vertical capsule on the body's centre line, radius = half the narrowest shirt width below the
  *    shoulders, from halfway between neck and shoulders down to where it meets the pelvis capsule at the shirt's hem;
  *  - pelvis: a short horizontal capsule halfway between waist and root, half as long as the hips are apart, radius
- *    just under half the hip spacing (so the hip bones win on the thighs);
+ *    just under half the hip spacing (so the hip bones win on the thighs); with a skirt bone the pelvis group follows
+ *    `skirt` instead of `root`, through the same capsule;
  *  - blend, attach band and cell scale with the limbs' thickness (the elbows' half width w): blend 1.15 w,
  *    band 1.55 w, cell w / 3.25 (tuned on Kai: w = 26 px gives 30, 40, 8).
  */
@@ -44,7 +45,8 @@ internal fun writeMesh(outDir: File, bones: List<Bone>, parts: Map<String, Part>
         "arm_far" to (listOf("arm_upper_far", "arm_fore_far", "hand_far") to listOf("shoulder_far", "elbow_far", "wrist_far")),
         "leg_far" to (listOf("shin_far", "thigh_far") to listOf("hip_far", "knee_far", "ankle_far")),
         "leg_near" to (listOf("shin_near", "thigh_near") to listOf("hip_near", "knee_near", "ankle_near")),
-        "pelvis" to (listOf("pelvis") to listOf("root", "hip_near", "hip_far")),
+        // A skirt follows its own bone (the pelvis part is on it), not the root.
+        "pelvis" to (listOf("pelvis") to listOf(if ("skirt" in byName) "skirt" else "root", "hip_near", "hip_far")),
         "torso" to (listOf("torso") to listOf("torso", "shoulder_near", "shoulder_far", "root")),
         "arm_near" to (listOf("arm_upper_near", "arm_fore_near", "hand_near") to listOf("shoulder_near", "elbow_near", "wrist_near")),
     )
@@ -64,6 +66,8 @@ internal fun writeMesh(outDir: File, bones: List<Bone>, parts: Map<String, Part>
     val torsoBottom = 2 * m.hemY - pelvisY + pelvisR - torsoR
     infs += Inf("torso", waist.px, torsoTop, waist.px, torsoBottom, torsoR)
     infs += Inf("root", root.px - hipSpacing / 4, pelvisY, root.px + hipSpacing / 4, pelvisY, pelvisR)
+    // Skirt: the same capsule as the pelvis's (only the skirt's mesh uses it; the shirt and the hips keep the root).
+    if ("skirt" in byName) infs += Inf("skirt", root.px - hipSpacing / 4, pelvisY, root.px + hipSpacing / 4, pelvisY, pelvisR)
 
     // Limb bones: pivot to the next joint, or to the centre of the bone's drawn parts at the limb's end.
     fun limb(bone: String, child: String?, attachTo: String? = null) {
