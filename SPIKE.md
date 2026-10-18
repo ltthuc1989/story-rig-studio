@@ -114,6 +114,7 @@ Từ Ngày 4 thêm `--es art vector|bitmap|mesh` và `--es atlas 1|0.5` (tỉ l�
 - Thân, đầu, mắt, miệng là `BitmapPart`; tay chân, tóc, áo là `MeshPart`.
 - Chạy 3 lần với `--es art bitmap`, `--es art mesh` (tay chân uốn mềm), và `--es art vector` nếu SVG của Recraft đạt tiêu chí chấm. Cả ba dùng cùng một rig.
 - Ảnh đặt ở `shared/src/commonMain/composeResources/files/kai/`. Dữ liệu rig (vùng ảnh, điểm neo, xương) để trong `scenes/KaiArt.kt`, tách khỏi code vẽ.
+- Cách làm hình, tool cắt, các góc nhìn và chuyển động của nhân vật bằng ảnh: xem `ART_PIPELINE.md`.
 
 Sản phẩm B (truyện) nhẹ hơn C nên không thử riêng; phần chờ thao tác và ghi âm thử ở giai đoạn sau.
 

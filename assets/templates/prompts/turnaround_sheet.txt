@@ -1,0 +1,21 @@
+# Tờ model sheet 5 góc trong một lượt gọi (21:9, 4K): đính kèm (1) assets/<tên>/gemini/ref.png (3/4 đã duyệt),
+# (2) assets/<tên>/gemini/view_front.png (trực diện đã duyệt), (3) assets/templates/rig_sheet.png (hình nộm 5 góc).
+# Vẽ lại hình nộm: ./gradlew :tools:run --args="mannequin sheet assets/templates/rig_sheet.png" (kèm rig_sheet.csv).
+Three images are attached.
+Image 1 and Image 2 are the approved design of ONE character (Image 1 three-quarter view, Image 2 front view): keep exactly the same character in every view (same face, hair shape, proportions, clothes, colors and art style). Copy every clothing detail exactly: prints, logos, stars, hearts, stripes, buttons, straps, backpack, with the same size, shape and color. Ignore their poses.
+Image 3 is a grey mannequin sheet that shows only the poses, the viewing angles and the layout: five figures of the same mannequin in one row. Copy its layout exactly: the same five figures, in the same order, at the same positions and the same size, all standing on the same ground line, with wide empty background between neighbouring figures. Do not draw the mannequins themselves and do not copy their grey color.
+Character turnaround model sheet for 2D cutout animation rigging: the SAME character drawn five times, one full-body figure per mannequin, left to right:
+1. Front view: head and body face the viewer squarely, the face a mirror image left to right (button nose on the centre line, both eyes the same size), both ears equally visible, like Image 2.
+2. Three-quarter view: turned 45 degrees towards the right of the image, like Image 1 (the face looks towards the right of the image).
+3. Side view (profile): turned 90 degrees, facing exactly towards the right of the image. Only one eye is visible, the nose and the mouth are seen in profile on the right edge of the face, one ear in the middle of the head. The body is seen from its side, narrow.
+4. Three-quarter back view: turned 135 degrees, we see the back of the head (hair, the back of the ear, no face, at most the tip of the cheek and nose on the right edge) and the back of the body, still turned towards the right of the image.
+5. Back view: seen exactly from behind: the back of the head with the hair, both ears equally visible, the back of the shirt, the backpack (if any) seen from behind, the back of the shorts or skirt and the heels of the shoes. No face at all.
+Each view shows what really is on that side of the character: details printed on the front of the shirt are not on the back; the hair seen from behind has the same color and style and covers the back of the head.
+Pose (very important, these figures will be cut into body parts by software), the same in every view, as the mannequins show:
+- Standing straight, weight on both feet, calm closed-mouth smile where the face shows.
+- Relaxed A-pose: in the front, three-quarter, three-quarter back and back views both arms straight and angled down at 45 degrees, hands at the height of the waistband, palms open with relaxed fingers. In the side view the near arm hangs straight with a slight swing forward, the hand in front of the thigh, exactly like the mannequin; the far arm is hidden behind the body.
+- There must be a clear empty gap of background between each visible arm and the torso, and between the two legs from the crotch down, wherever the mannequin shows one. Shoes do not overlap.
+- Nothing in the hands. No figure touches or overlaps another figure.
+Every figure full body, not cropped, exactly as tall as its mannequin; the five figures have exactly the same height and scale.
+Plain solid pure magenta background (#FF00FF: red 255, green 0, blue 255) filling the whole image, absolutely no shadow under the feet, no ground, no scenery, no props, no text, no letters, no labels, no numbers, no arrows, no guide lines, no logo, no watermark. Do not use magenta or pink anywhere on the character.
+Art style: exactly the art style of Image 1 and Image 2: polished flat vector illustration for a modern educational app, simple geometric shapes joined with clean smooth curves, absolutely no outlines, a single flat darker shading shape per form, no gradients, no texture, hands with four fingers (three fingers and a thumb). Light comes from the upper right. Clean, balanced, professional.

@@ -11,7 +11,7 @@
 
 Usage (from the repo root):
   python3 -I tools/gemini_gen.py gen --prompt assets/kai/prompts/1_rig_pose.txt --out assets/kai/gemini/ref.png \
-      [--attach assets/kai/gemini/ref.png ...] [--aspect 1:1] [--model gemini-2.5-flash-image]
+      [--attach assets/kai/gemini/ref.png ...] [--aspect 1:1] [--size 4K] [--model gemini-2.5-flash-image]
   python3 -I tools/gemini_gen.py usage
   python3 -I tools/gemini_gen.py list
 """
@@ -89,10 +89,13 @@ def pace():
         time.sleep(wait)
 
 
-def generate(key, model, parts, aspect):
+def generate(key, model, parts, aspect, size=None):
+    image_config = {"aspectRatio": aspect}
+    if size:
+        image_config["imageSize"] = size
     body = {
         "contents": [{"parts": parts}],
-        "generationConfig": {"responseModalities": ["IMAGE"], "imageConfig": {"aspectRatio": aspect}},
+        "generationConfig": {"responseModalities": ["IMAGE"], "imageConfig": image_config},
     }
     req = urllib.request.Request(
         f"{API}/models/{model}:generateContent",
@@ -118,7 +121,7 @@ def cmd_gen(a):
         pace()
         record_call()
         try:
-            res = generate(key, a.model, parts, a.aspect)
+            res = generate(key, a.model, parts, a.aspect, a.size)
             break
         except urllib.error.HTTPError as e:
             detail = e.read().decode(errors="replace")[:300]
@@ -168,6 +171,7 @@ def main():
     g.add_argument("--out", required=True)
     g.add_argument("--attach", action="append")
     g.add_argument("--aspect", default="1:1")
+    g.add_argument("--size", choices=["1K", "2K", "4K"], help="output size (price grows with it); model default when left out")
     sub.add_parser("usage")
     sub.add_parser("list")
     a = ap.parse_args()

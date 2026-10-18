@@ -1,0 +1,6 @@
+# view,yaw,x0,y0,x1,y1 (px of this sheet: the box each figure is drawn in)
+front,0,59,189,598,890
+3q,45,657,189,1062,890
+side,90,1122,189,1397,890
+3q_back,135,1457,189,1862,890
+back,180,1921,189,2460,890

@@ -8,3 +8,6 @@
 | 4 | Màn ngoài khoảng 4:3–21:9 (máy gập mở ra ~1,15–1,25) | Hiện đang tô viền bằng màu nền. Cân nhắc phần tràn dọc lớn hơn cho các cảnh cần hỗ trợ máy gập | 2026-10-17 |
 | 5 | Điểm neo (`anchor`) cho lớp hoặc vật trang trí: neo vào góc/mép của vùng nhìn thấy thay vì vị trí cố định trong cảnh | Chỉ dùng cho tiền cảnh trang trí (bụi lá làm khung góc màn hình...). Nhân vật và vật tương tác không neo. Đưa vào spec 2.0 và Studio | 2026-10-17 |
 | 6 | UI theo nhóm kích thước màn hình (`WindowSizeClass` Android / size class iOS) | Nút, chữ giữ cỡ theo dp/pt; iPad bố trí rộng hơn (vd phụ đề có dòng dịch, 4 thẻ đáp án một hàng thay vì 2) | 2026-10-17 |
+| 7 | Bộ kit nhân vật: tờ "character constructor" 4K mỗi nhân vật (5 góc, bộ mặt trực diện + nghiêng, bàn tay hoán đổi) | Spec và tiến độ ở `ART_PIPELINE.md` mục 7 (bước 0–5). Gemini chỉ gọi khi người dùng duyệt từng đợt | 2026-10-18 |
+| 8 | Tool: `splitsheet` (tách tờ, đưa về cùng tỉ lệ) và `sheetcheck` (tự kiểm tờ, báo ĐẠT/LỖI kèm ảnh) | `ART_PIPELINE.md` mục 3 | 2026-10-18 |
+| 9 | Cắt góc nghiêng và 3/4 sau; engine thêm góc 90° và 135°, bàn tay hoán đổi, clip đi ở góc nghiêng | `ART_PIPELINE.md` mục 4, 5 | 2026-10-18 |
