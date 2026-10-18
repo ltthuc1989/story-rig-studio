@@ -275,7 +275,9 @@ private fun partSet(view: String, yaw: Int): List<Slot> {
     val shoe = Slot("${view}_shoe", fw, 50.0) { g, x, y, k ->
         g.color = LIGHT; g.fill(Ellipse2D.Double(x, y + 3 * k, fw * k, 44 * k))
     }
-    val arms = if (yaw == 45) listOf(arm("3q_arm_near", LIGHT), arm("3q_arm_far", DARK)) else listOf(arm("${view}_arm", LIGHT))
+    // The far arm in the same grey as the near one: drawn darker it came back with darker, sickly skin (a shade for
+    // the far side, if wanted, belongs to the engine, where it can be tuned).
+    val arms = if (yaw == 45) listOf(arm("3q_arm_near", LIGHT), arm("3q_arm_far", LIGHT)) else listOf(arm("${view}_arm", LIGHT))
     return listOf(torso, pelvis) + arms + listOf(leg, shoe)
 }
 

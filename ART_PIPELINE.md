@@ -42,7 +42,7 @@ Hai tờ, không phải một: gộp tất cả vào một tờ thì các ô mi�
 | --- | --- |
 | A | 5 góc toàn thân dáng chữ A: trực diện (0°), 3/4 (45°), nghiêng (90°), 3/4 sau (135°), sau lưng (180°). Quay về phía bên phải ảnh, cùng chiều cao, cùng đường đất. Góc nghiêng: tay gần đưa nhẹ ra trước, có khoảng trống với thân |
 | B1 | **Bộ phận rời góc trực diện, vẽ đủ phần khuất:**<br>• thân áo kèm cổ vẽ dư lên dưới cằm, không tay; hông áo, nách và vai tròn vẽ đủ<br>• quần hoặc váy riêng, cạp quần vẽ dư lên<br>• một cánh tay trong tay áo, đầu vai tròn<br>• một chân, đầu đùi tròn vẽ dư lên trong ống quần<br>• một chiếc giày riêng, cổ giày vẽ dư lên |
-| B2 | **Bộ phận rời góc nghiêng** (cho đi và chạy): thân nghiêng, một cánh tay nghiêng có đầu vai tròn, một chân nghiêng có đầu đùi tròn, giày nghiêng. Tay chân phía xa lấy từ bản sao, tô sẫm hơn |
+| B2 | **Bộ phận rời góc nghiêng** (cho đi và chạy): thân nghiêng, một cánh tay nghiêng có đầu vai tròn, một chân nghiêng có đầu đùi tròn, giày nghiêng. Tay chân phía xa lấy từ bản sao. Không tô sẫm trong hình: Gemini vẽ tay xa sẫm hẳn thành màu da như bị bệnh (2026-10-18); nếu cần bóng cho phía xa thì engine làm tối nhẹ lúc vẽ (chưa có, chỉnh được mức) |
 | B3 | **Tóc tách lớp:** tóc phía sau, tóc mái hoặc tóc phía trước; đuôi ngựa hoặc tóc dài riêng nếu có, gốc tóc vẽ dư |
 
 ### Tờ 2: mặt và tay (`rig_face_hands.png`, prompt `face_hands_sheet.txt`)
