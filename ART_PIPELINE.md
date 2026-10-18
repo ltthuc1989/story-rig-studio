@@ -2,33 +2,68 @@
 
 Spec cho phần nhân vật bằng ảnh (P5 trong `SPIKE.md`): làm hình thế nào, cắt thành mảnh ra sao, engine chuyển động những gì. Cập nhật khi xong mỗi bước ở mục 7.
 
-## 1. Nguyên tắc: một bộ kit cho mỗi nhân vật, chuyển động bằng code
+## 1. Nguyên tắc: bộ kit vẽ sẵn bộ phận, chuyển động bằng code
 
-Làm theo cách của các xưởng làm hoạt hình cắt mảnh (Spine, Rive, Moho, Toon Boom Harmony):
+Quy trình chuẩn của các xưởng làm hoạt hình cắt mảnh (Spine, Moho, Toon Boom Harmony, Rive) có 3 tầng, tầng nào cũng cần:
 
-1. **Các góc toàn thân (turnaround):** mỗi góc là một rig riêng. Khi xoay, đổi góc trong 2–3 khung, có che hoặc nhoè (như demo Bobo). Cắt mảnh không xoay liên tục 360° được.
-2. **Thư viện hoán đổi (swap)** cho những thứ đổi hình dạng: khẩu hình miệng, mắt, lông mày, bàn tay (xoè, nắm, chỉ…).
-3. **Mọi chuyển động bằng xương và mesh:** đi, chạy, vẫy, cúi chào, nhảy, ngồi, theo nguyên tắc hoạt hình (nhanh dần chậm dần, lấy đà, chuyển động nối tiếp, co giãn, khoá bàn chân).
+1. **Hình nguồn là các bộ phận rời, vẽ cả phần bị che** (overdraw):
+   - thân vẽ đủ hông áo và nách dưới tay;
+   - đầu bắp tay và đầu đùi là hình tròn có tâm ở khớp (ball joint);
+   - cổ vẽ dư lên dưới cằm, cạp quần vẽ dư lên dưới vạt áo, cổ giày vẽ dư lên dưới gấu quần.
 
-**Không tạo hình cho từng động tác.** Mỗi hình Gemini lệch nhau một chút, ghép theo khung sẽ rung, chi phí lại nhân theo số động tác.
+   **Mesh chỉ uốn những điểm ảnh đã có, không tự vẽ ra phần chưa có.**
+2. **Thư viện hoán đổi (swap):** các góc nhìn, khẩu hình miệng, mắt, lông mày, bàn tay.
+3. **Mọi chuyển động bằng xương, mesh và clip:** đi, chạy, vẫy, cúi chào, nhảy, ngồi, theo nguyên tắc hoạt hình (nhanh dần chậm dần, lấy đà, lệch pha, co giãn, khoá bàn chân). Khi xoay người, đổi góc trong 2–3 khung, có che hoặc nhoè (như demo Bobo). Cắt mảnh không xoay liên tục 360° được.
+
+**Không tạo hình cho từng động tác.** Mỗi hình Gemini lệch nhau một chút, ghép theo khung sẽ rung, chi phí lại nhân theo số động tác. Chỉ tạo hình cho những gì code không làm ra được.
+
+**Bài học (2026-10-18):** bản đầu của spec này chỉ có tầng 2 và 3. Bộ cắt hiện tại cắt từ một hình phẳng dáng chữ A, nên phải đoán phần khuất (nắp tròn, phần tô thêm, phần tô lại màu). Vì vậy các lỗi vai và nách cứ quay lại:
+- độn vai;
+- rách nách;
+- vạt áo khi giơ tay;
+- một mảng ngực xoay theo tay.
+
+Tầng 1 là cách sửa tận gốc. Cắt hình phẳng chỉ còn là đường dự phòng (mục 4).
 
 | Code làm được | Phải có hình |
 | --- | --- |
-| Tay chân co duỗi, đi, chạy, ngồi, cúi, nhảy, thở | Mặt sau, mặt nghiêng (gáy, tóc sau, mũi nghiêng) |
-| Co theo chiều sâu (`pitch`), lật bàn tay (`roll`) | Hình dạng bàn tay (nắm, chỉ…) |
-| Lấy đối xứng: mắt, tay, chân phía bên kia; góc nhìn trái lấy từ phải | Khẩu hình miệng, mắt nhắm hoặc cười |
-| Mặt 3/4 suy từ mặt trực diện (co ngang ~0,85) | |
+| Tay chân co duỗi, đi, chạy, ngồi (đùi co ngắn theo chiều sâu), cúi, nhảy, thở, chỉ, vỗ tay | Phần bị che ở khớp: nách, đầu vai, háng, cổ, cạp quần, cổ chân |
+| Gập khuỷu và gối (mesh uốn trên bộ phận có sẵn) | Mặt sau, mặt nghiêng (gáy, tóc sau, mũi nghiêng) |
+| Co theo chiều sâu (`pitch`), lật bàn tay (`roll`), nhún vai | Hình dạng bàn tay (nắm, chỉ, đếm số…) |
+| Lấy đối xứng: mắt, tay, chân phía bên kia; góc nhìn trái lấy từ phải | Khẩu hình miệng, mắt nhắm, nhắm cười, chớp |
+| Mặt 3/4 suy từ mặt trực diện (co ngang ~0,85); đảo mắt (khi tròng đen là lớp riêng) | Tóc tách lớp (tóc sau, mái, đuôi ngựa) |
 
-## 2. Tờ "character constructor" (một lượt Gemini mỗi nhân vật)
+## 2. Bộ kit: 2 tờ Gemini 4K (16:9) mỗi nhân vật
 
-- **Cỡ:** 16:9, 4K (khoảng 5504×3072), nền magenta #FF00FF, không chữ, không bóng đổ.
-- **Dải trên (~58 % chiều cao):** 5 góc toàn thân dáng chữ A: trực diện (0°), 3/4 (45°), nghiêng (90°), 3/4 sau (135°), sau lưng (180°). Tất cả quay về phía bên phải ảnh, cùng chiều cao, cùng đường đất. Ở góc nghiêng, tay gần đưa nhẹ ra trước để có khoảng trống với thân.
-- **Dải dưới:**
-  - **Bộ mặt trực diện:** 1 mắt (mở, nhắm hờ, cười, ngạc nhiên); lông mày (thường, nhướng, cau, buồn); 7 miệng (cười khép M/B/P, E, A, O, S, cười lớn, buồn).
-  - **Bộ mặt nghiêng:** mắt nghiêng (4 kiểu), 1 lông mày, 7 miệng nghiêng.
-  - **7 bàn tay phải:** xoè thả lỏng, nắm, chỉ, giơ ngón cái, xoè lòng bàn tay (vẫy), ngửa (mời), cầm (chữ C). Tay trái lấy đối xứng.
-- **Tờ mẫu hình nộm** (Gemini chép bố cục): `./gradlew :tools:run --args="mannequin sheet assets/templates/rig_sheet.png"`. Toạ độ từng ô nằm trong file `.csv` cùng tên. Hiện có bản 5 góc (21:9); bản constructor đầy đủ là bước 1 ở mục 7.
-- **Prompt:** `assets/templates/prompts/turnaround_sheet.txt` (5 góc). Bản đầy đủ sẽ là `constructor_sheet.txt`. Đính kèm `ref.png` (3/4 đã duyệt), `view_front.png` (trực diện đã duyệt) và tờ mẫu.
+Hai tờ, không phải một: gộp tất cả vào một tờ thì các ô miệng, mắt, bàn tay quá nhỏ và Gemini dễ vẽ sai chỗ. Đính kèm thiết kế đã duyệt `ref.png` (3/4) và `view_front.png` (trực diện) làm chuẩn nhận diện, kèm tờ mẫu hình nộm. Nền magenta #FF00FF, không chữ, không bóng đổ.
+
+### Tờ 1: thân (`rig_body.png`, prompt `body_sheet.txt`)
+| Hàng | Nội dung |
+| --- | --- |
+| A | 5 góc toàn thân dáng chữ A: trực diện (0°), 3/4 (45°), nghiêng (90°), 3/4 sau (135°), sau lưng (180°). Quay về phía bên phải ảnh, cùng chiều cao, cùng đường đất. Góc nghiêng: tay gần đưa nhẹ ra trước, có khoảng trống với thân |
+| B1 | **Bộ phận rời góc trực diện, vẽ đủ phần khuất:**<br>• thân áo kèm cổ vẽ dư lên dưới cằm, không tay; hông áo, nách và vai tròn vẽ đủ<br>• quần hoặc váy riêng, cạp quần vẽ dư lên<br>• một cánh tay trong tay áo, đầu vai tròn<br>• một chân, đầu đùi tròn vẽ dư lên trong ống quần<br>• một chiếc giày riêng, cổ giày vẽ dư lên |
+| B2 | **Bộ phận rời góc nghiêng** (cho đi và chạy): thân nghiêng, một cánh tay nghiêng có đầu vai tròn, một chân nghiêng có đầu đùi tròn, giày nghiêng. Tay chân phía xa lấy từ bản sao, tô sẫm hơn |
+| B3 | **Tóc tách lớp:** tóc phía sau, tóc mái hoặc tóc phía trước; đuôi ngựa hoặc tóc dài riêng nếu có, gốc tóc vẽ dư |
+
+### Tờ 2: mặt và tay (`rig_face_hands.png`, prompt `face_hands_sheet.txt`)
+| Hàng | Nội dung |
+| --- | --- |
+| C1 | **Mắt trực diện:** một mắt vẽ riêng lòng trắng và tròng đen; mắt nhắm hờ, nhắm hẳn (một nét, để chớp), nhắm cười, mở to; mắt kia lấy đối xứng. Lông mày: thường, nhướng, cau, buồn |
+| C2 | **12 miệng trực diện** (nhép môi cho phonics): nghỉ hoặc M/B/P, A/I, E, O, U/W, F/V, L/TH, S/T, cười, cười lớn, buồn, ngạc nhiên |
+| C3 | **Mặt nghiêng:** mắt nghiêng (mở, nhắm, cười, mở to), lông mày, 12 miệng nghiêng |
+| C4 | **Bàn tay phải** (tay trái lấy đối xứng). Trực diện: xoè thả lỏng, nắm, chỉ, giơ ngón cái, xoè lòng bàn tay (vẫy), ngửa (mời), cầm (chữ C), đếm 1–4 (5 là xoè). Nghiêng: thả lỏng, nắm |
+
+**Tuỳ chọn, hỏi người dùng sau:** phụ kiện tách lớp để đung đưa (balo của Kai, kính của Bo). Đồ vật cầm tay thuộc cảnh, không thuộc nhân vật.
+
+### Tạo lại cho cả 5 nhân vật (quyết định 2026-10-18)
+- **Giữ nguyên thiết kế:** `ref.png` và `view_front.png` của từng nhân vật chỉ dùng làm chuẩn nhận diện, không tạo lại.
+- **Tạo mới 2 tờ cho mỗi nhân vật:**
+  - không hình cũ nào có bộ phận rời có vẽ phần khuất, bộ phận nghiêng, tóc tách lớp, mắt tách tròng, 12 khẩu hình, bàn tay đếm số;
+  - vẽ chung 2 tờ thì mọi góc và bộ phận cùng nét, cùng tỉ lệ, cùng màu.
+- **Chi phí:** 10 lượt × $0,151 ≈ $1,51; nếu mỗi tờ phải gọi lại 1 lần, tối đa khoảng $3.
+- **Thứ tự:** Kai (2 lượt) → chạy `sheetcheck` → người dùng duyệt → Mia, Leo, Hana, Bo, mỗi đợt người dùng duyệt.
+- Dữ liệu cắt hiện có trong app giữ lại làm dự phòng cho tới khi kit mới của nhân vật đó đạt `sheetcheck` và bảng kiểm tra vai và nách.
+- Tờ thử cũ (`rig_sheet.png` 21:9, `turnaround_sheet.txt`, `assets/kai/gemini/turnaround_v1.jpg`) dùng để thử `splitsheet` và `sheetcheck`.
 
 ### Chọn cỡ ảnh
 
@@ -40,12 +75,12 @@ Giá gemini-3.1-flash-image (không có 3K):
 | 2K | 2752×1536 | $0,101 | ~800 px | ~65 px |
 | 4K | 5504×3072 | $0,151 | ~1550 px | ~130 px |
 
-Nhân vật cận cảnh cao khoảng 650–860 px trên điện thoại (sân khấu 1920×1080) và 1200 px trở lên trên iPad. Vì vậy chọn **4K**: chỉ đắt hơn 2K $0,05 mỗi nhân vật, đủ cho iPad và cận mặt, cắt ngón tay chính xác hơn. Sau khi tách, tool thu nhỏ về cỡ app cần nên bộ nhớ trong app không tăng.
+Nhân vật cận cảnh cao khoảng 650–860 px trên điện thoại (sân khấu 1920×1080) và 1200 px trở lên trên iPad. Vì vậy chọn **4K**: chỉ đắt hơn 2K $0,05 mỗi tờ, đủ cho iPad và cận mặt, cắt ngón tay chính xác hơn. Sau khi tách, tool thu nhỏ về cỡ app cần nên bộ nhớ trong app không tăng.
 
 ## 3. Quy trình
 
 ```
-tờ mẫu → Gemini (1 lượt, người dùng duyệt) → splitsheet → sheetcheck → cutauto từng góc → selftest → composeResources/files/<tên>_<góc>
+2 tờ mẫu → Gemini (2 lượt, người dùng duyệt) → splitsheet → sheetcheck → cutparts (góc có bộ phận rời) / cutauto (các góc còn lại) → selftest + pose_sheet → composeResources/files/<tên>_<góc>
 ```
 
 - **`splitsheet`:** tách nền, tìm từng cụm điểm ảnh, gán vào ô mẫu, đưa toàn thân về chiều cao hình nộm (đỉnh đầu 110, đế 940 trên khung 1024). Ra `view_<góc>.png`, `face_front.png` kèm `face_map.csv`, `face_side.png`, `hands.png`.
@@ -57,11 +92,24 @@ tờ mẫu → Gemini (1 lượt, người dùng duyệt) → splitsheet → she
   5. có khoảng trống giữa tay và thân, giữa hai chân;
   6. không có hồng hay magenta trên nhân vật;
   7. cắt thử qua `cutauto` và selftest;
-  8. góc nghiêng chỉ có 1 mắt, góc sau lưng không có mặt.
+  8. góc nghiêng chỉ có 1 mắt, góc sau lưng không có mặt;
+  9. bộ phận rời khớp với người trực diện về màu và cỡ (bề ngang thân, độ dài tay chân, lệch ≤ 5 %); đầu vai và đầu đùi là hình tròn; thân không khuyết ở nách;
+  10. đủ 12 miệng, đủ bàn tay; mắt có tròng đen tách riêng.
 - **Cắt:** `./gradlew :tools:run --args="cutauto <geminiDir> <outDir> <previewDir>"`. Kiểm tra: `./gradlew :tools:run --args="selftest <dir>"`.
 - **Bảng kiểm tra vai và nách (bắt buộc sau mỗi lần sửa tool cắt, rig hay clip):** `tools/pose_sheet.sh <out.png> [chars]`. Mỗi nhân vật một hàng gồm đứng yên, vẫy tay, dang tay, đang giơ và chữ V, phóng to phần vai. Phải mở ra xem cả bộ trực diện lẫn 3/4 trước khi báo là đã sửa xong. Đã có lần sửa lỗi này lại làm hỏng lại lỗi cũ vì chỉ soi một tư thế.
 
-## 4. Quy tắc cắt (tools/…/AutoSpec.kt, RefCut.kt)
+## 4. Lắp rig
+
+### Chuẩn: lắp từ bộ phận rời (`cutparts`, sẽ làm)
+- Đặt từng bộ phận vào đúng chỗ trên người trực diện ở hàng A, bằng cách so viền (silhouette). Tận dụng `AutoSpec` để đo khớp.
+- Vai và hông đặt ở tâm đường tròn đầu bộ phận. Khuỷu, gối, cổ tay, cổ chân cắt và đặt nắp như cách cắt hình phẳng.
+- Thứ tự vẽ: bắp tay sau thân, cẳng tay và bàn tay trước thân. Mesh tách nhóm bắp tay và nhóm cẳng tay.
+- Không có điểm xoay khi buông tay, nên `slideShoulders` tự không trượt. Nhún vai (`SHRUG`) vẫn dùng.
+- Selftest so tư thế đứng lắp xong với người trực diện. Bảng vai và nách phải sạch mà không cần nắp hay phần tô thêm.
+
+### Dự phòng: cắt từ hình phẳng (tools/…/AutoSpec.kt, RefCut.kt)
+Dùng cho 5 bộ hình hiện có, cho các góc chưa có bộ phận rời (3/4, 3/4 sau, sau lưng), và khi bộ phận Gemini vẽ không khớp. Các quy tắc dưới đây là để đoán phần bị che.
+
 
 - **Vai:** đường cắt dọc theo hông áo, từ đỉnh nách lên đỉnh vai, vượt ra mỗi đầu `SHOULDER_MARGIN` (6 px).
 - **Khớp vai trượt:** khi tay ở góc vẽ hoặc giơ lên, tay xoay quanh giữa đường cắt (ngang nách), nhờ vậy mặt dưới tay vẫn áp vào hông áo. Khi tay buông, tay xoay quanh điểm ở 20 % đường cắt tính từ đỉnh (`SHOULDER_HANG_PIVOT`, ghi ở cột `hangX,hangY` của `bones.csv`), nên đỉnh tay áo không văng ra như độn vai. Engine trượt dần giữa hai điểm theo góc tay (`KaiRig.slideShoulders`), giống xương bả vai. Một điểm xoay cố định không làm được cả hai việc: đặt thấp thì vai phồng khi buông tay, đặt cao thì rách nách khi giơ tay. Khi giơ tay quá góc vẽ, cả cánh tay nhấc lên (nhún vai, `SHRUG` 40 %, đủ ở 100° trên góc vẽ), để tay duỗi thẳng không mọc ra từ nách. Đổi điểm xoay lên cao khi giơ tay đã thử và không dùng, vì mặt dưới tay áo văng ra thành vạt.
@@ -101,14 +149,18 @@ tờ mẫu → Gemini (1 lượt, người dùng duyệt) → splitsheet → she
 
 ## 7. Tiến độ
 
+Plan đầy đủ: bộ kit 2 tờ (mục 2), lắp rig từ bộ phận rời (mục 4). Làm ở session riêng, theo thứ tự dưới đây.
+
 | Bước | Việc | Trạng thái |
 | --- | --- | --- |
-| 0 | Sửa nách rách khi giơ tay: mặt trong ống tay và đầu viền tay áo nằm lại trên thân được chuyển sang tay (`innerSleeveToArm`); đầu cánh tay cắt theo dây cung từ nách lên mép đĩa, không còn góc bậc | xong 2026-10-18 |
-| 1 | Tờ mẫu constructor 16:9 + prompt `constructor_sheet.txt` | chưa |
-| 2 | `splitsheet`, thử trên `assets/kai/gemini/turnaround_v1.jpg` | chưa |
-| 2b | `sheetcheck` tự kiểm tờ | chưa |
-| 3 | Cắt góc nghiêng, 3/4 sau; selftest các góc mới | chưa |
-| 4 | Engine: thêm góc SIDE 90 và Q3_BACK 135, xoay qua đủ vòng; bàn tay hoán đổi; mặt 3/4 suy từ trực diện; clip đi ở góc nghiêng | chưa |
-| 5 | Gemini: 1 tờ cho Kai (4K), chạy `sheetcheck`, rồi 4 nhân vật còn lại (mỗi đợt người dùng duyệt) | chờ duyệt |
+| — | Vai và nách khi cắt hình phẳng: mặt trong ống tay sang tay, nắp theo dây cung, khớp vai trượt, nhún vai, vai cứng trong mesh, làm sạch mép thân, `pose_sheet.sh` | xong 2026-10-18 (`e677b7f`) |
+| 0 | Giữ app dùng được trong lúc làm kit. Nắp vai lấy hoa văn tay áo: đi dọc hướng sọc tay áo (vuông góc trục tay) tới điểm tay áo gần nhất có màu chính, thay vì chép ngực áo. Sửa lỗi Leo "mảng ngực xoay theo tay". Nếu Leo lệch màu ở tư thế đứng vượt 1 %, loại điểm thuộc nắp vai khỏi phép so màu và ghi lý do. Soi `pose_sheet.sh` trực diện và 3/4, so với `e677b7f` | chưa |
+| 1 | 2 tờ mẫu (`rig_body.png`, `rig_face_hands.png`, kèm `.csv` ô) trong `MannequinSheet.kt`. 2 prompt (`body_sheet.txt`, `face_hands_sheet.txt`) nói rõ phần phải vẽ dư, 12 miệng, bàn tay đếm số | chưa |
+| 2 | `splitsheet` và `sheetcheck` (10 mục ở mục 3), thử trên `turnaround_v1.jpg` | chưa |
+| 3 | Gemini cho Kai: 2 lượt, 4K, **người dùng duyệt riêng**. Chạy `sheetcheck`, báo bằng lời thường kèm ảnh khoanh lỗi | chờ duyệt |
+| 4 | `cutparts`: lắp rig trực diện và nghiêng từ bộ phận rời (mục 4). Engine đọc thêm: tròng mắt tách (đảo mắt), 12 miệng, bàn tay hoán đổi, tóc tách lớp, góc SIDE 90 và Q3_BACK 135, clip đi ở góc nghiêng | chưa |
+| 5 | Góc 3/4, 3/4 sau, sau lưng cắt từ hàng A (dự phòng). Rồi Mia, Leo, Hana, Bo: mỗi nhân vật 2 lượt, mỗi đợt người dùng duyệt | chưa |
 
-Đã có: tờ thử 5 góc của Kai, `assets/kai/gemini/turnaround_v1.jpg` (6336×2688, 1 lượt, 2026-10-18). Nhân vật đồng nhất giữa các góc; ở góc nghiêng tay buông sát thân.
+Mỗi bước: soi `tools/pose_sheet.sh` (trực diện và 3/4), selftest, `motionCheck`, rồi mở lại app desktop cho người dùng xem.
+
+Lượt Gemini ngày 2026-10-18: 12/20 paid (11 hình trực diện, 1 tờ thử 5 góc). Từ 2026-10-19 dùng `STORYRIG_TIER=free`.
