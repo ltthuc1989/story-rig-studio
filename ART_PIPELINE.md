@@ -62,7 +62,7 @@ tờ mẫu → Gemini (1 lượt, người dùng duyệt) → splitsheet → she
 
 ## 4. Quy tắc cắt (tools/…/AutoSpec.kt, RefCut.kt)
 
-- **Vai:** đường cắt dọc theo hông áo, từ đỉnh nách lên đỉnh vai, vượt ra mỗi đầu `SHOULDER_MARGIN` (6 px). Khớp vai nằm giữa đường cắt.
+- **Vai:** đường cắt dọc theo hông áo, từ đỉnh nách lên đỉnh vai, vượt ra mỗi đầu `SHOULDER_MARGIN` (6 px). Khớp vai nằm cao trong bầu vai, ở 20 % đường cắt tính từ đỉnh (`SHOULDER_PIVOT`). Nếu để khớp ở giữa đường cắt (ngang nách), hạ tay từ dáng chữ A sẽ làm đỉnh tay áo văng ra khoảng 30 px như độn vai, và tay trông gãy ở vai.
 - **Đầu cánh tay:** đĩa cắt theo dây cung từ đầu nách của đường cắt lên mép đĩa: nửa trên che đường vai khi tay buông, mặt dưới tay chạy thẳng từ nách khi giơ. Bán kính trừ `SHOULDER_MARGIN`.
 - **Mặt trong ống tay:** điểm ảnh trên thân sát đường cắt vai, có màu là sắc sẫm hơn của màu áo (mặt trong ống tay, đầu viền tay áo chạy vào nách), được chuyển sang tay. Khác tông màu (quai balo, hình in) thì giữ trên thân.
 - **Thân:** chỉ tô `ARM_FILL` (2 px) sau tay để khử răng cưa. Tô sâu hơn sẽ lộ ra như một cục áo khi giơ tay.

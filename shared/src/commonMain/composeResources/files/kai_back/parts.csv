@@ -1,8 +1,8 @@
 # part,bone,x,y,w,h,drawn (x,y = top-left in ref.png pixels; drawn=1 in the rest pose, in draw order)
-arm_upper_far,shoulder_far,553,409,170,118,1
+arm_upper_far,shoulder_far,582,409,141,118,1
 arm_fore_far,elbow_far,670,474,132,92,1
 hand_far,wrist_far,756,520,114,88,1
-arm_upper_near,shoulder_near,299,409,171,119,1
+arm_upper_near,shoulder_near,299,409,142,119,1
 arm_fore_near,elbow_near,219,475,133,92,1
 hand_near,wrist_near,154,520,111,88,1
 shin_far,knee_far,533,727,76,181,1

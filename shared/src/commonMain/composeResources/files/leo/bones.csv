@@ -2,10 +2,10 @@
 root,,520.5,652.9
 torso,root,520.5,617.8
 head,torso,519.5,382.0
-shoulder_near,torso,416.0,437.8
+shoulder_near,torso,416.0,410.4
 elbow_near,shoulder_near,323.1,493.2
 wrist_near,elbow_near,249.1,539.4
-shoulder_far,torso,623.7,436.5
+shoulder_far,torso,623.7,410.5
 elbow_far,shoulder_far,711.7,491.7
 wrist_far,elbow_far,782.0,537.4
 hip_near,root,471.8,688.0

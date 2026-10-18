@@ -3,10 +3,10 @@ root,,513.0,651.0
 torso,root,513.0,616.0
 head,torso,513.5,381.0
 skirt,root,513.0,551.0
-shoulder_near,torso,409.9,440.0
+shoulder_near,torso,409.9,407.3
 elbow_near,shoulder_near,311.7,501.0
 wrist_near,elbow_near,237.3,550.3
-shoulder_far,torso,616.8,440.9
+shoulder_far,torso,616.8,408.1
 elbow_far,shoulder_far,714.0,502.2
 wrist_far,elbow_far,787.5,551.5
 hip_near,root,471.3,686.0

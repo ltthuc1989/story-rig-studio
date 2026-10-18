@@ -7,10 +7,10 @@ shoe_near,ankle_near,353,876,130,62,1
 thigh_near,hip_near,405,612,112,97,1
 pelvis,root,407,598,217,77,1
 torso,torso,405,333,221,304,1
-arm_upper_far,shoulder_far,561,395,165,161,1
+arm_upper_far,shoulder_far,598,395,128,161,1
 arm_fore_far,elbow_far,669,499,104,107,1
 hand_far,wrist_far,717,550,112,110,1
-arm_upper_near,shoulder_near,298,393,172,162,1
+arm_upper_near,shoulder_near,298,393,135,162,1
 arm_fore_near,elbow_near,249,496,108,110,1
 hand_near,wrist_near,195,548,112,111,1
 head,head,314,44,345,333,1

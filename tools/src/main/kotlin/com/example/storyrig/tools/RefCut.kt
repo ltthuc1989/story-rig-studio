@@ -370,6 +370,14 @@ private const val ARM_FILL = 2
 /** How far a shoulder cut runs past the arm's top and the armpit (AutoSpec, KaiRefSpec). */
 internal const val SHOULDER_MARGIN = 6f
 
+/**
+ * Where on a shoulder cut the arm pivots, from its top end (0) to its armpit end (1). A rig's shoulder joint sits high
+ * in the shoulder ball, close under the shoulder's top: turning about it, the top of the sleeve stays put when the arm
+ * comes down from the A-pose. Turning about the middle of the cut (level with the armpit) swings the top of the sleeve
+ * ~30 px out, like shoulder pads, and the arm looks broken at the shoulder.
+ */
+internal const val SHOULDER_PIVOT = .2f
+
 /** How far (degrees, either way) the app may swing a skirt on its bone without opening a gap over the thighs. */
 internal const val SKIRT_SWING = 8.0
 
@@ -482,14 +490,17 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
     )) {
         val mask = data[0] as BooleanArray; val sh = data[1] as Seg; val el = data[2] as Pt; val wr = data[3] as Pt
         var arm = pieceOf(img, mask)
-        // Round shoulder end under the shirt: the cut runs SHOULDER_MARGIN past the arm's edges, the cap must not,
-        // or it pokes above the shoulder line once the arm hangs down. Only its top half (towards the cut's top end,
-        // away from the armpit): the arm's underside then runs straight into the shirt's side when it is raised.
+        // Round shoulder end under the shirt: the cut runs SHOULDER_MARGIN past the arm's top, the cap must not, or it
+        // pokes above the shoulder line once the arm hangs down. Cut by a chord towards the armpit (capInto): the
+        // arm's underside then runs straight into the shirt's side when it is raised.
         val up = hypot(sh.x1 - sh.x2, sh.y1 - sh.y2).let { l -> Pt((sh.x1 - sh.x2) / l, (sh.y1 - sh.y2) / l) }
-        val shJoint = jointOn(sh, S.seedTorso.x, S.seedTorso.y).let { Joint(it.x, it.y, it.ux, it.uy, it.radius - SHOULDER_MARGIN) }
+        // The pivot (SHOULDER_PIVOT down the cut); the cap is centred on it, out to the shoulder's top.
+        val shoulder = Pt(sh.x1 + (sh.x2 - sh.x1) * SHOULDER_PIVOT, sh.y1 + (sh.y2 - sh.y1) * SHOULDER_PIVOT)
+        val shJoint = jointOn(sh, S.seedTorso.x, S.seedTorso.y).let {
+            Joint(shoulder.x, shoulder.y, it.ux, it.uy, hypot(shoulder.x - sh.x1, shoulder.y - sh.y1) - SHOULDER_MARGIN)
+        }
         arm = capInto(arm, shJoint, img, keep = up)
-        val shoulder = mid(sh)
-        val elbow = jointAcross(arm, el.x, el.y, el.x - shoulder.x, el.y - shoulder.y)
+        val elbow = jointAcross(arm, el.x, el.y, el.x - mid(sh).x, el.y - mid(sh).y)
         val (upper, rest) = cutAt(arm, elbow, ref = img)
         val wrist = jointAcross(rest, wr.x, wr.y, wr.x - el.x, wr.y - el.y)
         val (fore, hand) = cutAt(rest, wrist, ref = img)
