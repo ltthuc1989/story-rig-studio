@@ -1,0 +1,38 @@
+Create one 16:9 landscape image: a character parts sheet for 2D cutout animation.
+
+Three images are attached, in this order:
+Image 1 and Image 2 are the approved design of ONE character (Image 1 three-quarter view, Image 2 front view). Keep this exact character everywhere on the sheet: the same face, hair, proportions, clothes, every clothing detail, colors and art style. Ignore their poses.
+Image 3 is a grey mannequin layout sheet. It only shows WHERE each piece goes, how big it is and at what angle. Replace every grey shape with the matching part of the character, at the same position, size and angle. Never draw the mannequin and never use its grey colors: light and dark grey mean nothing, every piece keeps the character's own normal colors.
+
+Character notes: Kai, a 7-year-old boy: red T-shirt with a small white star on the chest, short sleeves rolled up into a darker red cuff; a mustard-yellow backpack (from the front only its two shoulder straps show over the shirt, from the side and the back the backpack itself shows); blue denim shorts with turned-up cuffs; bare knees; white socks with one red stripe; orange and white velcro sneakers; short messy dark hair with a cowlick and a side-swept fringe; hands with four fingers (three fingers and a thumb), skin color as in Image 2. The accessory is his mustard-yellow backpack.
+
+The sheet has three rows.
+
+TOP ROW: five full-body views, left to right, all the same height, feet on one ground line:
+1. Front view, like Image 2: the face symmetrical, both ears equally visible.
+2. Three-quarter view turned toward the right of the image, like Image 1.
+3. Side view, profile facing the right of the image: one eye, one ear in the middle of the head, the body narrow; the near arm hangs with a slight swing forward, the far arm is hidden.
+4. Three-quarter back view, turned toward the right of the image, no face.
+5. Back view, exactly from behind, no face, both ears equally visible.
+In views 1, 2, 4 and 5: both arms straight and angled down about 45 degrees, open relaxed hands, a clear empty gap between each arm and the body; legs straight with a gap between them. Each view shows only what is really on that side (a chest print only on the front).
+
+MIDDLE ROW: loose pieces in two groups. The left group is seen from the FRONT, the right group from the SIDE (profile facing right). Each group has five pieces, left to right:
+A. TORSO: the upper body WITHOUT sleeves, arms or head, shaped like a sleeveless vest but made of the same top (same color, collar, prints, straps and every detail). Each shoulder ends in a smooth rounded edge; below it the armpit, then the side of the top runs straight down, complete, to the hem. The neck (skin) rises above the collar as if under the chin. Nothing sticks out at the shoulders.
+B. HIP BAND: a short, wide, horizontal band cut from the top of what the character wears on the hips: the waistband, drawn complete (including the part normally hidden under the top), and the seat down to the crotch. About one third as tall as the whole garment. Its bottom edge is ONE straight horizontal line from side to side: no leg openings, no hems, no cuffs, no gap between the legs.
+C. ARM, hanging straight down: at the top the sleeve, its top closed as a full round shape (where it joins the shoulder); then the bare arm and the open hand with relaxed fingers.
+D. LEG, straight, with NO shoe: at the top the garment's leg opening with its hem or cuff, its top closed as a full round shape (the hip); then the knee, the shin and the sock. The sock continues straight down past the ankle (the part normally hidden inside the shoe) and ends rounded. No shoe on this piece.
+E. SHOE: one shoe alone and empty, its opening complete, with no sock and no leg inside. In the side group it is long, toe to the right.
+
+BOTTOM ROW: six loose pieces seen at THREE-QUARTER (turned toward the right like Image 1), left to right:
+1. TORSO, as A, both shoulders rounded.
+2. HIP BAND, as B: a short band with a straight bottom edge, no leg openings.
+3. NEAR ARM, as C.
+4. FAR ARM, as C, seen from its other side, with exactly the same skin and clothing colors as the near arm, never darker or greyish.
+5. LEG with NO shoe, as D.
+6. SHOE, as E.
+
+If the character wears a skirt or a dress, the HIP BAND is the top band of the skirt (from the waist to the hips) and each LEG starts at the top with a rounded end of bare skin or tights instead of a garment leg.
+
+All loose pieces at exactly the same scale as the full-body views, so they fit together. No piece touches or overlaps another. Exactly 21 drawings on the sheet: 5 in the top row, 10 in the middle row, 6 in the bottom row.
+Background: plain solid pure magenta (#FF00FF: red 255, green 0, blue 255) filling the whole image. No shadow, no ground, no scenery, no text, no letters, no labels, no numbers, no arrows, no guide lines, no logo. No magenta or pink anywhere on the character.
+Art style: exactly the art style of Image 1 and Image 2: polished flat vector illustration, simple geometric shapes with clean smooth curves, absolutely no outlines, a single flat darker shading shape per form, no gradients, no texture, light from the upper right.

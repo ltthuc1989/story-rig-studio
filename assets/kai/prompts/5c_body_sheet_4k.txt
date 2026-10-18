@@ -1,0 +1,8 @@
+# Vẽ lại tờ thân Kai ở 4K, giữ y nguyên bản 1K đã chọn (kiểu sửa ảnh, không vẽ mới). Đính kèm theo thứ tự:
+# (1) bản 1K đã chọn: assets/kai/gemini/attempts/kit_body_v5_1k_edit.jpg,
+# (2) assets/kai/gemini/view_front.png (để giữ nét mặt, màu, chi tiết ở độ phân giải cao).
+# Các lỗi hình học còn lại (quần có ống, chân nghiêng dính giày, giày có cổ tất) để tool cắt xử lý, không yêu cầu Gemini sửa.
+Edit Image 1 and generate the edited image: redraw Image 1 at high resolution, exactly as it is.
+Image 1 is a character parts sheet for 2D cutout animation. Keep every piece exactly as it is: the same pieces, the same number of pieces, the same positions, sizes, angles, shapes, colors and art style, and the same plain magenta background. Do not add, remove, move or change any piece.
+Image 2 is the same character, Kai, at high resolution: use it only for the fine details (face, eyes, hair, the star, the backpack, the shoes), so that they are crisp and exactly match his design.
+Clean sharp edges, flat colors, absolutely no outlines, no gradients, no texture, no text, no labels, no shadows.

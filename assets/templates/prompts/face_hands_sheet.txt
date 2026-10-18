@@ -1,3 +1,4 @@
+# Bản cho API (tools/gemini_gen.py). Trên Gemini web dùng assets/templates/prompts/web/ (viết mới, 2026-10-19).
 # Bộ kit tờ 2 (mặt, tay, tóc), bản chung: chép ra assets/<tên>/prompts/, thay "Kai" và đoạn "Character notes" bằng mô tả của nhân vật.
 # Đính kèm ref.png, view_front.png, assets/templates/rig_face_hands.png. Mẫu đã điền: assets/kai/prompts/6_face_hands_sheet.txt.
 Generate one image: a 16:9 character parts sheet, drawn as described below.

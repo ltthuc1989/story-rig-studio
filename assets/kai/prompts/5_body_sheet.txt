@@ -1,3 +1,4 @@
+# Bản cho API (tools/gemini_gen.py). Trên Gemini web dùng assets/templates/prompts/web/ (viết mới, 2026-10-19).
 # Bộ kit tờ 1 (thân) cho Kai, 16:9 4K. Đính kèm theo thứ tự: (1) assets/kai/gemini/ref.png (3/4 đã duyệt),
 # (2) assets/kai/gemini/view_front.png (trực diện đã duyệt), (3) assets/templates/rig_body.png (tờ mẫu hình nộm).
 # Bố cục phải giữ đúng tờ mẫu: tool đọc từng bộ phận theo ô trong assets/templates/rig_body.csv.

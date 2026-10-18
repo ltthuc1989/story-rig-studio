@@ -1,0 +1,33 @@
+=== Tin nhắn sửa cho tờ mặt và tay. Mỗi lần gửi 1, tối đa 2 tin. Thay <<POSITION>> bằng vị trí, ví dụ:
+=== "row 2, piece 6" / "row 4, pieces 5 and 6".
+=== Chỉ chép phần dưới mỗi tiêu đề, không chép dòng ===.
+
+=== 1. Miệng hoặc mắt không cùng cỡ
+Edit the image. Make every mouth in <<POSITION>> the same size as the first mouth of row 2, keeping each mouth's shape. Keep everything else exactly the same.
+
+=== 2. Bàn tay sai số ngón
+Edit the image. The hands at <<POSITION>> must have <<FINGERS>>, like the hands in Image 2. Fix only those hands, keeping their poses. Keep everything else exactly the same.
+
+=== 3. Mảnh nằm trên đĩa hay mảng màu da
+Edit the image. Remove the skin-colored disc behind the piece at <<POSITION>>: the piece stands alone on the plain magenta background. Keep everything else exactly the same.
+
+=== 4. Đầu không tóc vẫn còn tóc hoặc còn mặt
+Edit the image. Change only row 6, piece 1: a smooth bald skin-colored head with both ears, no hair at all, and a blank face (no eyes, no eyebrows, no mouth). Keep everything else exactly the same.
+
+=== 5. Lòng và mu bàn tay giống nhau
+Edit the image. Row 4, piece 5 shows the PALM (the inside of the hand, with the palm lines or a lighter palm); row 4, piece 6 shows the BACK of the same hand (knuckles, no palm). Fix only these two hands. Keep everything else exactly the same.
+
+=== 6. Phụ kiện còn dây hoặc còn dính người
+Edit the image. Change only row 6, piece 4: the accessory alone, without its straps or ties and without any part of the body. Keep everything else exactly the same.
+
+=== 7. Tóc trước và tóc sau dính nhau, hoặc dính đầu
+Edit the image. Row 6, pieces 2 and 3 are two separate hair pieces with magenta between them: piece 2 the hair behind the head, piece 3 only the fringe and the top of the hair over the forehead. No head or skin in either piece. Keep everything else exactly the same.
+
+=== 8. Thiếu mảnh hoặc sai số mảnh trong một hàng
+Edit the image. <<ROW>> must have exactly these pieces, left to right: <<LIST>>. Fix that row only, at the positions of the grey shapes in Image 3. Keep everything else exactly the same.
+
+=== 9. Hình không phải khổ ngang 16:9
+Make it a 16:9 landscape image with the same layout and the same pieces.
+
+=== 10. Gemini trả lời bằng chữ hoặc từ chối
+Please generate the image.

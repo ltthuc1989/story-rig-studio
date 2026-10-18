@@ -1,0 +1,33 @@
+=== Tin nhắn sửa cho tờ thân. Mỗi lần gửi 1, tối đa 2 tin. Thay <<POSITION>> bằng vị trí của mảnh, ví dụ:
+=== "middle row, left group, second piece" / "middle row, right group, fourth piece" / "bottom row, last piece" / "top row, third view".
+=== Chỉ chép phần dưới mỗi tiêu đề, không chép dòng ===.
+
+=== 1. Mảnh hông còn ống quần, gấu hoặc khe giữa 2 chân
+Edit the image. Change only the hip band at <<POSITION>>: make it a short wide horizontal band in the same fabric: the waistband and the seat down to the crotch only, with ONE straight horizontal bottom edge from side to side. No leg openings, no cuffs, no gap between the legs. Keep everything else exactly the same.
+
+=== 2. Chân rời dính giày
+Edit the image. Change only the leg at <<POSITION>>: remove its shoe. The sock continues straight down past the ankle and ends rounded, like the front leg in the middle row. Keep everything else exactly the same.
+
+=== 3. Giày rời có tất hoặc chân bên trong
+Edit the image. Change only the shoe at <<POSITION>>: remove the sock sticking out of it, so the shoe is alone and empty, its opening visible. Keep everything else exactly the same.
+
+=== 4. Thân rời còn tay áo hoặc cánh tay
+Edit the image. Change only the torso at <<POSITION>>: remove the sleeves. Each shoulder ends in a smooth rounded edge, then the armpit, then the side of the top runs straight down to the hem, in the top's own color, like a sleeveless vest. Keep everything else exactly the same.
+
+=== 5. Tay hoặc chân phía xa bị sẫm, xám
+Edit the image. Change only the piece at <<POSITION>>: give it exactly the same skin and clothing colors as the near arm next to it, not darker, not greyish. Keep everything else exactly the same.
+
+=== 6. Mất chi tiết (dây đeo, hình in, cổ áo, túi)
+Edit the image. The piece at <<POSITION>> is missing <<DETAIL>>: add it back exactly as in Image 2 (same size, shape and color). Keep everything else exactly the same.
+
+=== 7. Thừa mảnh, đĩa màu da, hoặc mảnh không thuộc tờ
+Edit the image. Remove the extra shape at <<POSITION>>, leaving plain magenta background there. Keep everything else exactly the same.
+
+=== 8. Thiếu mảnh hoặc sai số mảnh trong một hàng
+Edit the image. The <<ROW>> must have exactly these pieces, left to right: <<LIST>>. Fix that row only, at the positions of the grey shapes in Image 3. Keep everything else exactly the same.
+
+=== 9. Hình không phải khổ ngang 16:9
+Make it a 16:9 landscape image with the same layout and the same pieces.
+
+=== 10. Gemini trả lời bằng chữ hoặc từ chối
+Please generate the image.

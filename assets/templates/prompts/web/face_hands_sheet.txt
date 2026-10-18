@@ -1,0 +1,34 @@
+Create one 16:9 landscape image: a face, hands and hair parts sheet for 2D cutout animation and lip sync.
+
+Three images are attached, in this order:
+Image 1 and Image 2 are the approved design of ONE character (Image 1 three-quarter view, Image 2 front view). Keep exactly the same face design, eye design, skin color, hair, colors and art style. Ignore their poses.
+Image 3 is a grey mannequin layout sheet. It only shows WHERE each piece goes and how big it is, in strict rows read left to right. Replace every grey shape with the matching piece, at the same position and size. Never draw the grey shapes. The grey hands have five fingers only as a layout: draw the character's own hands, with the number of fingers given in the notes.
+
+Character notes: <<CHARACTER NOTES>>
+
+Every piece is separate, drawn alone on the magenta background, never on a skin-colored disc or patch. Six rows:
+
+ROW 1, the FRONT-view eye (the eye on the left of the face in Image 2) and the eyebrows, 10 pieces:
+(1) the white of the eye alone, its shape, without the iris; (2) the iris with its pupil and highlight alone, round; (3) the eye half closed, a skin-colored eyelid over the top half; (4) the eye closed, one thin line; (5) the eye closed happy, an upside-down U; (6) the eye wide open, surprised, with its iris; (7) eyebrow neutral; (8) eyebrow raised; (9) eyebrow frowning; (10) eyebrow sad, raised in the middle.
+
+ROW 2, twelve FRONT-view mouths, each one single piece with its lips, all at the same scale:
+(1) closed, lips together (M, B, P, rest); (2) open wide (A, I); (3) wide and narrow, teeth showing (E); (4) round open (O); (5) small round pucker (U, W); (6) top teeth on the lower lip (F, V); (7) open, tongue tip behind the top teeth (L, TH); (8) teeth together, lips apart (S, T); (9) closed smile; (10) big open laugh; (11) small downturned sad mouth; (12) small tall open surprised mouth.
+
+ROW 3, the SIDE view (profile facing right), 17 pieces:
+(1) eye open in profile; (2) eye closed, a line; (3) eye closed happy; (4) eye wide open; (5) eyebrow in profile; then (6) to (17) the same twelve mouths as row 2, in the same order, seen in profile facing right.
+
+ROW 4, the RIGHT hand, each with a short piece of the wrist (the part normally hidden inside the sleeve), 8 pieces:
+(1) open relaxed, fingers slightly apart; (2) fist; (3) pointing, index finger up; (4) thumbs up; (5) open hand waving, showing the PALM; (6) the same open hand showing the BACK of the hand; (7) palm up, fingers to the right, offering; (8) holding, curled in a C shape.
+
+ROW 5, the RIGHT hand, with the same short piece of wrist, 7 pieces:
+(1) counting one (index up); (2) counting two; (3) counting three; (4) counting four, thumb folded; (5) clapping hand seen edge-on from the side; (6) side view, relaxed; (7) side view, fist.
+
+ROW 6, at the SAME scale as the head in Image 2, 4 pieces:
+(1) the head WITHOUT hair, front view: a smooth bald skin-colored head with both ears, the face left blank (no eyes, no eyebrows, no mouth; the nose and cheeks may stay), the hairline only as the edge of the skin;
+(2) the back hair alone: the part of the hair behind the head, as one piece;
+(3) the front hair alone: the fringe and the top of the hair over the forehead, as one piece;
+(4) the accessory named in the notes, alone, without any straps or ties that go around the body.
+
+All eyes at the same size, all mouths at the same size, all hands at the same size. No moustache, no beard, no glasses unless the notes say so. Exactly 58 pieces: 10, 12, 17, 8, 7 and 4 per row.
+Background: plain solid pure magenta (#FF00FF: red 255, green 0, blue 255) filling the whole image. No shadows, no text, no letters, no labels, no numbers, no arrows, no guide lines. No magenta or pink anywhere on the pieces.
+Art style: exactly the art style of Image 1 and Image 2: polished flat vector illustration, absolutely no outlines, a single flat darker shading shape per form, no gradients, no texture.
