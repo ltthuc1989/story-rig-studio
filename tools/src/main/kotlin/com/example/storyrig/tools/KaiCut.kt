@@ -372,7 +372,7 @@ internal fun renderPreviews(dir: File, ref: Img, bones: List<Bone>, parts: Map<S
         "shoulder_near" to 120.0, "elbow_near" to 40.0, "wrist_near" to -20.0,
         "shoulder_far" to -40.0, "elbow_far" to -70.0,
         "hip_near" to 25.0, "knee_near" to -45.0, "ankle_near" to 15.0,
-        "hip_far" to -15.0, "knee_far" to 20.0,
+        "hip_far" to -15.0, "knee_far" to 20.0, "skirt" to SKIRT_SWING,
     )
     ImageIO.write(
         renderPose(ref, bones, parts, relax(dance), swap = mapOf("mouth_smile" to "mouth_laugh", "eye_near_open" to "eye_near_happy", "eye_far_open" to "eye_far_happy").filterValues { it in parts }, drawOrder = order),
@@ -382,7 +382,17 @@ internal fun renderPreviews(dir: File, ref: Img, bones: List<Bone>, parts: Map<S
         "shoulder_near" to 30.0, "elbow_near" to -60.0, "wrist_near" to 30.0,
         "shoulder_far" to -30.0, "elbow_far" to 60.0, "wrist_far" to -30.0,
         "hip_near" to -45.0, "knee_near" to 60.0, "ankle_near" to -20.0,
-        "hip_far" to 30.0, "knee_far" to 45.0, "ankle_far" to 20.0,
+        "hip_far" to 30.0, "knee_far" to 45.0, "ankle_far" to 20.0, "skirt" to -SKIRT_SWING,
     )
     ImageIO.write(renderPose(ref, bones, parts, relax(bend), swap = mapOf("mouth_smile" to "mouth_o", "eye_near_open" to "eye_near_wide", "eye_far_open" to "eye_far_wide").filterValues { it in parts }, drawOrder = order), "png", File(dir, "pose_bend.png"))
+    // Skirt alone swung as far as the cut allows, both ways (nothing else moves): no gap may open over the thighs.
+    if ("skirt" in byName) {
+        val both = BufferedImage(ref.w * 2, ref.h, BufferedImage.TYPE_INT_ARGB)
+        both.createGraphics().apply {
+            drawImage(renderPose(ref, bones, parts, mapOf("skirt" to -SKIRT_SWING), drawOrder = order), 0, 0, null)
+            drawImage(renderPose(ref, bones, parts, mapOf("skirt" to SKIRT_SWING), drawOrder = order), ref.w, 0, null)
+            dispose()
+        }
+        ImageIO.write(both, "png", File(dir, "pose_skirt.png"))
+    }
 }

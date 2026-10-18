@@ -2,6 +2,7 @@
 root,,519.0,649.2
 torso,root,519.0,614.5
 head,torso,519.5,381.0
+skirt,root,519.0,550.0
 shoulder_near,torso,395.6,456.4
 elbow_near,shoulder_near,317.6,495.2
 wrist_near,elbow_near,240.8,543.9

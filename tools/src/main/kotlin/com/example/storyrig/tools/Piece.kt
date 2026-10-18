@@ -102,12 +102,32 @@ fun jointAcross(p: Piece, x: Float, y: Float, ux: Float, uy: Float): Joint {
  * Splits a limb at a joint. Both halves get a round cap of the joint's radius past the cut, filled by smearing
  * the cut line's colours along the limb, so in the rest pose the two halves line up exactly and when the joint
  * turns there is no gap. Flat-colour art without outlines makes the seam invisible.
- * A half whose cut edge is a natural edge drawn on top (a shorts cuff, the top of a shoe) gets no cap.
+ * A half whose cut edge is a natural edge drawn on top (a shorts cuff, the top of a shoe) gets no cap, and its
+ * colours stay out of the other half's cap (a shin's cap is trouser or sock, not shoe).
+ *
+ * With [ref] (the image the piece was cut from) a cap pixel over the same garment takes the reference's own pixel,
+ * so patterns (stripes) line up where the cap overlaps the other half ([capColour]). The +u half is drawn over the
+ * -u half (limbs are drawn from the body out): where its cap would cover a different colour of the other half (a
+ * hand's cap over the sleeve's cuff) it is left out, since the -u half's cap already closes the joint.
  * Returns (side towards -u, side towards +u).
  */
-fun cutAt(p: Piece, j: Joint, capBefore: Boolean = true, capAfter: Boolean = true): Pair<Piece, Piece> {
+fun cutAt(p: Piece, j: Joint, capBefore: Boolean = true, capAfter: Boolean = true, ref: Img? = null): Pair<Piece, Piece> {
     val before = Img(p.w, p.h); val after = Img(p.w, p.h)
     val r = j.radius
+    // Each half's colours next to the cut (past the cut line's own soft row).
+    val bandAfter = bandColours(p, j, 2f, r)
+    // The capless half's own colour: its most common one next to the cut that is not this half's most common one
+    // (a shoe's, not the white of a sock showing inside it).
+    val other = if (capAfter) emptyList() else {
+        val mine = mainColours(bandPixels(p, j, -r, -2f), 0f).firstOrNull()
+        listOfNotNull(mainColours(bandPixels(p, j, 2f, r), 0f).firstOrNull { mine == null || colourDist(it, mine) > SAME_GARMENT })
+    }
+    fun notOther(c: Int) = other.none { colourDist(c, it) <= SAME_GARMENT }
+    val bandBefore = bandColours(p, j, -r, -2f).filter(::notOther)
+    // Next to a capless half the cap is one flat colour: this half's most common colour right above the cut (the
+    // trouser, sock or skin above a shoe whose top the cut runs through), or deeper in if the cut row is all shoe.
+    val ownFill = if (other.isEmpty()) null else
+        (mainColours(bandPixels(p, j, -6f, -1f).filter(::notOther), 0f) + bandBefore).firstOrNull()
     for (ly in 0 until p.h) for (lx in 0 until p.w) {
         val x = lx + p.ox + 0.5f; val y = ly + p.oy + 0.5f
         val t = (x - j.x) * j.ux + (y - j.y) * j.uy
@@ -115,14 +135,73 @@ fun cutAt(p: Piece, j: Joint, capBefore: Boolean = true, capAfter: Boolean = tru
         if (t <= 0f) { if (a(c) > 0) before[lx, ly] = c } else { if (a(c) > 0) after[lx, ly] = c }
         // Cap: inside the disc around the joint, on the other side of the cut.
         if (hypot(x - j.x, y - j.y) > r) continue
-        val sx = (x - t * j.ux - 0.5f).roundToInt() - p.ox
-        val sy = (y - t * j.uy - 0.5f).roundToInt() - p.oy
-        if (!p.img.inside(sx, sy)) continue
-        val sc = p.img[sx, sy]
+        if (if (t > 0f) !capBefore else !capAfter) continue
+        fun colourBack(k: Float): Int {
+            val sx = (x - (t + k) * j.ux - 0.5f).roundToInt() - p.ox
+            val sy = (y - (t + k) * j.uy - 0.5f).roundToInt() - p.oy
+            return if (p.img.inside(sx, sy)) p.img[sx, sy] else 0
+        }
+        var sc = colourBack(0f)
         if (a(sc) <= 127) continue
-        if (t > 0f) { if (capBefore) before[lx, ly] = sc or (0xFF shl 24) } else if (capAfter) after[lx, ly] = sc or (0xFF shl 24)
+        if (t > 0f && ownFill != null) sc = ownFill
+        val gx = lx + p.ox; val gy = ly + p.oy
+        if (t > 0f) before[lx, ly] = capColour(ref, gx, gy, bandBefore, sc or (0xFF shl 24), avoid = other)
+        else after[lx, ly] = capColour(ref, gx, gy, bandAfter, sc or (0xFF shl 24), dropOther = capBefore)
     }
     return Piece(before, p.ox, p.oy).trimmed() to Piece(after, p.ox, p.oy).trimmed()
+}
+
+/** RGB L1 distance. */
+fun colourDist(c1: Int, c2: Int) = kotlin.math.abs(r(c1) - r(c2)) + kotlin.math.abs(g(c1) - g(c2)) + kotlin.math.abs(b(c1) - b(c2))
+
+/** How close (RGB L1) a reference pixel must be to a band colour to count as the same garment. */
+const val SAME_GARMENT = 60
+
+/** Main colours of [cols]: 16-level bins holding >= [minShare] of them, as mean colours, most common first. */
+fun mainColours(cols: List<Int>, minShare: Float = 0.05f): List<Int> {
+    val bins = HashMap<Int, IntArray>()
+    for (c in cols) {
+        val k = (r(c) shr 4 shl 8) or (g(c) shr 4 shl 4) or (b(c) shr 4)
+        val s = bins.getOrPut(k) { IntArray(4) }
+        s[0]++; s[1] += r(c); s[2] += g(c); s[3] += b(c)
+    }
+    return bins.values.filter { it[0] >= minShare * cols.size }.sortedByDescending { it[0] }
+        .map { argb(255, it[1] / it[0], it[2] / it[0], it[3] / it[0]) }
+}
+
+/**
+ * Main colours of a piece's opaque pixels between [from] and [to] px along a joint's u from its cut line (negative:
+ * before the cut) and within the joint's radius of the limb's axis: the garment right next to the cut. One radius
+ * deep is at least one period of the stripes seen so far.
+ */
+fun bandColours(p: Piece, j: Joint, from: Float, to: Float): List<Int> = mainColours(bandPixels(p, j, from, to))
+
+/** The opaque pixels' colours of the band [bandColours] looks at. */
+fun bandPixels(p: Piece, j: Joint, from: Float, to: Float): List<Int> {
+    val cols = ArrayList<Int>()
+    for (ly in 0 until p.h) for (lx in 0 until p.w) {
+        val c = p.img[lx, ly]
+        if (a(c) <= 200) continue
+        val dx = lx + p.ox + .5f - j.x; val dy = ly + p.oy + .5f - j.y
+        val t = dx * j.ux + dy * j.uy
+        if (t < from || t > to || kotlin.math.abs(-dx * j.uy + dy * j.ux) > j.radius) continue
+        cols += c
+    }
+    return cols
+}
+
+/**
+ * Colour of a cap pixel at (x, y) (reference pixels): the reference's own pixel when it is opaque and close to one of
+ * the [band] colours (the same garment, so stripes line up), otherwise [extrap], the colour smeared from the cut (a
+ * shin's knee cap under the shorts stays skin or sock). [dropOther]: transparent instead of [extrap] where the
+ * reference shows another colour. [avoid]: colours never taken from the reference (the shoe under a shin's cap).
+ */
+fun capColour(ref: Img?, x: Int, y: Int, band: List<Int>, extrap: Int, dropOther: Boolean = false, avoid: List<Int> = emptyList()): Int {
+    if (ref == null || !ref.inside(x, y)) return extrap
+    val c = ref[x, y]
+    if (a(c) <= 200) return extrap
+    if (band.any { colourDist(c, it) <= SAME_GARMENT } && avoid.none { colourDist(c, it) <= SAME_GARMENT }) return c or (0xFF shl 24)
+    return if (dropOther) 0 else extrap
 }
 
 /** Mean x of opaque pixels in a row (placed coordinates), or NaN. */
