@@ -566,9 +566,13 @@ internal const val SKIRT_SWING = 8.0
 
 internal fun cutRef(dir: File, outDir: File, previewDir: File) = cutWith(dir, outDir, previewDir, KaiRefSpec.spec())
 
-internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
+/**
+ * [srcName]: the image in [dir] to cut (default: the old flow's ref.png / view_<view>.png; the minimal flow's cutview
+ * passes view_<view>.png for every view). [faceSheet]: add the old face sheets (face.png + face_map.csv) in 3q.
+ */
+internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec, srcName: String? = null, faceSheet: Boolean = true) {
     val col = S.colours
-    val ref = Img.load(File(dir, if (S.view == "3q") "ref.png" else "view_${S.view}.png"))
+    val ref = Img.load(File(dir, srcName ?: if (S.view == "3q") "ref.png" else "view_${S.view}.png"))
     val img = defringe(keyMagenta(ref))
     val cv = Canvas(img.w, img.h)
     for (s in listOf(S.neck, S.shoulderNear, S.shoulderFar, S.hipNear, S.hipFar, S.seam, S.shoes)) cv.block(s)
@@ -748,7 +752,7 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec) {
     }
     // Skin colour (median of the head's skin pixels) for the face sheets' shape checks.
     // Face sheets are drawn for the three-quarter view; other views keep their own painted features only.
-    if (S.view == "3q") {
+    if (S.view == "3q" && faceSheet) {
         val skinPx = head.img.px.filter { a(it) > 200 && col.skin(it) }
         require(skinPx.isNotEmpty()) { "no skin on the head" }
         fun med(f: (Int) -> Int) = skinPx.map(f).sorted()[skinPx.size / 2]

@@ -44,6 +44,8 @@ fun main(args: Array<String>) {
         // greencut <cutDir> <ref.png> <outDir>, jointcheck <sheetDir> <cut> [baseline]: JointCheck.kt
         "greencut" -> greenCut(File(args[1]), File(args[2]), File(args[3]))
         "jointcheck" -> jointCheck(File(args[1]), args[2], args.getOrNull(3) == "baseline")
+        // cutview <char> front|3q: the minimal flow's cut from assets/<char>/design (CutView.kt)
+        "cutview" -> cutView(args[1], args[2])
         "viewcheck" -> viewCheck(args[1], args[2])
         "facecheck" -> faceCheck(args[1])
         "mannequin" -> if (args[1] == "kit") drawKitSheets(File(args[2])) else if (args[1] == "sheet") drawMannequinSheet(File(args[2])) else drawMannequin(args[1], File(args[2]), args.getOrNull(3)?.toDouble() ?: 32.0)
