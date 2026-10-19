@@ -1,0 +1,18 @@
+ĐẠT  kích thước vuông: 1024x1024 (cần vuông, >= 1000)
+ĐẠT  nền magenta: độ magenta ở góc 234 (cần >= 150)
+ĐẠT  một cụm duy nhất: 1 cụm >= 20 px, 0 cụm lạ >= 200 px
+ĐẠT  chiều cao như hình nộm: cao 924 px, hình nộm 830 px (tỉ lệ 1.11, cho phép 0,88–1,12)
+ĐẠT  đế chân trên đường đất: lệch 33 px (cho phép 40)
+ĐẠT  tay near giơ như hình nộm: đầu tay ở 99,500; hình nộm 149,476 (cho phép lệch 55 px dọc)
+ĐẠT  tay far giơ như hình nộm: đầu tay ở 924,499; hình nộm 875,476 (cho phép lệch 55 px dọc)
+ĐẠT  khe nền gap_arm_near: nền trống 30px quanh 285,522 (cần >= 12)
+ĐẠT  khe nền gap_arm_far: nền trống 30px quanh 739,522 (cần >= 12)
+ĐẠT  khe nền gap_legs: nền trống 34px quanh 512,817 (cần >= 12)
+ĐẠT  không có hồng trên nhân vật: 0 điểm hồng / 208645 bên trong (cho phép 0,1%)
+ĐẠT  không có lỗ trong dáng: 0 lỗ >= 30 px
+ĐẠT  bảng màu: #D43131 #241825 #F7B181 #F6AE7D #447097 #FEFDFC #F6B07E
+ĐẠT  đũng quần: y=690 (0.31 chiều cao từ đế)
+ĐẠT  cùng chiều cao với trực diện: 924 px, trực diện 922 px (cho phép 3%)
+ĐẠT  cùng đường đất với trực diện: đế $973, trực diện 971 (cho phép 15 px)
+ĐẠT  đũng quần cùng độ cao: lệch 2 px (cho phép 3%)
+ĐẠT  cùng bảng màu với trực diện: mọi màu chính của trực diện có ở góc này
