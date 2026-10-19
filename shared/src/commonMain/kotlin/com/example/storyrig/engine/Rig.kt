@@ -25,6 +25,11 @@ class SoftItem(val soft: SoftPath) : DrawItem()
 class BitmapPart(val bone: Int, val atlas: Atlas, var sprite: Sprite, antiAlias: Boolean) : DrawItem() {
     /** Part name (parts.csv), for [DistortProbe] reports. */
     var label = ""
+    /**
+     * Drawn with [Skeleton.concatRigid]: foreshortening and roll move the bone's children but never squash this
+     * picture (a rigid cut: what a squash would fake is a substitute drawing, KaiRig.applySwaps).
+     */
+    var rigid = false
     val paint = Paint().apply {
         isAntiAlias = antiAlias
         filterQuality = FilterQuality.Low
@@ -45,7 +50,7 @@ class BitmapPart(val bone: Int, val atlas: Atlas, var sprite: Sprite, antiAlias:
         val s = sprite
         val r = s.region
         canvas.save()
-        sk.concat(canvas, bone)
+        if (rigid) sk.concatRigid(canvas, bone) else sk.concat(canvas, bone)
         if (shiftX != 0f || scaleX != 1f) {
             val cx = s.dx + r.w * .5f
             canvas.translate(cx + shiftX, 0f)
@@ -56,7 +61,7 @@ class BitmapPart(val bone: Int, val atlas: Atlas, var sprite: Sprite, antiAlias:
         canvas.restore()
         stats.draws++
         stats.images++
-        if (DistortProbe.on) DistortProbe.record(sk, bone, scaleX, label)
+        if (DistortProbe.on) DistortProbe.record(sk, bone, scaleX, label, rigid)
     }
 }
 
@@ -75,10 +80,14 @@ object DistortProbe {
 
     fun reset() { worst = 1f; worstLabel = "" }
 
-    fun record(sk: Skeleton, bone: Int, scaleX: Float, label: String) {
+    private val m = FloatArray(4)
+
+    /** [rigid]: the part is drawn with [Skeleton.rigidMatrix], so that is what it shows. */
+    fun record(sk: Skeleton, bone: Int, scaleX: Float, label: String, rigid: Boolean) {
         val w = bone * 6
-        val a = sk.world[w] * scaleX; val b = sk.world[w + 1] * scaleX
-        val c = sk.world[w + 2]; val d = sk.world[w + 3]
+        if (rigid) sk.rigidMatrix(bone, m) else { m[0] = sk.world[w]; m[1] = sk.world[w + 1]; m[2] = sk.world[w + 2]; m[3] = sk.world[w + 3] }
+        val a = m[0] * scaleX; val b = m[1] * scaleX
+        val c = m[2]; val d = m[3]
         val t = a * a + b * b + c * c + d * d
         val det = a * d - b * c
         val q = kotlin.math.sqrt(maxOf(t * t - 4f * det * det, 0f))

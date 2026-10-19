@@ -215,4 +215,32 @@ class Skeleton(val size: Int) {
         val w = bone * 6
         canvas.concatAffine(world[w], world[w + 1], world[w + 2], world[w + 3], world[w + 4], world[w + 5])
     }
+
+    private val rigidM = FloatArray(4)
+
+    /**
+     * The bone's world transform without its own [fore] and [roll] squash, keeping their sign: a rigid picture drawn
+     * with it is only turned, scaled uniformly or mirrored, never deformed, while the bone's children still sit where
+     * the squash puts them (a foreshortened thigh's knee comes up; the thigh's picture overlaps the shin instead of
+     * shrinking). Exact while [wide] is 1 (limbs). Writes the 2x2 part to [out] (a, b, c, d).
+     */
+    fun rigidMatrix(bone: Int, out: FloatArray) {
+        val w = bone * 6
+        val f = fore[bone]; val rl = roll[bone]
+        if (f == 1f && rl == 1f) { out[0] = world[w]; out[1] = world[w + 1]; out[2] = world[w + 2]; out[3] = world[w + 3]; return }
+        // B = I + g u u^T + h v v^T with g = sign(f)/f - 1, h = sign(r)/r - 1: undoes the squash, keeps a mirror.
+        val ux = axisX[bone]; val uy = axisY[bone]
+        val g = (if (f < 0f) -1f else 1f) / f - 1f; val h = (if (rl < 0f) -1f else 1f) / rl - 1f
+        val b00 = 1f + g * ux * ux + h * uy * uy; val b01 = g * ux * uy - h * ux * uy; val b11 = 1f + g * uy * uy + h * ux * ux
+        val a = world[w]; val b = world[w + 1]; val c = world[w + 2]; val d = world[w + 3]
+        out[0] = a * b00 + c * b01; out[1] = b * b00 + d * b01
+        out[2] = a * b01 + c * b11; out[3] = b * b01 + d * b11
+    }
+
+    /** [concat] with [rigidMatrix]: the bone's pictures are never squashed (no allocation). */
+    fun concatRigid(canvas: Canvas, bone: Int) {
+        val w = bone * 6
+        rigidMatrix(bone, rigidM)
+        canvas.concatAffine(rigidM[0], rigidM[1], rigidM[2], rigidM[3], world[w + 4], world[w + 5])
+    }
 }

@@ -275,7 +275,7 @@ internal fun drawLimbTemplate(out: File) {
         g.stroke = BasicStroke((10 * k).toFloat(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND)
         g.draw(Line2D.Double(x + 60 * k, y + 56 * k, x + 70 * k, y + 38 * k))
     }
-    val back = Limb("hand_back", 60.0, 94.0, doubleArrayOf(.5, .93), doubleArrayOf(.5, .93)) { x, y ->
+    val back = Limb("hand_back", 60.0, 94.0, doubleArrayOf(.5, .75), doubleArrayOf(.5, .75)) { x, y ->
         val px = x + 12 * k; val py = y + 28 * k
         g.color = grey
         for ((i, f) in listOf(20.0, 26.0, 22.0).withIndex()) g.fill(RoundRectangle2D.Double(px + (1.5 + i * 13) * k, py - f * k, 11 * k, (f + 10) * k, 9 * k, 9 * k))

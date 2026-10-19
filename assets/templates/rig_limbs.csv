@@ -1,6 +1,6 @@
 # Slots of rig_limbs.png (1376 x 768 px): name,x0,y0,x1,y1,scale,jx,jy,cx,cy (joint to the parent bone and start of the child bone, as fractions of the box).
 upper_toward,234,115,402,283,2.0,0.5,0.5,0.5,0.55
 fore_toward,636,95,788,303,2.0,0.5,0.82,0.5,0.82
-hand_back,1022,105,1142,293,2.0,0.5,0.93,0.5,0.93
+hand_back,1022,105,1142,293,2.0,0.5,0.75,0.5,0.75
 thigh_toward,368,499,528,667,2.0,0.5,0.12,0.5,0.66
 shoe_sole,896,487,1008,679,2.0,0.5,0.12,0.5,0.12

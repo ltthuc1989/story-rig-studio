@@ -55,6 +55,8 @@ class KaiAssets(
     /** bones.csv hangX/hangY: a shoulder's pivot once its arm hangs down (NaN for other bones); see KaiRig.slideShoulders. */
     val hangPivotX: FloatArray = FloatArray(boneNames.size) { Float.NaN },
     val hangPivotY: FloatArray = FloatArray(boneNames.size) { Float.NaN },
+    /** swaps.csv: substitute drawings of a rigid cut ([SwapRow]); empty without one. */
+    val swaps: List<SwapRow> = emptyList(),
 ) {
     /** Rest pose, from the data (ref.png pixels): root pivot to the soles, and hair top to the soles. */
     val rootToSole: Float
@@ -86,6 +88,14 @@ class KaiAssets(
     }
 
     class PartRow(val name: String, val bone: Int, val x: Int, val y: Int, val w: Int, val h: Int, val drawn: Boolean)
+
+    /**
+     * A substitute drawing (swaps.csv, written by :tools from the limb sheet): [part] shows [swapPart] instead when its
+     * bone points [dir] `toward` or `away` from the viewer (foreshortened under KaiRig.SWAP_FORE), or `back` when the
+     * bone is rolled over. With a `toward` drawing the bone's child starts [childFore] of the way along the bone
+     * (where the drawing has it) and [hides] (parts it covers, a hand in a forearm seen end on) are not drawn.
+     */
+    class SwapRow(val part: String, val dir: String, val swapPart: String, val childFore: Float, val hides: List<String>)
 
     /**
      * Cut parts that become one skinned mesh (drawn once into one image at load), the bones it follows and its
@@ -167,9 +177,12 @@ class KaiAssets(
                 .associate { it[0] to it.getOrElse(1) { "" } }
             val heightScale = facts["heightScale"]?.toFloatOrNull() ?: 1f
             val view = View.parse(facts["view"]) ?: viewFromName(name)
+            val swaps = runCatching { csv(Res.readBytes("$dir/swaps.csv").decodeToString()) }.getOrNull().orEmpty().map {
+                SwapRow(it[0], it[1], it[2], it.getOrNull(3)?.toFloatOrNull() ?: 1f, it.getOrNull(4).orEmpty().split(';').filter { h -> h.isNotEmpty() })
+            }
             return KaiAssets(
                 atlas, names, parent, px, py, parts, meshes, meshAtlas, (uptimeMillis() - t0).toFloat(), heightScale, name, view,
-                facts["yaw"]?.toFloatOrNull(), hx, hy,
+                facts["yaw"]?.toFloatOrNull(), hx, hy, swaps,
             )
         }
 
@@ -260,6 +273,16 @@ class KaiRig(
     private val restY = FloatArray(sk.size)
     val rig: Rig
 
+    /** One limb part's substitute drawings ([KaiAssets.SwapRow]); null = none for that case. */
+    private class Swap(
+        val part: BitmapPart, val normal: Sprite,
+        val toward: Sprite?, val towardFore: Float, val hides: Array<BitmapPart>,
+        val away: Sprite?, val back: Sprite?,
+    )
+
+    /** Limb parts of a rigid cut and their substitute drawings; empty on a skinned rig. */
+    private val swaps: Array<Swap>
+
     val root = a.bone("root")
     val torso = a.bone("torso")
     val head = a.bone("head")
@@ -337,6 +360,19 @@ class KaiRig(
             items += bp
         }
         rig = Rig(sk, items.toTypedArray())
+        // A rigid cut never squashes a picture: foreshortening moves the children, substitute drawings do the rest.
+        val rigidCut = meshes.isEmpty()
+        if (rigidCut) for (bp in byName.values) bp.rigid = true
+        swaps = if (!rigidCut) emptyArray() else byName.mapNotNull { (name, bp) ->
+            if (a.boneNames[bp.bone].substringBeforeLast('_') !in LIMB_JOINTS) return@mapNotNull null
+            val rows = a.swaps.filter { it.part == name }
+            fun spriteFor(dir: String) = rows.firstOrNull { it.dir == dir }?.let { sprite(it.swapPart) }
+            val toward = rows.firstOrNull { it.dir == "toward" }
+            Swap(
+                bp, bp.sprite, spriteFor("toward"), toward?.childFore ?: SWAP_FORE,
+                toward?.hides.orEmpty().mapNotNull { byName[it] }.toTypedArray(), spriteFor("away"), spriteFor("back"),
+            )
+        }.toTypedArray()
         mouth = byName["mouth_smile"]
         eyeNear = byName["eye_near_open"]
         eyeFar = byName["eye_far_open"]
@@ -465,6 +501,36 @@ class KaiRig(
      * straight arm up starts at the shoulder's top, not at the armpit. Turning about a point H instead of the pivot M is the same turn plus a
      * shift of (I - R)(H - M) in the parent's space. After the clip, springs and feet, before [Rig.pose].
      */
+    /**
+     * Rigid cut: what a squash would fake, drawn instead (ART_PIPELINE.md section 1). A limb bone foreshortened under
+     * [SWAP_FORE] that points towards the viewer shows its `toward` drawing (its child where the drawing has it), or
+     * without one stays at [SWAP_FORE]; pointing away it is behind the body: hidden (its child at its pivot), or its
+     * `away` drawing (a shoe's sole). A hand rolled over shows its `back` drawing, not mirrored. After the clip,
+     * before springs and feet (they shorten legs further on top).
+     */
+    fun applySwaps() {
+        if (swaps.isEmpty()) return
+        for (s in swaps) { s.part.sprite = s.normal; s.part.visible = true }
+        for (s in swaps) {
+            val b = s.part.bone
+            if (sk.fore[b] < SWAP_FORE) {
+                if (player.pitchOf(b) >= 0f) {
+                    if (s.toward != null) {
+                        s.part.sprite = s.toward
+                        sk.fore[b] = s.towardFore
+                        for (h in s.hides) h.visible = false
+                    } else sk.fore[b] = SWAP_FORE
+                } else if (s.away != null) {
+                    s.part.sprite = s.away
+                } else {
+                    s.part.visible = false
+                    sk.fore[b] = HIDDEN_FORE
+                }
+            }
+            if (s.back != null && sk.roll[b] < 0f) { s.part.sprite = s.back; sk.roll[b] = 1f }
+        }
+    }
+
     fun slideShoulders() {
         slide(shoulderN, hangNear, slideNX, slideNY)
         slide(shoulderF, hangFar, slideFX, slideFY)
@@ -517,6 +583,16 @@ class KaiRig(
         const val EYE_OPEN = 0
         const val EYE_HALF = 1
         const val EYE_HAPPY = 2
+
+        /** Limb joints whose parts get substitute drawings in a rigid cut ([applySwaps]). */
+        private val LIMB_JOINTS = setOf("shoulder", "elbow", "wrist", "hip", "knee", "ankle")
+        /**
+         * Under this foreshortening a rigid limb part switches to a substitute drawing (or is hidden or held here):
+         * the full-length picture overlapping its child would read as a longer limb.
+         */
+        const val SWAP_FORE = .7f
+        /** A hidden part's child sits (almost) at its pivot: the lower leg tucked behind the thigh. */
+        private const val HIDDEN_FORE = .02f
 
         /** Arm raised this far above its drawn angle (degrees) lifts the shoulder fully ([slideShoulders]). */
         private const val SHRUG_FULL_DEG = 100f

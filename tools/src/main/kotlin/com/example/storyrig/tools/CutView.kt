@@ -46,5 +46,7 @@ internal fun cutView(char: String, view: String) {
     File(previewDir, "points.txt").writeText(lines.joinToString("\n") + "\n")
     // Rigid pieces (no skinned mesh): cut-out joints with round caps, as the minimal flow decided.
     cutWith(design, outDir, previewDir, S, srcName = "view_$view.png", faceSheet = false, rigid = true)
+    // Substitute drawings for what a rigid part cannot show turned (limb sheet, Limbs.kt).
+    File(design, "limbs.png").takeIf { it.exists() }?.let { cutLimbs(it, outDir) }
     println("cutview $cut -> $outDir")
 }

@@ -285,6 +285,7 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
             k.yaw?.apply(bodyYaw[i], headYaw[i])
             feetNear[r].captureGround(); feetFar[r].captureGround()
             k.player.apply(beat)
+            k.applySwaps()
         } else {
             sinePose(k, i, beat, y, mirrored[r])
         }

@@ -208,6 +208,9 @@ class ClipPlayer(
         current = index; startBeat = beat; fadeStart = beat; this.fadeBeats = fadeBeats
     }
 
+    /** Bone [b]'s absolute pitch this frame (radians, > 0 towards the viewer), after [apply]. */
+    fun pitchOf(b: Int) = pitch[b]
+
     fun apply(beat: Float) {
         if (current < 0) return
         acc.fill(0f)
