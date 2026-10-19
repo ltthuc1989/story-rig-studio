@@ -32,6 +32,7 @@ Cách này là cách các engine cut-out (Live2D, Spine, Character Animator, app
 | mặt và tay | 16:9, 1376×768 | `rig_face.png` + `.csv` 22 ô (mặt, tay vẽ gấp 2 cỡ thân) | `face.txt`, cuộc trò chuyện mới, đính kèm trực diện đã đạt | `design/face.png` |
 
 - Brief: `assets/templates/brief_template.md` có mục **thiết kế dễ rig** (tay áo trên khuỷu, ống quần trên gối, tóc không chạm vai, không hoa văn vắt qua khớp, không gì vắt chéo thân). Rà trước khi tạo.
+- **Bàn tay: 3 ngón và ngón cái cho mọi nhân vật** (chốt 2026-10-19, chuẩn hoạt hình và app trẻ em; tờ mẫu `rig_face` vẽ tay 3 ngón, brief ghi "three fingers and a thumb").
 - 1024 đủ cho app: nhân vật cao khoảng 830 px, app cần 670–950 px. Không cần 4K.
 - Lệnh kiểm từng hình: `viewcheck <char> front|3q` (vuông, nền sạch, một cụm, cao như hình nộm, đế trên đường đất, tay giơ như hình nộm, khe nền dưới tay và giữa chân, không hồng, không lỗ, bảng màu; 3/4 còn so chiều cao, đường đất, đũng quần, bảng màu với trực diện) và `facecheck <char>` (16:9, mỗi ô một mảnh, không mảnh lạ, miệng và bàn tay cùng cỡ, màu da bàn tay như thân). Ra `design/viewcheck_<view>.txt/.png`, `design/facecheck.txt/.png`.
 - Hình chưa đạt: tin nhắn sửa có sẵn trong `fixes.txt`, dán vào cùng cuộc trò chuyện, rồi kiểm lại từ đầu. Hướng dẫn đầy đủ: `assets/templates/prompts/web/README.md`.
