@@ -35,7 +35,10 @@ internal fun cutView(char: String, view: String) {
     var bad = 0
     val lines = joints.map { (n, p) ->
         val g = tm.map(template[n])
-        val d = hypot(p.x - g.x, p.y - g.y)
+        // Shoulders: height only. The template's x scale comes from the silhouette's width, i.e. the arm span, and
+        // Gemini draws the three-quarter arms at full length where the mannequin foreshortens them, so the mapped
+        // shoulder x lands on the sleeve; the measured one (the torso's side) is the right one.
+        val d = if (n.startsWith("shoulder")) kotlin.math.abs(p.y - g.y) else hypot(p.x - g.x, p.y - g.y)
         if (d > lim) bad++
         "%s  %-14s đo %4d,%4d  hình nộm %4d,%4d  lệch %3d px".format(if (d > lim) "LỖI" else "ĐẠT", n, p.x.roundToInt(), p.y.roundToInt(), g.x.roundToInt(), g.y.roundToInt(), d.roundToInt())
     } + (if (bad == 0) "=> ĐẠT: mọi khớp trong ${lim.roundToInt()} px của hình nộm" else "=> LỖI: $bad khớp lệch quá ${lim.roundToInt()} px, xem $previewDir/points.png")

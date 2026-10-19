@@ -316,14 +316,21 @@ private fun hueGap(c1: Int, c2: Int): Float {
     return min(d, 360f - d)
 }
 
-/** Copies each column's top colour [px] pixels upward (the hidden top of the shorts under the shirt). */
-private fun extendUp(p: Piece, px: Int): Piece {
+/**
+ * Copies each column's top colour [px] pixels upward (the hidden top of the shorts under the shirt). [under]: only
+ * where this says so (reference pixels): the torso's own pixels, so the extension never pokes out past the shirt's
+ * silhouette where the shirt is narrower than the shorts (a hip the hanging arm used to hide).
+ */
+private fun extendUp(p: Piece, px: Int, under: (Int, Int) -> Boolean = { _, _ -> true }): Piece {
     val out = Img(p.w, p.h + px)
     for (y in 0 until p.h) for (x in 0 until p.w) out[x, y + px] = p.img[x, y]
     for (x in 0 until p.w) {
         val top = (0 until p.h).firstOrNull { a(p.img[x, it]) > 200 } ?: continue
         val src = p.img[x, min(p.h - 1, top + 3)]
-        for (k in 1..px) out[x, top + px - k] = src or (0xFF shl 24)
+        for (k in 1..px) {
+            if (!under(x + p.ox, top - k + p.oy)) break
+            out[x, top + px - k] = src or (0xFF shl 24)
+        }
     }
     return Piece(out, p.ox, p.oy - px)
 }
@@ -572,6 +579,7 @@ internal fun cutRef(dir: File, outDir: File, previewDir: File) = cutWith(dir, ou
  */
 internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec, srcName: String? = null, faceSheet: Boolean = true, rigid: Boolean = false) {
     val col = S.colours
+    val capScale = if (rigid) 1.3f else 1f
     val ref = Img.load(File(dir, srcName ?: if (S.view == "3q") "ref.png" else "view_${S.view}.png"))
     val img = defringe(keyMagenta(ref))
     val cv = Canvas(img.w, img.h)
@@ -672,7 +680,9 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec, srcN
         val top = (0 until pelvis.h).first { y -> (0 until pelvis.w).any { a(pelvis.img[it, y]) > 127 } } + pelvis.oy
         Bone("skirt", "root", S.root.x, top.toFloat()).also { bones += it }
     }
-    parts["pelvis"] = Part("pelvis", skirt?.name ?: "root", extendUp(pelvis, 18))
+    // The hidden top of the shorts under the shirt: 18 px, or 50 for a rigid cut, whose torso bows and sways as a
+    // rigid piece and lifts its hem that far off the pelvis (a 30 degree bow foreshortens the torso by about 13%).
+    parts["pelvis"] = Part("pelvis", skirt?.name ?: "root", extendUp(pelvis, if (rigid) 50 else 18, under = if (rigid) { x, y -> x in 0 until img.w && y in 0 until img.h && torsoM[y * img.w + x] } else { _, _ -> true }))
 
     for ((side, data) in listOf(
         "near" to listOf(armNearM, S.shoulderNear, S.elbowNear, S.wristNear),
@@ -692,9 +702,9 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec, srcN
         val (pivot, ballR) = shoulderJoint(Pt(sh.x1 - up.x * SHOULDER_MARGIN, sh.y1 - up.y * SHOULDER_MARGIN), shoulder, axis)
         arm = roundHead(arm, pivot, axis, ballR, shoulder, Pt(shJoint.ux, shJoint.uy))
         val elbow = jointAcross(arm, el.x, el.y, el.x - shoulder.x, el.y - shoulder.y)
-        val (upper, rest) = cutAt(arm, elbow, ref = img)
+        val (upper, rest) = cutAt(arm, elbow, ref = img, capScale = capScale)
         val wrist = jointAcross(rest, wr.x, wr.y, wr.x - el.x, wr.y - el.y)
-        val (fore, hand) = cutAt(rest, wrist, ref = img)
+        val (fore, hand) = cutAt(rest, wrist, ref = img, capScale = capScale)
         elbowHalf += elbow.radius
         // The shoulder stays with the shirt: a ball round the arm's pivot, drawn over the arm's top, which turns under it.
         parts["shoulder_ball_$side"] = Part("shoulder_ball_$side", "shoulder_ball_$side", shoulderBall(img, torso, torsoM, mask, sh, Pt(shJoint.ux, shJoint.uy), pivot, ballR))
@@ -727,7 +737,7 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec, srcN
         // Start the cap inside the opaque rows: the top row or two are the cut line's soft edge.
         leg = capInto(leg, Joint(knee.x, leg.oy + 4f, 0f, -1f, knee.radius), img)
         val ankle = jointAcross(leg, an.x, an.y, an.x - kn.x, an.y - kn.y)
-        val (shin, shoe) = cutAt(leg, ankle, capAfter = false, ref = img)
+        val (shin, shoe) = cutAt(leg, ankle, capAfter = false, ref = img, capScale = capScale)
         bones += Bone("hip_$side", "root", mid(hip).x, pivotY)
         bones += Bone("knee_$side", "hip_$side", knee.x, kn.y)
         bones += Bone("ankle_$side", "knee_$side", ankle.x, ankle.y)

@@ -39,7 +39,10 @@ private fun report(out: File, src: Img, checks: List<Check>): Boolean {
 }
 
 /** Enclosed background: background pixels not 4-connected to the image border (holes in the figure, pink patches). */
-internal fun holes(keyed: Img, minArea: Int): List<Comp> {
+internal fun holes(keyed: Img, minArea: Int): List<Comp> = holesImg(keyed, minArea).second
+
+/** [holes], plus the image whose opaque pixels are the enclosed background. */
+internal fun holesImg(keyed: Img, minArea: Int): Pair<Img, List<Comp>> {
     val w = keyed.w; val h = keyed.h
     val outside = BooleanArray(w * h)
     val st = ArrayDeque<Int>()
@@ -53,7 +56,7 @@ internal fun holes(keyed: Img, minArea: Int): List<Comp> {
     // Holes as components of an image whose opaque pixels are the enclosed background.
     val inv = Img(w, h)
     for (i in inv.px.indices) if (a(keyed.px[i]) <= 127 && !outside[i]) inv.px[i] = -1
-    return components(inv, minArea).second
+    return inv to components(inv, minArea).second
 }
 
 internal fun viewCheck(char: String, view: String): Boolean {
@@ -165,8 +168,13 @@ internal fun faceCheck(char: String): Boolean {
     val stray = comps.filter { it !in taken && it.area >= 60 && !(it.cx > img.w - 160 * k && it.cy > img.h - 160 * k) }
     checks += Check("không có mảnh ngoài ô", stray.isEmpty(), "${stray.size} mảnh lạ" + (stray.firstOrNull()?.let { " (ở ${it.x0},${it.y0}, ${it.area} px)" } ?: ""),
         stray.firstOrNull()?.let { Box(it.x0, it.y0, it.x1 + 1, it.y1 + 1) })
-    val mouths = widths.filterKeys { it.startsWith("mouth_") }.values
-    if (mouths.isNotEmpty()) checks += Check("miệng cùng cỡ", mouths.max() <= 3 * mouths.min(), "rộng ${mouths.min()}–${mouths.max()} px (cho phép gấp 3)")
+    // O and U are puckered lips, narrow by design (U about a sixth of a laugh): they only must not be a speck.
+    val puckers = setOf("mouth_o", "mouth_u")
+    val mouths = widths.filterKeys { it.startsWith("mouth_") && it !in puckers }.values
+    if (mouths.isNotEmpty()) checks += Check("miệng cùng cỡ", mouths.max() <= 3 * mouths.min(), "rộng ${mouths.min()}–${mouths.max()} px (cho phép gấp 3; trừ O, U)")
+    val round = widths.filterKeys { it in puckers }
+    if (mouths.isNotEmpty() && round.isNotEmpty()) checks += Check("miệng O, U không quá nhỏ", round.values.min() * 8 >= mouths.max(),
+        round.entries.joinToString { "${it.key.removePrefix("mouth_").uppercase()} ${it.value} px" } + " (cần >= 1/8 miệng rộng nhất, ${mouths.max()} px)")
     val hands = widths.filterKeys { it.startsWith("hand_") }.values
     if (hands.isNotEmpty()) checks += Check("bàn tay cùng cỡ", hands.max() <= 1.5f * hands.min(), "rộng ${hands.min()}–${hands.max()} px (cho phép gấp 1,5)")
     // Skin: the hands' main colour must be a main colour of the front view.

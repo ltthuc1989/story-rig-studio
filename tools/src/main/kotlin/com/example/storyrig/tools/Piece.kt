@@ -111,9 +111,14 @@ fun jointAcross(p: Piece, x: Float, y: Float, ux: Float, uy: Float): Joint {
  * hand's cap over the sleeve's cuff) it is left out, since the -u half's cap already closes the joint.
  * Returns (side towards -u, side towards +u).
  */
-fun cutAt(p: Piece, j: Joint, capBefore: Boolean = true, capAfter: Boolean = true, ref: Img? = null): Pair<Piece, Piece> {
+/**
+ * [capScale]: the cap discs' radius as a multiple of the joint's; the rigid cuts use 1.3, since a limb bent 120
+ * degrees at a joint whose centre sits a little off the limb's axis opened a sliver past a disc of exactly the
+ * limb's half width.
+ */
+fun cutAt(p: Piece, j: Joint, capBefore: Boolean = true, capAfter: Boolean = true, ref: Img? = null, capScale: Float = 1f): Pair<Piece, Piece> {
     val before = Img(p.w, p.h); val after = Img(p.w, p.h)
-    val r = j.radius
+    val r = j.radius * capScale
     // Each half's colours next to the cut (past the cut line's own soft row).
     val bandAfter = bandColours(p, j, 2f, r)
     // The capless half's own colour: its most common one next to the cut that is not this half's most common one

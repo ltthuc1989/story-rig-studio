@@ -12,7 +12,8 @@
 # Joint check by numbers: each cut is rendered from a copy in which every invented pixel is green (greencut), on a flat
 # magenta background (bg=0); `jointcheck` then counts, per pose, the green that shows and the holes in the figure, and
 # compares with tools/jointcheck_baseline.txt. The reference image of a cut is assets/<char>/gemini/{ref,view_front,
-# view_back}.png (old flow) or assets/<char>/design/view_<view>.png (minimal flow), whichever exists.
+# view_back}.png (old flow) or assets/<char>/design/view_<view>.png (minimal flow), whichever exists; REF=gemini forces
+# the old flow's image (a character redesigned while the app still has its old cut).
 set -e
 out=${1:?usage: tools/joint_sheet.sh <outDir> [kai,kai_front,...] [green]}
 cd "${0:A:h}/.."
@@ -31,11 +32,18 @@ for c in ${(s:,:)cuts}; do
   if [[ $green == green ]]; then
     char=${c%%_*}; view=${c#$char}; view=${view#_}; view=${view:-3q}
     ref=assets/$char/design/view_$view.png
-    [[ -f $ref ]] || ref=assets/$char/gemini/$([[ $view == 3q ]] && echo ref.png || echo view_$view.png)
+    [[ -f $ref && ${REF:-design} == design ]] || ref=assets/$char/gemini/$([[ $view == 3q ]] && echo ref.png || echo view_$view.png)
     rc=_g_$c; extra="bg=0"
     ./gradlew :tools:run -q --args="greencut $files/$c $ref $files/$rc" | grep -v "^$" | tail -1
   fi
   ./gradlew :desktopApp:snapshot -q --args="out=$raw scene=kai char=$rc count=1 art=mesh dance=stress feet=0 $extra w=2400 h=2400 frames=$(( picks[-1] + 1 )) pick=${(j:,:)picks}" >/dev/null 2>&1
+  if [[ $green == green ]]; then
+    # Second pass, every part tinted with its index (ids=1): which parts bound a hole (jointcheck).
+    ./gradlew :desktopApp:snapshot -q --args="out=$raw/ids scene=kai char=$rc count=1 art=mesh dance=stress feet=0 bg=0 ids=1 w=2400 h=2400 frames=$(( picks[-1] + 1 )) pick=${(j:,:)picks}" >/dev/null 2>&1
+    for k in {0..15}; do
+      ffmpeg -loglevel error -y -i $raw/ids/frame_$(printf %04d ${picks[$((k + 1))]}).png -vf "crop=760:1300:820:480" $out/$c/ids_$(printf %02d $k).png
+    done
+  fi
   [[ $rc == _g_* ]] && rm -rf "${files:?}/${rc:?}"
   tiles=()
   for k in {0..15}; do

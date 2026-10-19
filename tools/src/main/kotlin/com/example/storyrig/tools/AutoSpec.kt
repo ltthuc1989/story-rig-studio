@@ -525,7 +525,11 @@ fun autoSpec(img: Img, template: RigTemplate = RigTemplate.load(TEMPLATE), debug
     // Seen from behind the head is hair: the skin is the neck's colour.
     val skinCol = if (!face) img[bodyX, narrowY]
         else mostCommon(headPx.filter { val y = it / sil.w; y >= topY + .55f * headH && y <= topY + .85f * headH })
-    var seedHair = Pt(headC.x.roundToInt().toFloat(), topY + (12 * s).roundToInt().toFloat())
+    // 12 px under the top of the head on its centre column; past any gap between a hair spike and the hair's mass
+    // (Kai's three-quarter cowlick), down to the first solid pixel.
+    var seedY = topY + (12 * s).roundToInt()
+    while (seedY < neckY - 1 && a(img[headC.x.roundToInt(), seedY]) <= 230) seedY++
+    var seedHair = Pt(headC.x.roundToInt().toFloat(), seedY.toFloat())
     var hairCol = img[seedHair.x.toInt(), seedHair.y.toInt()]
     if (dist(hairCol, skinCol) < 90) {
         val upper = headPx.filter { it / sil.w < topY + .6f * headH && dist(img.px[it], skinCol) > 150 }

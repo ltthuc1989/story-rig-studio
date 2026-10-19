@@ -1,0 +1,29 @@
+ĐẠT  khổ 16:9: 1376x768
+ĐẠT  nền magenta: độ magenta ở góc 244
+ĐẠT  ô eye_open: 1 cụm, chính 70x53 px
+ĐẠT  ô eye_closed: 1 cụm, chính 69x14 px
+ĐẠT  ô eye_happy: 1 cụm, chính 69x15 px
+ĐẠT  ô eye_wide: 1 cụm, chính 70x66 px
+ĐẠT  ô brow: 1 cụm, chính 78x8 px
+ĐẠT  ô brow_raised: 1 cụm, chính 77x19 px
+ĐẠT  ô brow_frown: 1 cụm, chính 77x22 px
+ĐẠT  ô mouth_mbp: 1 cụm, chính 85x6 px
+ĐẠT  ô mouth_ai: 1 cụm, chính 88x63 px
+ĐẠT  ô mouth_e: 1 cụm, chính 109x53 px
+ĐẠT  ô mouth_o: 1 cụm, chính 56x63 px
+ĐẠT  ô mouth_u: 1 cụm, chính 18x29 px
+ĐẠT  ô mouth_fv: 1 cụm, chính 92x37 px
+ĐẠT  ô mouth_smile: 1 cụm, chính 88x25 px
+ĐẠT  ô mouth_sad: 1 cụm, chính 73x21 px
+ĐẠT  ô mouth_laugh: 1 cụm, chính 110x76 px
+ĐẠT  ô hand_relaxed: 1 cụm, chính 128x179 px
+ĐẠT  ô hand_fist: 1 cụm, chính 97x135 px
+ĐẠT  ô hand_point: 1 cụm, chính 99x187 px
+ĐẠT  ô hand_open: 1 cụm, chính 130x187 px
+ĐẠT  ô hand_thumb_up: 1 cụm, chính 110x161 px
+ĐẠT  ô hand_grip: 1 cụm, chính 109x165 px
+ĐẠT  không có mảnh ngoài ô: 0 mảnh lạ
+ĐẠT  miệng cùng cỡ: rộng 73–110 px (cho phép gấp 3; trừ O, U)
+ĐẠT  miệng O, U không quá nhỏ: O 56 px, U 18 px (cần >= 1/8 miệng rộng nhất, 110 px)
+ĐẠT  bàn tay cùng cỡ: rộng 97–130 px (cho phép gấp 1,5)
+ĐẠT  màu da bàn tay như thân: tay #F7B083, lệch 4 so với bảng màu trực diện (cho phép 45)

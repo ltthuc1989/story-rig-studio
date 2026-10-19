@@ -128,6 +128,7 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
             KaiRig(
                 a, cfg.antiAlias, phase = i * .7f, useMeshes = mesh, adaptView = adaptViews,
                 facingYaw = if (f < 0) null else rigYaw[it], facingMirror = mirrored[it],
+                partIds = cfg.flagOf("ids", false),
             )
         }
         rootY = FloatArray(rigs) { kais[it].rootToSole + SOLE_LIFT }

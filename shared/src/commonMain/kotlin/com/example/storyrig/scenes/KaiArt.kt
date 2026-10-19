@@ -143,10 +143,11 @@ class KaiAssets(
             // cloth. Without mesh.csv the rig keeps its rigid parts.
             val meshRows = if (mesh) runCatching { csv(Res.readBytes("$dir/mesh.csv").decodeToString()) }.getOrNull() else null
             if (mesh && meshRows == null) println("StoryRig: no $dir/mesh.csv, drawing rigid parts")
-            if (meshRows != null) {
-                val groups = meshRows.filter { it[0] == "group" }.map {
-                    MeshGroup(it[1], it[3].split(';'), it[4].split(';'), it[2].toFloat())
-                }
+            // A rigid cut (the minimal flow) has a mesh.csv with no groups: nothing to skin, no mesh atlas.
+            val groups = meshRows?.filter { it[0] == "group" }?.map {
+                MeshGroup(it[1], it[3].split(';'), it[4].split(';'), it[2].toFloat())
+            }.orEmpty()
+            if (meshRows != null && groups.isNotEmpty()) {
                 val influences = meshRows.filter { it[0] == "influence" }.associate {
                     it[1] to Influence(
                         it[1], FloatArray(4) { k -> it[2 + k].toFloat() }, it[6].toFloat(), it[7].toFloat(),
@@ -248,6 +249,11 @@ class KaiRig(
     facingYaw: Float? = null,
     /** Turning actors: this rig is always drawn mirrored (the three-quarter cut facing left). */
     facingMirror: Boolean = false,
+    /**
+     * Debug (`ids=1`, tools/joint_sheet.sh): every part is tinted a flat colour that encodes its index in parts.csv
+     * (r = index + 1, g = 255 - r, b = 7 r mod 256), so the joint check can tell which parts bound a hole.
+     */
+    partIds: Boolean = false,
 ) {
     val sk = Skeleton(a.boneNames.size)
     private val restX = FloatArray(sk.size)
@@ -313,13 +319,19 @@ class KaiRig(
         val items = ArrayList<DrawItem>()
         val byName = HashMap<String, BitmapPart>()
         val meshes = if (useMeshes) a.meshes else emptyList()
-        for (row in a.parts) if (row.drawn) {
+        for ((idx, row) in a.parts.withIndex()) if (row.drawn) {
             val mesh = meshes.firstOrNull { row.name in it.parts }
             if (mesh != null) {
                 if (row.name == mesh.firstPart) items += MeshPart(SoftMesh(mesh.data), a.meshAtlas!!, antiAlias)
                 continue
             }
             val bp = BitmapPart(row.bone, a.atlas, sprite(row.name), antiAlias)
+            if (partIds) {
+                val r = (idx + 1) and 0xFF
+                bp.paint.colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(
+                    androidx.compose.ui.graphics.Color(r, 255 - r, (r * 7) and 0xFF), androidx.compose.ui.graphics.BlendMode.SrcIn,
+                )
+            }
             byName[row.name] = bp
             items += bp
         }
