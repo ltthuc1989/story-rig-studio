@@ -19,6 +19,9 @@ Edit the image. Keep the character exactly the same. Move the legs apart like th
 === Góc nhìn: hình không vuông, hoặc nhân vật bị cắt, quá to hoặc quá nhỏ
 Make it a square 1:1 image with the whole character visible, centred, the same size and position as the grey mannequin (about 80% of the image height), on the plain magenta background.
 
+=== Góc nhìn: nền sai màu (trắng, hồng nhạt, chia hai nửa, gradient)
+Edit the image. Keep the character exactly the same. Replace the whole background with ONE plain solid pure magenta color (#FF00FF: red 255, green 0, blue 255) from edge to edge: no white area, no light pink, no gradient, no split in two, no shadow. Nothing else changes.
+
 === Góc nhìn: có bóng, nền, chữ, vật thừa
 Edit the image. Remove <<the shadow under the feet / the ground / the text / the object>>: nothing but the character on the plain magenta background. Nothing else changes.
 
