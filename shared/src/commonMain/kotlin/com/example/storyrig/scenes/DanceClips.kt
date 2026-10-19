@@ -79,6 +79,37 @@ object DanceClips {
     }
 
     /**
+     * Walking in place, Ben's walk in the lake scene (reference/lake.html renderBoy) told as clip keys: one step a
+     * beat; the hips dip as a foot lands and rise as the other passes (Ben: -2.6 cos 2ph on a 64-unit leg, about 8 px
+     * on Kai's); the leading leg swings forward, the trailing one back, the passing knee folds; the arms swing
+     * against the legs (Ben: +-15 degrees) with a soft elbow; the chest turns a little against the hips and the head
+     * nods with each step.
+     */
+    val WALK = Clip.build("walk", 2f) {
+        ty("root") { for (b in 0 until 2) { at(b + 0f, 8f, Ease.IO); at(b + .5f, -3f, Ease.IO) } }
+        rot("root") { at(0f, 1.5f, Ease.IO); at(1f, -1.5f, Ease.IO) }
+        rot("torso") { at(0f, -2f, Ease.IO); at(1f, 2f, Ease.IO) }
+        nod(2)
+        for ((side, phase) in listOf("near" to 0f, "far" to 1f)) {
+            // Contact (leg ahead) at phase, passing at phase + .5 (knee folded), back at phase + 1.
+            cycle("hip_$side", phase, 22f, 4f, -18f, 6f)
+            cycle("knee_$side", phase, -4f, -6f, -14f, -45f)
+            cycle("ankle_$side", phase, -8f, 2f, 12f, 10f)
+        }
+        rot("shoulder_near") { at(0f, 5f) }
+        rot("shoulder_far") { at(0f, -5f) }
+        for ((side, phase) in listOf("near" to 1f, "far" to 0f)) {
+            cycle("shoulder_$side", phase, 15f, 0f, -15f, 0f)
+            cycle("elbow_$side", phase, 18f, 12f, 6f, 12f)
+        }
+    }
+
+    /** A 2-beat cycle of pitch keys at [phase], +.5, +1, +1.5 beats, wrapped into the clip. */
+    private fun Clip.Builder.cycle(bone: String, phase: Float, vararg v: Float) = pitch(bone) {
+        for ((t, x) in v.indices.map { ((phase + it * .5f) % 2f) to v[it] }.sortedBy { it.first }) at(t, x, Ease.IO)
+    }
+
+    /**
      * Standing still, for any scene: slow weight shift from foot to foot (the feet stay planted by FootLock,
      * so the legs lean), the torso leaning against it, the head turning to look one way, holding, then the
      * other way; arms hanging loose. Breathing comes from AutoLayers.
@@ -130,7 +161,7 @@ object DanceClips {
     }
 
     /** The dances the scene takes turns with, in [ALL]'s order. */
-    val DANCES = arrayOf(WAVE, PUMP, MARCH, IDLE)
+    val DANCES = arrayOf(WAVE, PUMP, MARCH, IDLE, WALK)
 
     /** Every clip a rig can play by name (`--es dance <name>`): the dances, then clips played only on request. */
     val ALL = DANCES + STRESS

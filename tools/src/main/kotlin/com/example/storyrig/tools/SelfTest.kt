@@ -17,7 +17,7 @@ import kotlin.math.max
  *
  * Checks: the cut runs; all body parts and bones are there (and the face parts / expressions when expected);
  * the rest pose drawn from the parts matches ref.png pixel for pixel (missing, extra, wrong colour); no part
- * carries stray bits; the skirt rule fires only where expected; Kai matches the app's data byte for byte;
+ * carries stray bits; the skirt rule fires only where expected;
  * variants find their joints within tolerance of the moved hand measurements.
  */
 /** Shoulder to wrist, as a share of the figure's height, below which an arm counts as not found. */
@@ -28,8 +28,9 @@ internal fun selfTest(outRoot: File): Boolean {
     val cases = ArrayList<Case>()
     for (dir in File("assets").listFiles().orEmpty().sortedBy { it.name }) {
         val gem = File(dir, "gemini")
-        if (File(gem, "ref.png").exists()) cases += Case(dir.name, gem, "3q", skirt = dir.name == "hana",
-            golden = File("shared/src/commonMain/composeResources/files/${dir.name}").takeIf { dir.name == "kai" })
+        // No golden: since d8dd983 the app's kai comes from the minimal flow (cutview, assets/kai/design), not from
+        // this pipeline; the other checks still hold it to its standard.
+        if (File(gem, "ref.png").exists()) cases += Case(dir.name, gem, "3q", skirt = dir.name == "hana")
         for (v in listOf("front", "back")) if (File(gem, "view_$v.png").exists()) cases += Case("${dir.name}_$v", gem, v, skirt = dir.name == "hana")
     }
     // Synthetic variants of Kai: other colours, smaller and moved, stretched.

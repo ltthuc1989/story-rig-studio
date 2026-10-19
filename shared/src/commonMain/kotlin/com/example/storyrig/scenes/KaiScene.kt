@@ -342,10 +342,7 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
         }
         val eye = if (nowMs < blinkEnd[i]) KaiRig.EYE_HAPPY else KaiRig.EYE_OPEN
         for (r in actorFirst[i] until actorFirst[i + 1]) {
-            val k = kais[r]
-            k.mouth?.sprite = k.mouths[mouthIndex[i]]
-            k.eyeNear?.sprite = k.eyesNear[eye]
-            k.eyeFar?.sprite = k.eyesFar[eye]
+            kais[r].face(mouthIndex[i], eye)
         }
     }
 

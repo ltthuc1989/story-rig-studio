@@ -116,7 +116,7 @@ class KaiAssets(
     class HoseRow(val limb: String, val upper: String, val lower: String, val colour: Color, val t0: Float, val t1: Float, val width: Float, val round: Boolean)
 
     /** One vector shape (shapes.csv) of [part] on [bone]: SVG path [d] in ref.png px, filled or stroked [stroke] wide. */
-    class ShapeRow(val part: String, val bone: String, val colour: Color, val alpha: Float, val stroke: Float, val d: String)
+    class ShapeRow(val part: String, val bone: String, val drawn: Boolean, val colour: Color, val alpha: Float, val stroke: Float, val d: String)
 
     /**
      * Cut parts that become one skinned mesh (drawn once into one image at load), the bones it follows and its
@@ -167,9 +167,10 @@ class KaiAssets(
             val hy = FloatArray(names.size) { boneRows[it].getOrNull(5)?.toFloatOrNull() ?: Float.NaN }
             val bitmapParts = partRows.map { PartRow(it[0], names.indexOf(it[1]), it[2].toInt(), it[3].toInt(), it[4].toInt(), it[5].toInt(), it[6] == "1") }
             val images = bitmapParts.map { it.name to Res.readBytes("$dir/parts/${it.name}.png").decodeToImageBitmap() }
-            // shapes.csv: part,bone,colour,alpha,stroke,d (d last: it may hold commas).
+            // shapes.csv: part,bone,drawn,colour,alpha,stroke,d (d last: it may hold commas). drawn=0: an expression
+            // shown on demand (eye_near_happy), like a cut's drawn=0 picture.
             val shapeRows = runCatching { csv(Res.readBytes("$dir/shapes.csv").decodeToString()) }.getOrNull().orEmpty().map {
-                ShapeRow(it[0], it[1], colour(it[2]), it[3].toFloatOrNull() ?: 1f, it[4].toFloatOrNull() ?: 0f, it.drop(5).joinToString(","))
+                ShapeRow(it[0], it[1], it[2] == "1", colour(it[3]), it[4].toFloatOrNull() ?: 1f, it[5].toFloatOrNull() ?: 0f, it.drop(6).joinToString(","))
             }
             val vector = LinkedHashMap<String, MutableList<ShapeRow>>()
             for (r in shapeRows) vector.getOrPut(r.part) { ArrayList() } += r
@@ -184,7 +185,7 @@ class KaiAssets(
                 val bone = names.indexOf(rows[0].bone)
                 // A part with no shape is a place in the draw order only (where a limb's tubes go).
                 if (x0 > x1) PartRow(name, bone, a0(px[bone]), a0(py[bone]), 1, 1, false)
-                else PartRow(name, bone, x0.toInt(), y0.toInt(), (x1 - x0).toInt().coerceAtLeast(1), (y1 - y0).toInt().coerceAtLeast(1), true)
+                else PartRow(name, bone, x0.toInt(), y0.toInt(), (x1 - x0).toInt().coerceAtLeast(1), (y1 - y0).toInt().coerceAtLeast(1), rows[0].drawn)
             }
             val parts = bitmapParts + vectorParts
             val atlas = Atlas.pack(images.ifEmpty { listOf("_" to ImageBitmap(1, 1)) })
@@ -336,6 +337,11 @@ class KaiRig(
     /** Limb parts of a rigid cut and their substitute drawings; empty on a skinned rig. */
     private val swaps: Array<Swap>
 
+    /** A vector character's eyes and mouths ([EYES], [MOUTHS] order; null where it has no such drawing): [face] shows one. */
+    private var vEyesNear: Array<Part?> = emptyArray()
+    private var vEyesFar: Array<Part?> = emptyArray()
+    private var vMouths: Array<Part?> = emptyArray()
+
     val root = a.bone("root")
     val torso = a.bone("torso")
     val head = a.bone("head")
@@ -409,10 +415,21 @@ class KaiRig(
             val shapes = a.vector[row.name]
             if (shapes != null) {
                 // Vector part: its shapes in the bone's rest local space, never squashed (as a rigid cut's pictures).
-                art.group(tx = -a.pivotX[row.bone], ty = -a.pivotY[row.bone]) {
-                    for (r in shapes) if (r.d.isNotBlank()) { if (r.stroke > 0f) stroke(r.d, r.colour, r.stroke, r.alpha) else path(r.d, r.colour, r.alpha) }
+                fun vectorPart(name: String): Part? {
+                    val rows = a.vector[name] ?: return null
+                    val bone = a.boneOrNull(rows[0].bone).takeIf { it >= 0 } ?: row.bone
+                    art.group(tx = -a.pivotX[bone], ty = -a.pivotY[bone]) {
+                        for (r in rows) if (r.d.isNotBlank()) { if (r.stroke > 0f) stroke(r.d, r.colour, r.stroke, r.alpha) else path(r.d, r.colour, r.alpha) }
+                    }
+                    return Part(bone, art.build()).also { it.rigid = true; items += it }
                 }
-                items += Part(row.bone, art.build()).also { it.rigid = true }
+                // A face feature's expressions (drawn=0 rows) go right after it in the draw order, hidden: face() shows one.
+                when (row.name) {
+                    "eye_near_open" -> vEyesNear = Array(EYES.size) { vectorPart("eye_near_${EYES[it]}") }
+                    "eye_far_open" -> vEyesFar = Array(EYES.size) { vectorPart("eye_far_${EYES[it]}") }
+                    "mouth_smile" -> vMouths = Array(MOUTHS.size) { vectorPart(MOUTHS[it]) }
+                    else -> vectorPart(row.name)
+                }
                 continue
             }
             val mesh = meshes.firstOrNull { row.name in it.parts }
@@ -630,6 +647,23 @@ class KaiRig(
             }
             if (s.back != null && sk.roll[b] < 0f) { s.part.sprite = s.back; sk.roll[b] = 1f }
         }
+    }
+
+    /**
+     * Mouth [mouth] ([MOUTHS]) and eyes [eye] ([EYES]): a cut swaps its pictures' sprites, a vector character shows
+     * one of its drawings (the first one when it has no such expression). No allocation.
+     */
+    fun face(mouth: Int, eye: Int) {
+        this.mouth?.sprite = mouths[mouth]
+        eyeNear?.sprite = eyesNear[eye]
+        eyeFar?.sprite = eyesFar[eye]
+        show(vMouths, mouth); show(vEyesNear, eye); show(vEyesFar, eye)
+    }
+
+    private fun show(variants: Array<Part?>, i: Int) {
+        if (variants.isEmpty()) return
+        for (p in variants) p?.visible = false
+        (variants.getOrNull(i) ?: variants[0])?.visible = true
     }
 
     fun slideShoulders() {

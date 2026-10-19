@@ -4,7 +4,7 @@ arm_near,shoulder_near,elbow_near,#D73433,0.000,0.205,72.5,butt
 arm_near,shoulder_near,elbow_near,#A41725,0.205,0.475,85.0,butt
 arm_near,shoulder_near,elbow_near,#DD7C57,0.475,0.575,58.5,butt
 leg_near,hip_near,knee_near,#F6B285,0,2,62.0,round
-leg_near,hip_near,knee_near,#42719A,0.000,0.615,89.5,butt
+leg_near,hip_near,knee_near,#42719A,-0.300,0.615,89.5,butt
 leg_near,hip_near,knee_near,#6C98BA,0.615,0.965,99.5,butt
 leg_near,hip_near,knee_near,#DB7C5A,0.995,1.095,64.0,butt
 leg_near,hip_near,knee_near,#FEFCFA,1.635,1.725,61.0,butt
@@ -15,7 +15,7 @@ arm_far,shoulder_far,elbow_far,#D73433,0.000,0.205,72.0,butt
 arm_far,shoulder_far,elbow_far,#A41725,0.205,0.465,85.0,butt
 arm_far,shoulder_far,elbow_far,#DC7B57,0.465,0.575,58.0,butt
 leg_far,hip_far,knee_far,#F6B285,0,2,62.0,round
-leg_far,hip_far,knee_far,#42729A,0.000,0.615,89.5,butt
+leg_far,hip_far,knee_far,#42729A,-0.300,0.615,89.5,butt
 leg_far,hip_far,knee_far,#6C98BA,0.615,0.965,99.5,butt
 leg_far,hip_far,knee_far,#DB7C5A,0.995,1.105,64.0,butt
 leg_far,hip_far,knee_far,#FEFCFA,1.635,1.735,61.0,butt

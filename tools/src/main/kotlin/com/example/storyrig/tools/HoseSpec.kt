@@ -98,11 +98,13 @@ internal fun hoseSpec(outDir: File) {
         out += "${limb}_$side,$b0,$b1,${hex(skinCol)},0,2,${"%.1f".format(java.util.Locale.ROOT, median(skinRuns.flatMap { it.widths }))},round"
         for (r in merged) if (r.cl != skin) {
             val col = mainColours(r.colours, .3f).first()
-            // Ends: the stretch reaches a half sample further each way, so stretches meet without a gap.
-            val t0 = (r.t0 - .005f).coerceAtLeast(0f); val t1 = (r.t1 + .005f).coerceAtMost(2f)
-            // Butt ends: a hem is a straight edge; at the body the cut's shoulder ball or pelvis covers the end.
-            // (A shorts leg is round where it starts: the two legs' round tops fill the crotch under the pelvis.)
-            val cap = if (limb == "leg" && t0 <= .02f) "round" else "butt"
+            // Ends: the stretch reaches a half sample further each way, so stretches meet without a gap. A shorts leg
+            // that starts at the hip goes on up under the pelvis (t < 0), so the two legs meet behind the crotch.
+            val t0 = if (limb == "leg" && r.t0 <= .02f) -.3f else (r.t0 - .005f).coerceAtLeast(0f)
+            val t1 = (r.t1 + .005f).coerceAtMost(2f)
+            // Butt ends (a stroke's cap is on both ends): a hem is a straight edge; at the body the cut's shoulder
+            // ball or pelvis covers the end.
+            val cap = "butt"
             out += "${limb}_$side,$b0,$b1,${hex(col)},${"%.3f".format(java.util.Locale.ROOT, t0)},${"%.3f".format(java.util.Locale.ROOT, t1)},${"%.1f".format(java.util.Locale.ROOT, median(r.widths) + 1f)},$cap"
         }
         println("  $limb $side: " + merged.joinToString(" ") { "${hex(classes[it.cl])}[${"%.2f".format(java.util.Locale.ROOT, it.t0)}-${"%.2f".format(java.util.Locale.ROOT, it.t1)} w${median(it.widths).roundToInt()}]" })
