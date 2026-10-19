@@ -27,14 +27,21 @@ fun main(args: Array<String>) {
         val seq = map["frames"]?.toInt()
         val pick = map["pick"]?.split(',')?.map { it.trim().toInt() }?.toSet()
         if (seq != null) {
+            // distort.csv: per written frame, the most squashed rigid picture (DistortProbe), for tools/joint_sheet.sh.
+            com.example.storyrig.engine.DistortProbe.on = true
+            val distort = StringBuilder("# frame,ratio (smaller/larger axis of the most squashed part; 1 = undeformed),part\n")
             repeat(seq) { i ->
+                com.example.storyrig.engine.DistortProbe.reset()
                 val img = scene.render(t)
                 if (pick == null || i in pick) {
                     val data = img.encodeToData() ?: error("encode failed")
                     File(out, "frame_%04d.png".format(i)).writeBytes(data.bytes)
+                    val p = com.example.storyrig.engine.DistortProbe
+                    distort.append(i).append(',').append(String.format(java.util.Locale.ROOT, "%.3f", p.worst)).append(',').append(p.worstLabel).append('\n')
                 }
                 t += 16_666_667L
             }
+            File(out, "distort.csv").writeText(distort.toString())
             println("snapshots in $out")
             return@use
         }

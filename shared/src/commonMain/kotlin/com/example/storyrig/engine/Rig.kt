@@ -23,6 +23,8 @@ class SoftItem(val soft: SoftPath) : DrawItem()
  * without allocating.
  */
 class BitmapPart(val bone: Int, val atlas: Atlas, var sprite: Sprite, antiAlias: Boolean) : DrawItem() {
+    /** Part name (parts.csv), for [DistortProbe] reports. */
+    var label = ""
     val paint = Paint().apply {
         isAntiAlias = antiAlias
         filterQuality = FilterQuality.Low
@@ -54,6 +56,36 @@ class BitmapPart(val bone: Int, val atlas: Atlas, var sprite: Sprite, antiAlias:
         canvas.restore()
         stats.draws++
         stats.images++
+        if (DistortProbe.on) DistortProbe.record(sk, bone, scaleX, label)
+    }
+}
+
+/**
+ * Debug (desktop snapshots, tools/joint_sheet.sh): how far the most squashed drawn picture is from its cut shape
+ * this frame. A rigid picture drawn with a matrix whose two axes differ (a thigh shortened towards the viewer, a
+ * hand rolled edge on) looks deformed: [worst] is the smaller over the larger singular value of the part's matrix,
+ * 1 = only turned and uniformly scaled. Reset before each frame.
+ */
+object DistortProbe {
+    var on = false
+    var worst = 1f
+        private set
+    var worstLabel = ""
+        private set
+
+    fun reset() { worst = 1f; worstLabel = "" }
+
+    fun record(sk: Skeleton, bone: Int, scaleX: Float, label: String) {
+        val w = bone * 6
+        val a = sk.world[w] * scaleX; val b = sk.world[w + 1] * scaleX
+        val c = sk.world[w + 2]; val d = sk.world[w + 3]
+        val t = a * a + b * b + c * c + d * d
+        val det = a * d - b * c
+        val q = kotlin.math.sqrt(maxOf(t * t - 4f * det * det, 0f))
+        val hi = kotlin.math.sqrt((t + q) / 2f)
+        if (hi <= 0f) return
+        val ratio = kotlin.math.sqrt(maxOf((t - q) / 2f, 0f)) / hi
+        if (ratio < worst) { worst = ratio; worstLabel = label }
     }
 }
 

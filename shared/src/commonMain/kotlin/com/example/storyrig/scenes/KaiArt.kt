@@ -326,6 +326,7 @@ class KaiRig(
                 continue
             }
             val bp = BitmapPart(row.bone, a.atlas, sprite(row.name), antiAlias)
+            bp.label = row.name
             if (partIds) {
                 val r = (idx + 1) and 0xFF
                 bp.paint.colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(

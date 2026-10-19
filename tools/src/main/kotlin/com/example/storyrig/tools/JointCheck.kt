@@ -93,7 +93,11 @@ private fun maxThickness(inv: Img, comp: Comp): Int {
     return best
 }
 
-private class PoseResult(val pose: Int, val green: Int, val greenBlobs: List<Comp>, val tears: List<Comp>, val tearBones: List<String>, val loops: Int, val figure: Int)
+private class PoseResult(
+    val pose: Int, val green: Int, val greenBlobs: List<Comp>, val tears: List<Comp>, val tearBones: List<String>, val loops: Int, val figure: Int,
+    /** Shape ratio of the most squashed drawn picture (1 = undeformed) and its part. */
+    val shape: Float, val shapePart: String,
+)
 
 /** parts.csv order (part -> bone) and bones.csv (bone -> parent) of a cut, for reading the ids_NN.png renders. */
 private class CutGraph(val partBone: List<String>, val parent: Map<String, String?>) {
@@ -141,11 +145,21 @@ private const val MIN_FIGURE = 50_000
  */
 private const val MAX_GREEN = 300
 
+/**
+ * Smallest shape ratio (smaller over larger axis of a drawn picture's matrix, Snapshot's distort.csv) a pose may
+ * show. A rigid picture squashed more than 10% looks deformed (a foreshortened arm, a flattened shoe, a hand rolled
+ * edge on); such a pose needs a substitute drawing, not a squash (ART_PIPELINE.md section 1).
+ */
+private const val MIN_SHAPE = .9f
+
 internal fun jointCheck(sheetDir: File, cut: String, writeBaseline: Boolean) {
     val dir = File(sheetDir, cut)
     val graph = CutGraph.load(File("shared/src/commonMain/composeResources/files/$cut"))
     if (graph == null) println("không đọc được parts.csv/bones.csv của $cut: lỗ hở phân loại theo bề dày")
     val results = ArrayList<PoseResult>()
+    // distort.csv rows are the written frames in pose order: frame,ratio,part.
+    val shapes = File(dir, "distort.csv").takeIf { it.exists() }?.readLines()?.filter { it.isNotBlank() }?.map { it.split(",") }
+    if (shapes == null) println("thiếu $dir/distort.csv: chưa đo méo (chạy lại tools/joint_sheet.sh)")
     for (k in 0 until 16) {
         val f = File(dir, "pose_%02d.png".format(k))
         if (!f.exists()) { println("thiếu $f"); continue }
@@ -176,7 +190,8 @@ internal fun jointCheck(sheetDir: File, cut: String, writeBaseline: Boolean) {
                 tear
             }
         }
-        results += PoseResult(k, green, greenBlobs, tears, tearBones, hs.size - tears.size, figure)
+        val shape = shapes?.getOrNull(k)
+        results += PoseResult(k, green, greenBlobs, tears, tearBones, hs.size - tears.size, figure, shape?.get(1)?.toFloat() ?: 1f, shape?.getOrNull(2) ?: "")
         if (tears.isNotEmpty() || greenBlobs.isNotEmpty()) {
             val bi = img.toBuffered(); val gr = bi.createGraphics()
             gr.color = Color.RED; gr.stroke = BasicStroke(3f)
@@ -204,18 +219,18 @@ internal fun jointCheck(sheetDir: File, cut: String, writeBaseline: Boolean) {
         // accepted in the baseline pass as long as they do not grow or multiply (`reg`).
         val held = p.tears.isNotEmpty() && b != null && !reg
         if (held) reviewed++
-        val ok = drawn && p.green <= MAX_GREEN && (p.tears.isEmpty() || held) && !reg
+        val ok = drawn && p.green <= MAX_GREEN && (p.tears.isEmpty() || held) && !reg && p.shape >= MIN_SHAPE
         if (!ok) bad++
         lines += if (!drawn) "LỖI  tư thế %2d: KHÔNG CÓ NHÂN VẬT (%d điểm ảnh, cần >= %d): app không vẽ được bộ cắt này, xem log snapshot".format(p.pose, p.figure, MIN_FIGURE)
-        else "%s  tư thế %2d: xanh %6d%s, lỗ %2d%s, vòng %d%s%s".format(
-            if (ok) "ĐẠT" else "LỖI", p.pose, p.green,
+        else "%s  tư thế %2d: méo %3d%%%s, xanh %6d%s, lỗ %2d%s, vòng %d%s%s".format(
+            if (ok) "ĐẠT" else "LỖI", p.pose, Math.round((1f - p.shape) * 100f), if (p.shape < 1f) " (${p.shapePart})" else "", p.green,
             p.greenBlobs.take(2).joinToString("") { " (${it.area} px ở ${it.x0},${it.y0})" }, p.tears.size,
             if (worst != null) " (lớn nhất ${worst.area} px ở ${worst.x0},${worst.y0}; ${p.tearBones.joinToString(", ")})" else "", p.loops,
             if (b != null) "  [baseline xanh ${b.green}, lỗ ${b.tears}, lớn nhất ${b.worst}]" else "",
             if (reg) "  HỒI QUY" else if (held) "  (lỗ đã duyệt bằng mắt)" else "",
         )
     }
-    lines += if (bad == 0) "=> ĐẠT: ${results.size} tư thế, lỗ hở ${if (reviewed > 0) "chỉ còn lỗ đã duyệt ($reviewed tư thế)" else "không có"}, xanh lộ ra <= $MAX_GREEN px (tổng ${results.sumOf { it.green }})"
+    lines += if (bad == 0) "=> ĐẠT: ${results.size} tư thế, không mảnh nào méo quá ${Math.round((1f - MIN_SHAPE) * 100f)}%, lỗ hở ${if (reviewed > 0) "chỉ còn lỗ đã duyệt ($reviewed tư thế)" else "không có"}, xanh lộ ra <= $MAX_GREEN px (tổng ${results.sumOf { it.green }})"
         else "=> LỖI: $bad/${results.size} tư thế" + (if (regress > 0) ", $regress hồi quy so với baseline" else "") +
             (if (results.any { it.tears.isNotEmpty() }) "; lỗ hở: xem check_NN.png, sửa bộ cắt, hoặc nếu nhìn thấy không phải rách thì người dùng duyệt rồi ghi baseline" else "")
     val txt = lines.joinToString("\n")

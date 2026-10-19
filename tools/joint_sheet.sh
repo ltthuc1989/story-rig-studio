@@ -55,6 +55,8 @@ for c in ${(s:,:)cuts}; do
     tiles+=(-i $out/$c/tile_$k.png)
   done
   ffmpeg -loglevel error -y $tiles -filter_complex "[0][1][2][3][4][5][6][7]hstack=8[a];[8][9][10][11][12][13][14][15]hstack=8[b];[a][b]vstack" $out/$c.png
+  # Squash per pose (Snapshot's DistortProbe), in pose order: jointcheck fails a pose that draws a picture deformed.
+  [[ -f $raw/distort.csv ]] && grep -v '^#' $raw/distort.csv > $out/$c/distort.csv
   rm -rf $raw $out/$c/tile_*.png
   echo $out/$c.png
   [[ $green == green ]] && ./gradlew :tools:run -q --args="jointcheck $out $c ${4:-}" | grep -v "^$"
