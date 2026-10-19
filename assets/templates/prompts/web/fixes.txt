@@ -55,5 +55,11 @@ Edit the image. Make every piece in row <<n>> the same scale as the first piece 
 === Tờ mặt: hình không phải 16:9
 Make it a 16:9 landscape image with the same layout and the same pieces.
 
+=== Tờ tay chân: cẳng tay (mảnh 2) thòng xuống thay vì chĩa về người xem
+Edit the image. Piece 2 in row 1 is wrong: the forearm points straight at the viewer, so it is hidden behind the hand. Draw only the open right hand facing the viewer, palm toward us, fingers up and slightly apart, with just a small round end of the forearm peeking out below and behind the wrist. No long arm, no sleeve, nothing hanging down. Keep everything else exactly the same.
+
+=== Tờ tay chân: mảnh vẽ thành cả cánh tay hoặc cả chân nhìn nghiêng
+Edit the image. Piece <<n>> must point straight at the viewer, seen end on and short, like the grey shape at its position in Image 2, not a whole arm or leg seen from the side. Keep everything else exactly the same.
+
 === Gemini trả lời bằng chữ hoặc từ chối
 Please generate the image.

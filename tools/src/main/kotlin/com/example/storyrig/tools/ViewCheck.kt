@@ -222,6 +222,12 @@ internal fun limbCheck(char: String): Boolean {
         val ok = main != null && inside.count { it.area >= 60 } <= 2
         checks += Check("ô $name", ok, when { main == null -> "trống"; else -> "${inside.size} cụm, chính ${main.x1 - main.x0 + 1}x${main.y1 - main.y0 + 1} px" }, b)
         if (main != null) mains[name] = main
+        // Shape: width over height near the template's, so a piece drawn as something else (a forearm hanging down
+        // instead of pointing at the viewer) fails even though it is one blob of the right colours.
+        if (main != null) {
+            val want = (b.x1 - b.x0).toFloat() / (b.y1 - b.y0); val got = (main.x1 - main.x0 + 1).toFloat() / (main.y1 - main.y0 + 1)
+            checks += Check("dáng $name", got / want in .7f..1.43f, "rộng/cao %.2f, hình nộm %.2f (cho phép 0,7–1,43 lần)".format(got, want), b)
+        }
     }
     val stray = comps.filter { it !in taken && it.area >= 60 && !(it.cx > img.w - 160 * k && it.cy > img.h - 160 * k) }
     checks += Check("không có mảnh ngoài ô", stray.isEmpty(), "${stray.size} mảnh lạ" + (stray.firstOrNull()?.let { " (ở ${it.x0},${it.y0}, ${it.area} px)" } ?: ""),
@@ -231,7 +237,8 @@ internal fun limbCheck(char: String): Boolean {
     val ff = File(design, "view_front.png")
     if (ff.exists()) {
         val fk = keyMagenta(Img.load(ff)); val fs = Silhouette(fk)
-        val fpal = mainColours(fk.px.filterIndexed { i, _ -> fs.on[i] }, .03f)
+        // Down to 0.5% of the figure: the shoes and socks are small but are colours of the design.
+        val fpal = mainColours(fk.px.filterIndexed { i, _ -> fs.on[i] }, .005f)
         for ((name, b) in slots) {
             val px = ArrayList<Int>()
             for (y in max(b.y0, 0) until min(b.y1, img.h)) for (x in max(b.x0, 0) until min(b.x1, img.w)) { val c = keyed[x, y]; if (a(c) > 200) px += c }
@@ -256,14 +263,15 @@ internal fun limbCheck(char: String): Boolean {
             checks += Check("bàn tay mu cùng cỡ tờ mặt", bw in .67f * hw..1.5f * hw, "rộng ${bw.roundToInt()} px, tay tờ mặt trung bình ${hw.roundToInt()} px (cho phép 0,67–1,5 lần)")
         }
     }
-    // Scale: the thigh end on against the front cut's thigh (sheet pieces are FACE_SCALE times the views).
+    // Scale: the thigh end on against the front cut's thigh (sheet pieces are FACE_SCALE times the views). Only a
+    // sanity bound: the cut scales every piece to its part's width at the joint, so this catches a wrong piece only.
     val cut = File("tools/build/cut/${char}_front/out/parts.csv")
     val thigh = mains["thigh_toward"]
     if (cut.exists() && thigh != null) {
         val tw = cut.readLines().firstOrNull { it.startsWith("thigh_near,") }?.split(",")?.get(4)?.toFloat()
         if (tw != null) {
             val want = tw * FACE_SCALE.toFloat(); val got = width(thigh) / k
-            checks += Check("đùi cùng tỉ lệ bộ cắt", got in .75f * want..1.33f * want, "rộng ${got.roundToInt()} px, cần khoảng ${want.roundToInt()} (đùi bộ cắt ${tw.roundToInt()} x $FACE_SCALE; cho phép 0,75–1,33 lần)")
+            checks += Check("đùi cùng tỉ lệ bộ cắt", got in .6f * want..1.6f * want, "rộng ${got.roundToInt()} px, cần khoảng ${want.roundToInt()} (đùi bộ cắt ${tw.roundToInt()} x $FACE_SCALE; cho phép 0,6–1,6 lần)")
         }
     }
     return report(File(design, "limbcheck"), img, checks)
