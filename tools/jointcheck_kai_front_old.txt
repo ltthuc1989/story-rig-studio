@@ -1,0 +1,18 @@
+# kai_front: tư thế, điểm ảnh xanh (bịa) lộ ra, lỗ hở (số, lớn nhất px, chỗ), vòng kín lớn; so với baseline
+LỖI  tư thế  0: xanh     71, lỗ  0, vòng 0
+LỖI  tư thế  1: xanh    843, lỗ  0, vòng 0
+LỖI  tư thế  2: xanh    875, lỗ  0, vòng 0
+LỖI  tư thế  3: xanh    145, lỗ  0, vòng 0
+LỖI  tư thế  4: xanh    803, lỗ  0, vòng 0
+LỖI  tư thế  5: xanh    115, lỗ  0, vòng 0
+LỖI  tư thế  6: xanh    126, lỗ  0, vòng 0
+LỖI  tư thế  7: xanh    122, lỗ  0, vòng 0
+LỖI  tư thế  8: xanh     89, lỗ  0, vòng 0
+LỖI  tư thế  9: xanh    102, lỗ  0, vòng 0
+LỖI  tư thế 10: xanh    415, lỗ  0, vòng 0
+LỖI  tư thế 11: xanh    205, lỗ  0, vòng 0
+LỖI  tư thế 12: xanh    195, lỗ  0, vòng 0
+LỖI  tư thế 13: xanh    788, lỗ  0, vòng 0
+LỖI  tư thế 14: xanh    426, lỗ  0, vòng 2
+LỖI  tư thế 15: xanh    275, lỗ  0, vòng 0
+=> LỖI: 16/16 tư thế

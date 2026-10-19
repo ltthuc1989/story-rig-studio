@@ -82,7 +82,7 @@ private fun runCase(c: Case, outRoot: File): Row {
         System.setOut(java.io.PrintStream(log))
         try {
             val image = if (c.view == "3q") "ref.png" else "view_${c.view}.png"
-            val template = if (c.view == "3q") File("assets/templates/rig_3q_right.png") else File("assets/templates/rig_${c.view}.png")
+            val template = if (c.view == "3q") File("assets/templates/legacy/rig_3q_right.png") else File("assets/templates/legacy/rig_${c.view}.png")
             val img = defringe(keyMagenta(Img.load(File(c.dir, image))))
             val res = autoSpec(img, RigTemplate.load(template), view = c.view)
             spec = res.spec

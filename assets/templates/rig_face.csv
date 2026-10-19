@@ -1,0 +1,23 @@
+# Slots of rig_face.png (1376 x 768 px, Gemini's 16:9 web size): name,x0,y0,x1,y1,scale (scale: times the 1024 views' body scale).
+eye_open,60,84,132,136,2.0
+eye_closed,253,84,325,136,2.0
+eye_happy,446,84,518,136,2.0
+eye_wide,640,84,712,136,2.0
+brow,833,90,913,130,2.0
+brow_raised,1034,90,1114,130,2.0
+brow_frown,1235,90,1315,130,2.0
+mouth_mbp,60,270,140,290,2.0
+mouth_ai,206,246,294,314,2.0
+mouth_e,361,260,461,300,2.0
+mouth_o,527,248,587,312,2.0
+mouth_u,654,258,698,302,2.0
+mouth_fv,764,264,852,296,2.0
+mouth_smile,919,266,1007,294,2.0
+mouth_sad,1073,268,1145,292,2.0
+mouth_laugh,1212,240,1316,320,2.0
+hand_relaxed,60,436,180,624,2.0
+hand_fist,287,436,407,624,2.0
+hand_point,514,436,634,624,2.0
+hand_open,741,436,861,624,2.0
+hand_thumb_up,968,436,1088,624,2.0
+hand_grip,1196,436,1316,624,2.0

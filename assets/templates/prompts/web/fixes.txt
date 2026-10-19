@@ -1,0 +1,50 @@
+=== Tin nhắn sửa, gửi trong cùng cuộc trò chuyện với hình cần sửa. Mỗi lần 1 tin. Thay <<...>> cho đúng.
+=== Nhớ: Gemini vẽ lại cả hình, nên sau mỗi tin sửa phải chạy lại viewcheck / facecheck cho hình mới.
+
+=== Góc nhìn: tay thấp hơn hoặc cao hơn mannequin
+Edit the image. Keep the character exactly the same. Raise/lower both arms so they are straight and held out to the sides about 15 degrees below horizontal, exactly like the grey mannequin, with a wide empty gap of background under each arm between the arm and the body. Nothing else changes.
+
+=== Góc nhìn: tay chạm thân, không có khe dưới nách
+Edit the image. Keep the character exactly the same. The arms must not touch the body: leave a wide empty gap of magenta background under each arm, from the armpit to the hand, so the armpit and the side of the top are fully visible. Nothing else changes.
+
+=== Góc nhìn: hai chân sát nhau
+Edit the image. Keep the character exactly the same. Move the legs apart like the grey mannequin, with a clear gap of background between them from the crotch down to the feet; the shoes must not touch. Nothing else changes.
+
+=== Góc nhìn: hình không vuông, hoặc nhân vật bị cắt, quá to hoặc quá nhỏ
+Make it a square 1:1 image with the whole character visible, centred, the same size and position as the grey mannequin (about 80% of the image height), on the plain magenta background.
+
+=== Góc nhìn: có bóng, nền, chữ, vật thừa
+Edit the image. Remove <<the shadow under the feet / the ground / the text / the object>>: nothing but the character on the plain magenta background. Nothing else changes.
+
+=== Góc nhìn: vẽ cả hình nộm, hoặc có 2 nhân vật
+Edit the image. Keep only the colored character; remove the grey mannequin figure. One single character on the plain magenta background.
+
+=== Góc nhìn: tay áo quá dài, ống quần qua gối, tóc chạm vai, hoa văn vắt qua khớp
+Edit the image. Keep the character exactly the same, but <<the sleeves end above the elbow / the shorts end above the knee / the hair does not touch the shoulders / remove the pattern crossing the shoulder>>. Nothing else changes.
+
+=== Góc 3/4: không giống góc trực diện (quần áo, màu, chi tiết khác đi)
+Edit the image. This must be the same character as the first image, with exactly the same <<clothes / colors / hair / detail>>: <<nêu rõ>>. Keep the three-quarter pose. Nothing else changes.
+
+=== Góc 3/4: chiều cao khác góc trực diện
+Edit the image. Keep the character exactly the same, but make it exactly the same height as in the first image, with the feet on the same ground line and the head at the same height. Nothing else changes.
+
+=== Góc 3/4: quay sai hướng, hoặc vẫn là trực diện
+Edit the image. Turn the character 45 degrees towards the RIGHT of the image, like the grey mannequin: the nose and the face point to the right, the arm and the leg on the left of the image are the ones nearer to the viewer. Keep everything else the same.
+
+=== Tờ mặt: thiếu mảnh hoặc sai số mảnh trong một hàng
+Edit the image. Row <<n>> must have exactly these pieces, left to right: <<danh sách>>. Fix that row only, at the positions of the grey shapes in Image 2. Keep everything else exactly the same.
+
+=== Tờ mặt: mảnh nằm trên mảng da, hoặc vẽ cả khuôn mặt
+Edit the image. Each piece in row <<n>> must stand alone on the plain magenta background: no skin patch, no face, no head around it. Keep everything else exactly the same.
+
+=== Tờ mặt: bàn tay sai số ngón
+Edit the image. Every hand in row 3 must have <<three fingers and a thumb>>, exactly like the hands in Image 1. Keep each hand's pose. Keep everything else exactly the same.
+
+=== Tờ mặt: miệng hoặc mắt không cùng cỡ
+Edit the image. Make every piece in row <<n>> the same scale as the first piece of that row, keeping each one's shape. Keep everything else exactly the same.
+
+=== Tờ mặt: hình không phải 16:9
+Make it a 16:9 landscape image with the same layout and the same pieces.
+
+=== Gemini trả lời bằng chữ hoặc từ chối
+Please generate the image.

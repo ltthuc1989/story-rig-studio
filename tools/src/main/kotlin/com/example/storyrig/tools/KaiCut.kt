@@ -38,6 +38,14 @@ fun main(args: Array<String>) {
             cutAuto(File(args[1]), File(args[2]), File(args[3]), compareKai = v == "kai", view = if (v == "front" || v == "back") v else "3q")
         }
         "autotest" -> autoTest(File(args[1]), File(args[2]))
+        // rigtemplate <dir>: the minimal flow's templates (rig_front, rig_3q, rig_face), Templates.kt
+        "rigtemplate" -> drawRigTemplates(File(args[1]))
+        // viewcheck <char> front|3q, facecheck <char>: the generated images against the templates (ViewCheck.kt)
+        // greencut <cutDir> <ref.png> <outDir>, jointcheck <sheetDir> <cut> [baseline]: JointCheck.kt
+        "greencut" -> greenCut(File(args[1]), File(args[2]), File(args[3]))
+        "jointcheck" -> jointCheck(File(args[1]), args[2], args.getOrNull(3) == "baseline")
+        "viewcheck" -> viewCheck(args[1], args[2])
+        "facecheck" -> faceCheck(args[1])
         "mannequin" -> if (args[1] == "kit") drawKitSheets(File(args[2])) else if (args[1] == "sheet") drawMannequinSheet(File(args[2])) else drawMannequin(args[1], File(args[2]), args.getOrNull(3)?.toDouble() ?: 32.0)
         "selftest" -> if (!selfTest(File(args.getOrNull(1) ?: "tools/build/selftest"))) kotlin.system.exitProcess(1)
         "facetest" -> faceLayoutTest(File(args[1]), File(args[2]))

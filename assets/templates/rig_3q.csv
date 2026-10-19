@@ -1,0 +1,24 @@
+# Joints of the mannequin in rig_3q.png (1024x1024 px, magenta background), from tools Templates.kt: yaw 45, arms 15.0 degrees below horizontal, legs 10.0 degrees from vertical.
+# near = viewer's left, far = viewer's right. shoulder = arm axis where it crosses the torso side; armpit = arm's lower edge meets the torso side; gap_* = background seeds.
+# name,x,y
+head_centre,512.0,235.0
+neck_top,512.0,360.0
+neck_bottom,512.0,385.0
+shoulder_near,398.9,440.9
+armpit_near,398.9,473.0
+hand_near,258.7,494.0
+shoulder_far,625.1,440.9
+armpit_far,625.1,473.0
+hand_far,765.3,494.0
+waist,512.0,620.0
+root,512.0,655.0
+hip_near,476.1,690.0
+hip_far,547.9,690.0
+crotch,512.0,690.0
+ankle_near,449.9,900.0
+foot_near,459.1,918.0
+ankle_far,574.1,900.0
+foot_far,596.0,918.0
+gap_arm_near,353.9,535.0
+gap_arm_far,670.1,535.0
+gap_legs,512.0,800.0

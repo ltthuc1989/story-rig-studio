@@ -28,7 +28,8 @@ import kotlin.math.roundToInt
  *    the top of the head (hair). Face features are blobs that contrast with the skin, classified by position and shape.
  */
 
-private val TEMPLATE = File("assets/templates/rig_3q_right.png")
+// The A-pose templates of the old flow (assets/templates/legacy); the minimal flow's rig_front/rig_3q are Templates.kt.
+private val TEMPLATE = File("assets/templates/legacy/rig_3q_right.png")
 
 /** AutoSpec arm: a fitted axis this many degrees off the arm's own pixels is replaced by theirs. */
 private const val AXIS_TRUST_DEG = 15.0
@@ -662,7 +663,7 @@ fun autoSpec(img: Img, template: RigTemplate = RigTemplate.load(TEMPLATE), debug
 
 internal fun cutAuto(dir: File, outDir: File, previewDir: File, compareKai: Boolean, view: String = "3q") {
     val image = if (view == "3q") "ref.png" else "view_$view.png"
-    val template = if (view == "3q") TEMPLATE else File("assets/templates/rig_$view.png")
+    val template = if (view == "3q") TEMPLATE else File("assets/templates/legacy/rig_$view.png")
     val img = defringe(keyMagenta(Img.load(File(dir, image))))
     val res = autoSpec(img, RigTemplate.load(template), debug = true, view = view)
     if (compareKai) compareWithKai(res.spec)

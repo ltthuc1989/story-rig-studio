@@ -1,0 +1,14 @@
+=== TIN 1 (cuộc trò chuyện mới; đính kèm theo thứ tự: (1) assets/<char>/design/view_front.png đã đạt, (2) assets/templates/rig_face.png) ===
+Create one 16:9 landscape image: a face and hands parts sheet for 2D cutout animation and lip sync, for the character in Image 1. Keep exactly the same face design, eye and mouth style, skin color, hand style and number of fingers as Image 1.
+Image 2 is a grey layout sheet: each grey shape is one piece to draw, at the same position and about the same size, in three rows read left to right. Do not draw the grey shapes themselves. Every piece is drawn alone on the magenta background, never on a skin-colored disc or patch, and no piece touches another.
+
+Row 1, 7 pieces, the character's eye on the LEFT of Image 1 and its eyebrow, all at the same scale, about twice the size they have in Image 1:
+(1) the eye open, looking at the viewer, with its highlight; (2) the eye closed, one thin curved line; (3) the eye closed happy, an upside-down U; (4) the eye wide open, surprised; (5) the eyebrow neutral; (6) the eyebrow raised; (7) the eyebrow frowning.
+Row 2, 9 mouths for lip sync, each one single piece with its lips, all at the same scale as the eyes:
+(1) closed, lips together (M, B, P, rest); (2) open wide (A, I); (3) wide and narrow with the teeth showing (E); (4) round open (O); (5) small round pucker (U, W); (6) top teeth on the lower lip (F, V); (7) closed smile; (8) small sad mouth, corners down; (9) big open laugh with the top teeth.
+Row 3, 6 pieces, the RIGHT hand, each with a short piece of the wrist below it (the part normally hidden in the sleeve), the same style and the same number of fingers as the hands in Image 1:
+(1) relaxed open hand, fingers slightly apart; (2) fist; (3) pointing with the index finger up; (4) open palm facing the viewer, fingers spread (waving); (5) thumbs up; (6) holding, fingers curled in a C shape.
+
+All eyes the same size, all mouths the same scale, all hands the same size. No moustache, no beard, no glasses unless Image 1 has them.
+Plain solid pure magenta background (#FF00FF: red 255, green 0, blue 255) filling the whole image, no shadows, no text, no letters, no labels, no numbers, no arrows, no guide lines. Do not use magenta or pink anywhere on the pieces.
+Art style: exactly the art style of Image 1: polished flat vector illustration, absolutely no outlines, a single flat darker shading shape per form, no gradients, no texture.

@@ -140,15 +140,22 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
         val art = ArtBuilder(PathCache(), cfg.antiAlias)
         val l = -Stage.BLEED_W / 2f + Stage.SAFE_W / 2f
         val t = -Stage.BLEED_H / 2f + Stage.SAFE_H / 2f
-        val sky = LinearGradientShader(Offset(0f, t), Offset(0f, 760f), listOf(hex(0x8fd3ff), hex(0xcfefff)))
-        art.rect(l, t, Stage.BLEED_W, 760f - t, hex(0xcfefff), shader = sky)
-        art.ellipse(300f, 820f, 700f, 220f, hex(0x7fd18b))
-        art.ellipse(1500f, 840f, 820f, 240f, hex(0x6cc47a))
-        art.rect(l, 780f, Stage.BLEED_W, Stage.BLEED_H, hex(0x3fbf6b))
-        art.circle(1650f, 170f, 90f, hex(0xffc83d))
-        background = art.build()
-        art.ellipse(0f, 0f, 120f, 18f, hex(0x2a8a4a), alpha = .35f)
-        shadow = art.build()
+        if (cfg.flagOf("bg", true)) {
+            val sky = LinearGradientShader(Offset(0f, t), Offset(0f, 760f), listOf(hex(0x8fd3ff), hex(0xcfefff)))
+            art.rect(l, t, Stage.BLEED_W, 760f - t, hex(0xcfefff), shader = sky)
+            art.ellipse(300f, 820f, 700f, 220f, hex(0x7fd18b))
+            art.ellipse(1500f, 840f, 820f, 240f, hex(0x6cc47a))
+            art.rect(l, 780f, Stage.BLEED_W, Stage.BLEED_H, hex(0x3fbf6b))
+            art.circle(1650f, 170f, 90f, hex(0xffc83d))
+            background = art.build()
+            art.ellipse(0f, 0f, 120f, 18f, hex(0x2a8a4a), alpha = .35f)
+            shadow = art.build()
+        } else {
+            // bg=0: flat magenta and no shadow, so tools/joint_sheet.sh can count holes in the figure (jointcheck).
+            art.rect(l, t, Stage.BLEED_W, Stage.BLEED_H, hex(0xff00ff))
+            background = art.build()
+            shadow = emptyArray()
+        }
 
         // Each character gets a share of the width in proportion to its height (arms flung out ~ARM_SPAN), so a
         // grown-up's arms don't reach into the next child. Kids stay ~62% of the safe height at most; everyone

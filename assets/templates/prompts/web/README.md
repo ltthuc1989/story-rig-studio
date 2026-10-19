@@ -1,69 +1,39 @@
-# Tạo bộ kit nhân vật trên Gemini web
+# Tạo nhân vật trên Gemini web (flow tối giản)
 
-Dùng gemini.google.com, miễn phí trong hạn mức mỗi ngày. API (`tools/gemini_gen.py`) thì lượt nào cũng tính tiền, vì model tạo ảnh không có free tier qua API.
+Mỗi nhân vật cần **3 hình**, tạo miễn phí trên gemini.google.com, rồi code cắt và kiểm. Xem ART_PIPELINE.md mục 2–3.
 
-Bộ kit gồm 2 tờ:
+| Bước | Hình | Cuộc trò chuyện | Đính kèm (đúng thứ tự) | Prompt | Lưu về | Kiểm |
+|---|---|---|---|---|---|---|
+| 1 | trực diện, 1:1 | mới | `assets/templates/rig_front.png` | `views.txt` tin 1 | `assets/<char>/design/view_front.png` | `viewcheck <char> front` |
+| 2 | 3/4, 1:1 | **cùng** bước 1 | `assets/templates/rig_3q.png` | `views.txt` tin 2 | `design/view_3q.png` | `viewcheck <char> 3q` |
+| 3 | mặt và tay, 16:9 | mới | (1) `design/view_front.png` đã đạt, (2) `assets/templates/rig_face.png` | `face.txt` | `design/face.png` | `facecheck <char>` |
 
-| Tờ | Tờ mẫu (ảnh 3) | Prompt chính | Tin nhắn sửa |
-|---|---|---|---|
-| Thân | `assets/templates/rig_body.png` | `body_sheet.txt` | `body_fixes.txt` |
-| Mặt và tay | `assets/templates/rig_face_hands.png` | `face_hands_sheet.txt` | `face_hands_fixes.txt` |
+`tools/new_character.sh <char> <bước>` in sẵn mọi thứ để chép và dán, và chạy lệnh kiểm:
+```
+tools/new_character.sh kai front        # in prompt tin 1 đã điền brief, file cần đính kèm, nơi lưu
+tools/new_character.sh kai check-front  # sau khi lưu hình
+tools/new_character.sh kai 3q / check-3q / face / check-face / cut
+```
 
-## Chuẩn bị cho một nhân vật
+## Trước khi tạo
+1. Viết `assets/<char>/brief.txt`: một đoạn tiếng Anh tả nhân vật, theo `assets/templates/brief_template.md`. Rà mục "thiết kế dễ rig" trong đó trước: tay áo ngắn, ống quần trên gối, tóc không chạm vai, không hoa văn vắt qua khớp.
+2. Chọn model Pro ("Nano Banana Pro" hoặc Thinking) nếu có: giữ bố cục tốt hơn.
 
-1. Viết `assets/<char>/prompts/notes.txt`: một đoạn tiếng Anh tả quần áo, mọi chi tiết, tóc, phụ kiện, số ngón tay. Xem mẫu ở `assets/kai/prompts/notes.txt`.
-2. Điền notes vào chỗ `<<CHARACTER NOTES>>` của 2 prompt chính:
-   ```
-   for s in body_sheet:web_body face_hands_sheet:web_face_hands; do python3 -I -c "import sys;t=open(sys.argv[1]).read();n=open(sys.argv[2]).read().strip();open(sys.argv[3],'w').write(t.replace('<<CHARACTER NOTES>>',n))" assets/templates/prompts/web/${s%%:*}.txt assets/<char>/prompts/notes.txt assets/<char>/prompts/${s##*:}.txt; done
-   ```
-   Kết quả là `assets/<char>/prompts/web_body.txt` và `web_face_hands.txt`, dán được ngay.
+## Khi hình chưa đạt
+- Lệnh kiểm in từng mục ĐẠT hoặc LỖI kèm số đo, và khoanh đỏ chỗ sai trong `design/viewcheck_<view>.png` hay `design/facecheck.png`.
+- Chọn tin nhắn sửa tương ứng trong `fixes.txt`, dán vào **cùng cuộc trò chuyện**. Mỗi lần một tin.
+- **Gemini vẽ lại cả hình mỗi lần**, nên sau mỗi tin sửa phải lưu hình mới đè lên và chạy lại lệnh kiểm từ đầu, không chỉ nhìn chỗ vừa sửa.
+- Lưu cả hình chưa đạt (`design/attempts/`) để so.
 
-## Cách tạo một tờ
+## Sau khi khóa
+Hình đã đạt cả 3 lệnh kiểm là **khóa thiết kế**: không tạo lại nữa. Lỗi về sau (khớp, chuyển động) sửa ở tool cắt hoặc engine, và `jointcheck` phải báo về 0 (xem `tools/joint_sheet.sh`).
 
-1. Mở **một cuộc trò chuyện mới** cho mỗi tờ, để Gemini không lẫn tờ này với tờ kia.
-2. Chọn chế độ tạo ảnh. Nếu có model Pro ("Nano Banana Pro" hoặc chế độ Thinking), chọn nó, vì nó giữ bố cục tốt hơn.
-3. Đính kèm **cả 3 ảnh** cho tờ nào cũng vậy, **đúng thứ tự này**. Hai tờ chỉ khác nhau ở ảnh thứ 3:
+## Tải về
+Web miễn phí trả về 1024×1024 (1:1) và 1376×768 (16:9), đủ cho app (nhân vật cao khoảng 830 px, app cần 670–950 px). Không cần 4K. Biểu tượng ngôi sao ở góc dưới phải nằm trên nền, lệnh kiểm bỏ qua.
 
-   | Thứ tự | Tờ thân | Tờ mặt và tay |
-   |---|---|---|
-   | 1 | `assets/<char>/gemini/ref.png` | `assets/<char>/gemini/ref.png` |
-   | 2 | `assets/<char>/gemini/view_front.png` | `assets/<char>/gemini/view_front.png` |
-   | 3 | `assets/templates/rig_body.png` | `assets/templates/rig_face_hands.png` |
-4. Dán toàn bộ prompt đã điền (`web_body.txt` hoặc `web_face_hands.txt`).
-5. Tải hình **kích thước lớn nhất** (nút "Download full size" nếu có), lưu thành `assets/<char>/gemini/web/<body|face>_<n>.png`, với n = 1, 2, 3… theo từng lần. Lưu cả hình chưa đạt.
-6. Gửi Claude soi. Claude đo kích thước, kiểm từng ô, đo màu, rồi chọn tin nhắn sửa trong file fixes, điền vị trí sẵn.
-7. Dán tin nhắn sửa **vào cùng cuộc trò chuyện**. Mỗi lần chỉ sửa 1–2 chỗ: sửa ít chỗ thì Gemini giữ nguyên phần đã đúng; nêu nhiều chỗ một lúc thì nó chỉ làm được vài chỗ.
-8. Lặp bước 5–7 tới khi đạt.
-
-## Gọi vị trí một mảnh
-
-- **Tờ thân:**
-  - "top row, view 1…5";
-  - "middle row, left group / right group, first…fifth piece" (left group trực diện, right group nhìn nghiêng);
-  - "bottom row, first…sixth piece" (3/4).
-- **Tờ mặt và tay:** "row 1…6, piece n".
-
-## Nếu hình tải về chỉ khoảng 1K (cạnh dài khoảng 1400 px)
-
-Sửa cho đạt hết ở 1K trên web trước, rồi chọn một trong hai cách:
-- Gọi API 4K đúng 1 lượt ($0,151), đính kèm bản đạt và yêu cầu vẽ lại y hệt. Prompt mẫu: `assets/kai/prompts/5c_body_sheet_4k.txt`.
-- Phóng to trên máy.
-
-Cách nào cũng phải được người dùng duyệt trước.
-
-## Vì sao prompt viết như vậy (bài học từ 5 lượt gọi tờ thân Kai, 2026-10-18 và 19)
-
-- **Mảnh hông gọi là "hip band":** không bao giờ dùng chữ "shorts". Cứ thấy chữ đó là Gemini vẽ cả chiếc quần có 2 ống (4/4 lần).
-- **Mỗi mảnh chân rời ghi riêng "NO shoe":** chỉ nói một câu chung thì chân nhìn nghiêng và chân 3/4 vẫn dính giày.
-- **Tay chân phía xa ghi rõ cùng màu tay chân gần:** khi tờ mẫu tô xám đậm, Gemini vẽ tay xa sẫm như bị bệnh.
-- **Tờ mẫu không vẽ đĩa sáng ở vai:** Gemini biến đĩa đó thành mảng da.
-- **Vẽ lại cả tờ thì kết quả ngẫu nhiên:** sửa prompt rồi vẽ lại, chỗ này đúng thì chỗ khác hỏng. Sửa ảnh trong cùng cuộc trò chuyện thì giữ được phần đã đúng.
-- **Phần hình học Gemini vẫn không làm đúng thì để tool cắt làm:** cắt theo đường thẳng, tách giày, kéo dài tất màu trơn.
-
-## Cảnh và đạo cụ
-
-Chưa có tờ mẫu. Khi cần thì làm theo cùng khuôn:
-- tờ mẫu hình nộm;
-- prompt chính có chỗ `<<...>>`;
-- file tin nhắn sửa;
-- notes cho từng cảnh.
+## Vì sao prompt viết như vậy
+- **Tay giơ gần ngang vai, chân dạng:** nách, hông áo và đùi trong đều lộ ra, code không phải đoán phần bị che (gốc của lỗi rách nách).
+- **Chỉ 2 góc:** 5 góc thì tỉ lệ và màu lệch nhau giữa các góc; xoay người làm bằng đổi góc.
+- **Tờ mặt 22 ô:** tờ nhiều ô Gemini vỡ bố cục (tờ 58 ô và tờ thân 21 ô đều vỡ). Đầu trọc và tóc tách lớp code cắt từ hình gốc.
+- **Chiều cao như hình nộm, cùng đường đất:** để mọi góc cùng tỉ lệ; lệnh kiểm đo.
+- Đồ cũ (tờ thân 16:9, 5 góc, prompt API) ở `legacy/`.
