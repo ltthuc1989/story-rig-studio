@@ -4,7 +4,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.Color
+import com.example.storyrig.engine.ArtBuilder
 import com.example.storyrig.engine.Atlas
+import com.example.storyrig.engine.Part
+import com.example.storyrig.engine.PathCache
+import com.example.storyrig.engine.SoftItem
+import com.example.storyrig.engine.SoftPath
 import com.example.storyrig.engine.MeshData
 import com.example.storyrig.engine.MeshInfluence
 import com.example.storyrig.engine.MeshPart
@@ -57,6 +63,10 @@ class KaiAssets(
     val hangPivotY: FloatArray = FloatArray(boneNames.size) { Float.NaN },
     /** swaps.csv: substitute drawings of a rigid cut ([SwapRow]); empty without one. */
     val swaps: List<SwapRow> = emptyList(),
+    /** hoses.csv: limbs drawn as skinned vector tubes ([HoseRow]) instead of their cut pictures; empty without one. */
+    val hoses: List<HoseRow> = emptyList(),
+    /** shapes.csv: vector parts ([ShapeRow]) by part name, in draw order; their [parts] rows are their bounds. */
+    val vector: Map<String, List<ShapeRow>> = emptyMap(),
 ) {
     /** Rest pose, from the data (ref.png pixels): root pivot to the soles, and hair top to the soles. */
     val rootToSole: Float
@@ -98,6 +108,17 @@ class KaiAssets(
     class SwapRow(val part: String, val dir: String, val swapPart: String, val childFore: Float, val hides: List<String>)
 
     /**
+     * One stretch of a limb tube (hoses.csv), like Ben's hose() in reference/lake.html: along [upper] then [lower]
+     * (t 0..1 on the upper bone, 1..2 on the lower), [width] ref.png px, round or butt ends. Rows draw in order, so a
+     * sleeve or a shorts leg is a wider stretch drawn over the skin one. [limb]: arm_near, arm_far, leg_near, leg_far;
+     * the tubes take the draw-order place of that limb's cut parts ([LIMB_PARTS]).
+     */
+    class HoseRow(val limb: String, val upper: String, val lower: String, val colour: Color, val t0: Float, val t1: Float, val width: Float, val round: Boolean)
+
+    /** One vector shape (shapes.csv) of [part] on [bone]: SVG path [d] in ref.png px, filled or stroked [stroke] wide. */
+    class ShapeRow(val part: String, val bone: String, val colour: Color, val alpha: Float, val stroke: Float, val d: String)
+
+    /**
      * Cut parts that become one skinned mesh (drawn once into one image at load), the bones it follows and its
      * grid cell in ref.png pixels. A `group` row of mesh.csv.
      */
@@ -136,16 +157,40 @@ class KaiAssets(
             val dir = "files/$name"
             val t0 = uptimeMillis()
             val boneRows = csv(Res.readBytes("$dir/bones.csv").decodeToString())
-            val partRows = csv(Res.readBytes("$dir/parts.csv").decodeToString())
+            // A vector character (shapes.csv) may have no cut pictures at all.
+            val partRows = runCatching { csv(Res.readBytes("$dir/parts.csv").decodeToString()) }.getOrNull().orEmpty()
             val names = boneRows.map { it[0] }
             val parent = IntArray(names.size) { i -> if (boneRows[i][1].isEmpty()) -1 else names.indexOf(boneRows[i][1]) }
             val px = FloatArray(names.size) { boneRows[it][2].toFloat() }
             val py = FloatArray(names.size) { boneRows[it][3].toFloat() }
             val hx = FloatArray(names.size) { boneRows[it].getOrNull(4)?.toFloatOrNull() ?: Float.NaN }
             val hy = FloatArray(names.size) { boneRows[it].getOrNull(5)?.toFloatOrNull() ?: Float.NaN }
-            val parts = partRows.map { PartRow(it[0], names.indexOf(it[1]), it[2].toInt(), it[3].toInt(), it[4].toInt(), it[5].toInt(), it[6] == "1") }
-            val images = parts.map { it.name to Res.readBytes("$dir/parts/${it.name}.png").decodeToImageBitmap() }
-            val atlas = Atlas.pack(images)
+            val bitmapParts = partRows.map { PartRow(it[0], names.indexOf(it[1]), it[2].toInt(), it[3].toInt(), it[4].toInt(), it[5].toInt(), it[6] == "1") }
+            val images = bitmapParts.map { it.name to Res.readBytes("$dir/parts/${it.name}.png").decodeToImageBitmap() }
+            // shapes.csv: part,bone,colour,alpha,stroke,d (d last: it may hold commas).
+            val shapeRows = runCatching { csv(Res.readBytes("$dir/shapes.csv").decodeToString()) }.getOrNull().orEmpty().map {
+                ShapeRow(it[0], it[1], colour(it[2]), it[3].toFloatOrNull() ?: 1f, it[4].toFloatOrNull() ?: 0f, it.drop(5).joinToString(","))
+            }
+            val vector = LinkedHashMap<String, MutableList<ShapeRow>>()
+            for (r in shapeRows) vector.getOrPut(r.part) { ArrayList() } += r
+            // Each vector part gets a parts row with its shapes' bounds (feet, height, spring and end-bone axes read them).
+            val cache = PathCache()
+            val vectorParts = vector.map { (name, rows) ->
+                var x0 = Float.MAX_VALUE; var y0 = Float.MAX_VALUE; var x1 = -Float.MAX_VALUE; var y1 = -Float.MAX_VALUE
+                for (r in rows) if (r.d.isNotBlank()) {
+                    val bnd = cache.get(r.d).getBounds(); val hw = r.stroke / 2f
+                    x0 = minOf(x0, bnd.left - hw); y0 = minOf(y0, bnd.top - hw); x1 = maxOf(x1, bnd.right + hw); y1 = maxOf(y1, bnd.bottom + hw)
+                }
+                val bone = names.indexOf(rows[0].bone)
+                // A part with no shape is a place in the draw order only (where a limb's tubes go).
+                if (x0 > x1) PartRow(name, bone, a0(px[bone]), a0(py[bone]), 1, 1, false)
+                else PartRow(name, bone, x0.toInt(), y0.toInt(), (x1 - x0).toInt().coerceAtLeast(1), (y1 - y0).toInt().coerceAtLeast(1), true)
+            }
+            val parts = bitmapParts + vectorParts
+            val atlas = Atlas.pack(images.ifEmpty { listOf("_" to ImageBitmap(1, 1)) })
+            val hoses = runCatching { csv(Res.readBytes("$dir/hoses.csv").decodeToString()) }.getOrNull().orEmpty().map {
+                HoseRow(it[0], it[1], it[2], colour(it[3]), it[4].toFloat(), it[5].toFloat(), it[6].toFloat(), it.getOrNull(7) != "butt")
+            }
             var meshes = emptyList<Mesh>()
             var meshAtlas: Atlas? = null
             // Limbs, torso and pelvis as meshes, all weighted from the one influence table so that a sleeve and the
@@ -182,7 +227,7 @@ class KaiAssets(
             }
             return KaiAssets(
                 atlas, names, parent, px, py, parts, meshes, meshAtlas, (uptimeMillis() - t0).toFloat(), heightScale, name, view,
-                facts["yaw"]?.toFloatOrNull(), hx, hy, swaps,
+                facts["yaw"]?.toFloatOrNull(), hx, hy, swaps, hoses, vector,
             )
         }
 
@@ -235,6 +280,14 @@ class KaiAssets(
             val r = atlas[g.name]
             val data = MeshData.grid(atlas.image, r.x, r.y, r.w, r.h, limb.x - bx, limb.y - by, cell, influences, block)
             return Mesh(g, g.parts.toSet(), limb.firstPart, data)
+        }
+
+        private fun a0(v: Float) = v.toInt()
+
+        /** "#RRGGBB" or "#AARRGGBB". */
+        private fun colour(s: String): Color {
+            val v = s.trim().removePrefix("#").toLong(16)
+            return if (s.trim().length <= 7) Color(0xFF000000L or v) else Color(v)
         }
 
         private fun csv(text: String) = text.lineSequence()
@@ -342,7 +395,26 @@ class KaiRig(
         val items = ArrayList<DrawItem>()
         val byName = HashMap<String, BitmapPart>()
         val meshes = if (useMeshes) a.meshes else emptyList()
-        for ((idx, row) in a.parts.withIndex()) if (row.drawn) {
+        val art = ArtBuilder(PathCache(), antiAlias)
+        val hoseLimbs = a.hoses.groupBy { it.limb }
+        val placed = HashSet<String>()
+        for ((idx, row) in a.parts.withIndex()) {
+            // Limbs with tubes: all their tubes where the limb's first cut part was; its cut parts are not drawn.
+            val limb = LIMB_PARTS[row.name]
+            if (limb != null && limb in hoseLimbs) {
+                if (placed.add(limb)) for (h in hoseLimbs.getValue(limb)) items += hose(h, antiAlias)
+                continue
+            }
+            if (!row.drawn) continue
+            val shapes = a.vector[row.name]
+            if (shapes != null) {
+                // Vector part: its shapes in the bone's rest local space, never squashed (as a rigid cut's pictures).
+                art.group(tx = -a.pivotX[row.bone], ty = -a.pivotY[row.bone]) {
+                    for (r in shapes) if (r.d.isNotBlank()) { if (r.stroke > 0f) stroke(r.d, r.colour, r.stroke, r.alpha) else path(r.d, r.colour, r.alpha) }
+                }
+                items += Part(row.bone, art.build()).also { it.rigid = true }
+                continue
+            }
             val mesh = meshes.firstOrNull { row.name in it.parts }
             if (mesh != null) {
                 if (row.name == mesh.firstPart) items += MeshPart(SoftMesh(mesh.data), a.meshAtlas!!, antiAlias)
@@ -472,6 +544,35 @@ class KaiRig(
     }
 
     /**
+     * A limb tube ([KaiAssets.HoseRow]) as a skinned path in rig space, as Ben's hose() (LakeArt.boyRig): points on
+     * the upper bone follow it, points on the lower bone follow that, and across the joint one quadratic curve from
+     * 55% of the upper bone to 45% of the lower one with its control point half on each, so the bend is always a
+     * smooth curve. Foreshortening shortens the tube; its width never changes.
+     */
+    private fun hose(h: KaiAssets.HoseRow, antiAlias: Boolean): SoftItem {
+        val u = a.bone(h.upper); val l = a.bone(h.lower)
+        val child = (0 until sk.size).firstOrNull { a.boneParent[it] == l }
+        val r = a.boneParent.indexOfFirst { it < 0 }
+        val x0 = a.pivotX[u] - a.pivotX[r]; val y0 = a.pivotY[u] - a.pivotY[r]
+        val x1 = a.pivotX[l] - a.pivotX[r]; val y1 = a.pivotY[l] - a.pivotY[r]
+        val x2 = if (child != null) a.pivotX[child] - a.pivotX[r] else 2 * x1 - x0
+        val y2 = if (child != null) a.pivotY[child] - a.pivotY[r] else 2 * y1 - y0
+        fun px(t: Float) = if (t <= 1f) x0 + (x1 - x0) * t else x1 + (x2 - x1) * (t - 1f)
+        fun py(t: Float) = if (t <= 1f) y0 + (y1 - y0) * t else y1 + (y2 - y1) * (t - 1f)
+        val up = intArrayOf(u); val lo = intArrayOf(l)
+        fun on(t: Float) = if (t <= 1f) up else lo
+        val b = SoftPath.Builder(sk).moveTo(px(h.t0), py(h.t0), on(h.t0))
+        if (h.t1 <= 1f || h.t0 >= 1f) b.lineTo(px(h.t1), py(h.t1), on(h.t1))
+        else {
+            val c0 = maxOf(h.t0, .55f); val c1 = minOf(h.t1, 1.45f)
+            if (c0 > h.t0) b.lineTo(px(c0), py(c0), up)
+            b.quadTo(x1, y1, intArrayOf(u, l), HALF, px(c1), py(c1), lo)
+            if (h.t1 > c1) b.lineTo(px(h.t1), py(h.t1), lo)
+        }
+        return SoftItem(b.build(h.colour, h.width, antiAlias, round = h.round))
+    }
+
+    /**
      * Back to rest pose, root at (x, y) with uniform [scale]; [mirror] flips the rig to face left (root scaleX < 0).
      * Angles are then set with [rot] (degrees).
      */
@@ -583,6 +684,17 @@ class KaiRig(
         const val EYE_OPEN = 0
         const val EYE_HALF = 1
         const val EYE_HAPPY = 2
+
+        /** Cut parts a limb's tubes replace (hoses.csv), by part name: the tubes go where the first of them was. */
+        private val LIMB_PARTS = buildMap {
+            for (side in listOf("near", "far")) {
+                // The shoulder ball stays: the cut's round shoulder over the sleeve tube's start.
+                for (n in listOf("arm_upper", "arm_fore")) put("${n}_$side", "arm_$side")
+                for (n in listOf("thigh", "shin")) put("${n}_$side", "leg_$side")
+            }
+        }
+        /** A tube's joint control point: half on each bone. */
+        private val HALF = floatArrayOf(.5f, .5f)
 
         /** Limb joints whose parts get substitute drawings in a rigid cut ([applySwaps]). */
         private val LIMB_JOINTS = setOf("shoulder", "elbow", "wrist", "hip", "knee", "ankle")

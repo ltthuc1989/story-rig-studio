@@ -1,0 +1,19 @@
+# limb,upper bone,lower bone,colour,t0,t1,width,round|butt: Kai vector limbs (Ben's hose)
+arm_far,shoulder_far,elbow_far,#E9A274,0,2,44,round
+arm_far,shoulder_far,elbow_far,#BD2C2C,0,0.3,64,round
+arm_far,shoulder_far,elbow_far,#8E1220,0.27,0.37,68,butt
+leg_far,hip_far,knee_far,#E9A274,0,2,50,round
+leg_far,hip_far,knee_far,#3A6590,0,0.62,84,round
+leg_far,hip_far,knee_far,#5F8AAE,0.6,0.92,90,butt
+leg_far,hip_far,knee_far,#EDE6DA,1.62,2,50,butt
+leg_far,hip_far,knee_far,#B83235,1.68,1.72,51,butt
+leg_far,hip_far,knee_far,#B83235,1.75,1.79,51,butt
+arm_near,shoulder_near,elbow_near,#F7B384,0,2,44,round
+arm_near,shoulder_near,elbow_near,#D73433,0,0.3,64,round
+arm_near,shoulder_near,elbow_near,#A41525,0.27,0.37,68,butt
+leg_near,hip_near,knee_near,#F7B384,0,2,50,round
+leg_near,hip_near,knee_near,#42719A,0,0.62,84,round
+leg_near,hip_near,knee_near,#6A97BA,0.6,0.92,90,butt
+leg_near,hip_near,knee_near,#FFF6E8,1.62,2,50,butt
+leg_near,hip_near,knee_near,#D43837,1.68,1.72,51,butt
+leg_near,hip_near,knee_near,#D43837,1.75,1.79,51,butt

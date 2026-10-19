@@ -13,7 +13,10 @@ abstract class DrawItem {
 }
 
 /** Rigid shapes in a bone's local space, drawn with the bone's world matrix. Optional clip in the same space. */
-class Part(val bone: Int, val shapes: Array<Shape>, val clip: Path? = null) : DrawItem()
+class Part(val bone: Int, val shapes: Array<Shape>, val clip: Path? = null) : DrawItem() {
+    /** Drawn with [Skeleton.concatRigid]: never squashed by foreshortening or roll (a vector character's parts). */
+    var rigid = false
+}
 
 /** Skinned path; its points are already in rig space after [SoftPath.deform]. */
 class SoftItem(val soft: SoftPath) : DrawItem()
@@ -146,7 +149,7 @@ class Rig(val sk: Skeleton, val items: Array<DrawItem>) {
             if (!it.visible) continue
             if (it is Part) {
                 canvas.save()
-                sk.concat(canvas, it.bone)
+                if (it.rigid) sk.concatRigid(canvas, it.bone) else sk.concat(canvas, it.bone)
                 val c = it.clip
                 if (c != null) canvas.clipPath(c)
                 it.shapes.drawAll(canvas, alphaMul, stats)

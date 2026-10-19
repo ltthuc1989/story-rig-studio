@@ -49,6 +49,8 @@ fun main(args: Array<String>) {
         "viewcheck" -> viewCheck(args[1], args[2])
         "facecheck" -> faceCheck(args[1])
         "limbcheck" -> limbCheck(args[1])
+        // hosespec <cutDir>: limb tubes from a cut's limb pictures (HoseSpec.kt)
+        "hosespec" -> hoseSpec(File(args[1]))
         "mannequin" -> if (args[1] == "kit") drawKitSheets(File(args[2])) else if (args[1] == "sheet") drawMannequinSheet(File(args[2])) else drawMannequin(args[1], File(args[2]), args.getOrNull(3)?.toDouble() ?: 32.0)
         "selftest" -> if (!selfTest(File(args.getOrNull(1) ?: "tools/build/selftest"))) kotlin.system.exitProcess(1)
         "facetest" -> faceLayoutTest(File(args[1]), File(args[2]))

@@ -48,5 +48,7 @@ internal fun cutView(char: String, view: String) {
     cutWith(design, outDir, previewDir, S, srcName = "view_$view.png", faceSheet = false, rigid = true)
     // Substitute drawings for what a rigid part cannot show turned (limb sheet, Limbs.kt).
     File(design, "limbs.png").takeIf { it.exists() }?.let { cutLimbs(it, outDir) }
+    // Arms and legs as vector tubes, measured from the limb pictures (HoseSpec.kt).
+    hoseSpec(outDir)
     println("cutview $cut -> $outDir")
 }
