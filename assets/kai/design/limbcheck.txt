@@ -1,0 +1,20 @@
+ĐẠT  khổ 16:9: 1376x768
+ĐẠT  nền magenta: độ magenta ở góc 243
+ĐẠT  ô upper_toward: 1 cụm, chính 168x167 px
+ĐẠT  dáng upper_toward: rộng/cao 1.01, hình nộm 1.00 (cho phép 0,7–1,43 lần)
+ĐẠT  ô fore_toward: 1 cụm, chính 201x312 px
+ĐẠT  dáng fore_toward: rộng/cao 0.64, hình nộm 0.73 (cho phép 0,7–1,43 lần)
+ĐẠT  ô hand_back: 1 cụm, chính 131x188 px
+ĐẠT  dáng hand_back: rộng/cao 0.70, hình nộm 0.64 (cho phép 0,7–1,43 lần)
+ĐẠT  ô thigh_toward: 1 cụm, chính 161x189 px
+ĐẠT  dáng thigh_toward: rộng/cao 0.85, hình nộm 0.95 (cho phép 0,7–1,43 lần)
+ĐẠT  ô shoe_sole: 1 cụm, chính 112x238 px
+ĐẠT  dáng shoe_sole: rộng/cao 0.47, hình nộm 0.58 (cho phép 0,7–1,43 lần)
+ĐẠT  không có mảnh ngoài ô: 0 mảnh lạ
+ĐẠT  màu upper_toward như thân: màu chính có trong trực diện
+ĐẠT  màu fore_toward như thân: màu chính có trong trực diện
+ĐẠT  màu hand_back như thân: màu chính có trong trực diện
+ĐẠT  màu thigh_toward như thân: màu chính có trong trực diện
+ĐẠT  màu shoe_sole như thân: màu chính có trong trực diện
+ĐẠT  bàn tay mu cùng cỡ tờ mặt: rộng 131 px, tay tờ mặt trung bình 112 px (cho phép 0,67–1,5 lần)
+ĐẠT  đùi cùng tỉ lệ bộ cắt: rộng 161 px, cần khoảng 216 (đùi bộ cắt 108 x 2.0; cho phép 0,6–1,6 lần)
