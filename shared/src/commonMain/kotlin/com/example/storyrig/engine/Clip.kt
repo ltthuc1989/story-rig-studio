@@ -154,7 +154,11 @@ class ClipPlayer(
     boneIndex: (String) -> Int,
     zeroDeg: (String) -> Float = { 0f },
     yawDeg: Float? = null,
+    /** Largest |rotation| (degrees, clip terms) a bone may take; a clip past it is clamped there. */
+    limitDeg: (String) -> Float = { Float.MAX_VALUE },
+    boneName: (Int) -> String = { "" },
 ) {
+    private val limit = FloatArray(sk.size) { limitDeg(boneName(it)) }
     /** Per clip, per channel: index into [acc] (a [Skeleton.local] slot, or the pitch slot), -1 when the rig lacks that bone. */
     private val slot = Array(clips.size) { ci ->
         val c = clips[ci]
@@ -214,7 +218,8 @@ class ClipPlayer(
             val tsy = if (sk.parent[b] < 0) sk.local[o + 4] else 1f
             sk.local[o] += acc[o] * tsx
             sk.local[o + 1] += acc[o + 1] * tsy
-            var r = acc[o + 2] * DEG
+            // Joint range: a pose past the limit is held at it, so no clip can show what the cut has no art for.
+            var r = acc[o + 2].coerceIn(-limit[b], limit[b]) * DEG
             val p = sk.parent[b]
             val pp = if (p >= 0) pitch[p] else 0f
             val pt = pp + acc[po + b] * DEG

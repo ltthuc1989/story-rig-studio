@@ -344,6 +344,7 @@ class KaiRig(
             sk, clips, { a.boneOrNull(it) },
             zeroDeg = { when (it) { "shoulder_near" -> hangNear; "shoulder_far" -> hangFar; else -> 0f } },
             yawDeg = if (adaptView) a.yawDeg else null,
+            limitDeg = ::jointLimitDeg, boneName = { a.boneNames[it] },
         )
         val inHead = BooleanArray(sk.size) { b -> var x = b; while (x >= 0 && x != head) x = sk.parent[x]; x == head }
         val hi = rig.items.indices.filter { val it = rig.items[it]; it is BitmapPart && inHead[it.bone] }
@@ -480,6 +481,23 @@ class KaiRig(
     companion object {
         /** Lip-sync shapes, in the order the scene picks from. */
         val MOUTHS = listOf("mouth_smile", "mouth_e", "mouth_a", "mouth_o", "mouth_s", "mouth_laugh")
+
+        /**
+         * Joint range (ART_PIPELINE.md section 1): the largest |rotation| in clip terms a bone may take, so no clip
+         * shows what the cut has no art for. Shoulders from hanging: 165 is a V; elbows and knees bend both ways in
+         * the clips (sign = direction), so the bound is on the magnitude.
+         */
+        fun jointLimitDeg(bone: String): Float = when (bone.substringBeforeLast('_')) {
+            "shoulder" -> 165f
+            "elbow" -> 135f
+            "wrist" -> 60f
+            "hip" -> 95f
+            "knee" -> 125f
+            "ankle" -> 40f
+            "head" -> 25f
+            "torso" -> 35f
+            else -> Float.MAX_VALUE
+        }
         val EYES = listOf("open", "half", "happy", "wide")
         const val EYE_OPEN = 0
         const val EYE_HALF = 1

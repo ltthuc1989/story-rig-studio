@@ -128,7 +128,7 @@ Dùng cho mọi bộ cắt: 5 bộ hình cũ (dáng chữ A, tờ mẫu `legacy/
 | 3 | `jointcheck` (`JointCheck.kt`, `greencut`, `KaiScene bg=0`, `joint_sheet.sh … green`, baseline): chạy trên Kai cũ, báo đúng nách (xanh 843/875/803 ở tư thế 1, 2, 4) | xong 2026-10-19 |
 | 4 | Người dùng tạo 3 hình Kai trên web theo `tools/new_character.sh kai front / 3q / face`; mỗi hình qua lệnh kiểm; khóa thiết kế | chưa |
 | 5 | `cutview <char> front\|3q`: cắt với tờ mẫu mới từ `design/`; đầu tròn mọi khớp, tô 3 vùng trơn; tay chân mảnh cứng (mesh chỉ tóc, váy); so điểm khớp với `.csv` hình nộm; tờ mặt 22 ô vào engine (mắt, mày, 9 miệng, 6 bàn tay thay cho `face_map.csv`) | chưa |
-| 6 | Engine: giới hạn biên độ khớp; quay người bằng đổi cut + ép dẹt 3 khung; PseudoYaw chỉ còn đầu ±15°; STRESS thêm 2 nhịp quay người và đổi miệng, bàn tay | chưa |
+| 6 | Engine: giới hạn biên độ khớp (`ClipPlayer.limitDeg`, bảng `KaiArt.jointLimitDeg`: vai 165, khuỷu 135, cổ tay 60, hông 95, gối 125, cổ chân 40, đầu 25, thân 35; `motionCheck` đạt); quay người bằng đổi cut + ép dẹt đã có sẵn (`TurnMove`, `--es turn`); còn: PseudoYaw chỉ còn đầu ±15°, STRESS thêm 2 nhịp quay người và đổi miệng, bàn tay (sau khi tờ mặt vào engine) | giới hạn khớp xong 2026-10-19; phần còn lại chưa |
 | 7 | Kai mới: `joint_sheet.sh … green` về 0 xanh, 0 lỗ ở 16 tư thế × 2 góc; selftest; `motionCheck`; tờ duyệt tổng; người dùng duyệt rồi mới thay `files/kai`, `files/kai_front`; ghi baseline | chưa |
 | 8 | Lần lượt Mia → Leo → Hana → Bo theo cùng flow (brief, 3 hình, kiểm, cắt), mỗi lần một nhân vật | chưa |
 
