@@ -191,3 +191,80 @@ internal fun faceCheck(char: String): Boolean {
     }
     return report(File(design, "facecheck"), img, checks)
 }
+
+/**
+ * The limb sheet (assets/<char>/design/limbs.png, template rig_limbs): 16:9 on magenta, one piece per slot and
+ * nothing else, every piece in the front view's colours, the hand from the back as big as the face sheet's hands,
+ * the thigh about twice the front cut's thigh width (the cut scales each piece to its part anyway; this catches a
+ * piece drawn at a wrong scale or a missing one).
+ */
+internal fun limbCheck(char: String): Boolean {
+    val design = File("assets/$char/design")
+    val f = File(design, "limbs.png")
+    require(f.exists()) { "thiếu $f" }
+    val img = Img.load(f)
+    val k = img.w.toFloat() / FACE_W
+    val slots = File("assets/templates/rig_limbs.csv").readLines().filter { it.isNotBlank() && !it.startsWith("#") }.map { l ->
+        val p = l.split(","); p[0] to Box((p[1].toFloat() * k).roundToInt(), (p[2].toFloat() * k).roundToInt(), (p[3].toFloat() * k).roundToInt(), (p[4].toFloat() * k).roundToInt())
+    }
+    val checks = ArrayList<Check>()
+    checks += Check("khổ 16:9", abs(img.w * 9 - img.h * 16) <= img.w / 10, "${img.w}x${img.h}")
+    checks += Check("nền magenta", magenta(cornerColour(img)) >= 150, "độ magenta ở góc ${magenta(cornerColour(img))}")
+    val keyed = keyMagenta(img)
+    val (_, comps) = components(keyed, 15)
+    val taken = HashSet<Comp>()
+    val mains = LinkedHashMap<String, Comp>()
+    for ((name, b) in slots) {
+        val mx = (b.x1 - b.x0) / 2; val my = (b.y1 - b.y0) / 2
+        val inside = comps.filter { it.cx in (b.x0 - mx)..(b.x1 + mx) && it.cy in (b.y0 - my)..(b.y1 + my) }
+        taken += inside
+        val main = inside.maxByOrNull { it.area }
+        val ok = main != null && inside.count { it.area >= 60 } <= 2
+        checks += Check("ô $name", ok, when { main == null -> "trống"; else -> "${inside.size} cụm, chính ${main.x1 - main.x0 + 1}x${main.y1 - main.y0 + 1} px" }, b)
+        if (main != null) mains[name] = main
+    }
+    val stray = comps.filter { it !in taken && it.area >= 60 && !(it.cx > img.w - 160 * k && it.cy > img.h - 160 * k) }
+    checks += Check("không có mảnh ngoài ô", stray.isEmpty(), "${stray.size} mảnh lạ" + (stray.firstOrNull()?.let { " (ở ${it.x0},${it.y0}, ${it.area} px)" } ?: ""),
+        stray.firstOrNull()?.let { Box(it.x0, it.y0, it.x1 + 1, it.y1 + 1) })
+    fun width(c: Comp) = c.x1 - c.x0 + 1
+    // Colours: each piece's main colours must all be main colours of the front view (same clothes, same skin).
+    val ff = File(design, "view_front.png")
+    if (ff.exists()) {
+        val fk = keyMagenta(Img.load(ff)); val fs = Silhouette(fk)
+        val fpal = mainColours(fk.px.filterIndexed { i, _ -> fs.on[i] }, .03f)
+        for ((name, b) in slots) {
+            val px = ArrayList<Int>()
+            for (y in max(b.y0, 0) until min(b.y1, img.h)) for (x in max(b.x0, 0) until min(b.x1, img.w)) { val c = keyed[x, y]; if (a(c) > 200) px += c }
+            val pal = mainColours(px, .15f)
+            val off = pal.filter { c -> fpal.none { colourDist(it, c) <= 45 } }
+            checks += Check("màu $name như thân", pal.isNotEmpty() && off.isEmpty(),
+                if (pal.isEmpty()) "trống" else if (off.isEmpty()) "màu chính có trong trực diện" else "màu lạ " + off.joinToString(" ") { "#%06X".format(it and 0xFFFFFF) }, b)
+        }
+    }
+    // Scale: the hand from the back against the face sheet's hands (same template scale).
+    val face = File(design, "face.png")
+    val back = mains["hand_back"]
+    if (face.exists() && back != null) {
+        val fimg = keyMagenta(Img.load(face)); val fk = fimg.w.toFloat() / FACE_W
+        val (_, fc) = components(fimg, 15)
+        val hands = File("assets/templates/rig_face.csv").readLines().filter { it.startsWith("hand_") }.mapNotNull { l ->
+            val p = l.split(","); val x0 = p[1].toFloat() * fk; val x1 = p[3].toFloat() * fk; val y0 = p[2].toFloat() * fk; val y1 = p[4].toFloat() * fk
+            fc.filter { it.cx.toFloat() in x0..x1 && it.cy.toFloat() in y0..y1 }.maxByOrNull { it.area }?.let { width(it) / fk }
+        }
+        if (hands.isNotEmpty()) {
+            val hw = hands.average().toFloat(); val bw = width(back) / k
+            checks += Check("bàn tay mu cùng cỡ tờ mặt", bw in .67f * hw..1.5f * hw, "rộng ${bw.roundToInt()} px, tay tờ mặt trung bình ${hw.roundToInt()} px (cho phép 0,67–1,5 lần)")
+        }
+    }
+    // Scale: the thigh end on against the front cut's thigh (sheet pieces are FACE_SCALE times the views).
+    val cut = File("tools/build/cut/${char}_front/out/parts.csv")
+    val thigh = mains["thigh_toward"]
+    if (cut.exists() && thigh != null) {
+        val tw = cut.readLines().firstOrNull { it.startsWith("thigh_near,") }?.split(",")?.get(4)?.toFloat()
+        if (tw != null) {
+            val want = tw * FACE_SCALE.toFloat(); val got = width(thigh) / k
+            checks += Check("đùi cùng tỉ lệ bộ cắt", got in .75f * want..1.33f * want, "rộng ${got.roundToInt()} px, cần khoảng ${want.roundToInt()} (đùi bộ cắt ${tw.roundToInt()} x $FACE_SCALE; cho phép 0,75–1,33 lần)")
+        }
+    }
+    return report(File(design, "limbcheck"), img, checks)
+}

@@ -23,12 +23,13 @@ import kotlin.math.tan
  * legs are all visible and nothing big has to be invented later; and one small face sheet (eyes, brows, mouths, hands).
  * Every joint of a view mannequin goes to its .csv (name,x,y) in the names AutoSpec.kt reads; every slot of the face
  * sheet to its .csv (name,x0,y0,x1,y1,scale).
- *   rigtemplate <dir>        writes rig_front.png/.csv, rig_3q.png/.csv, rig_face.png/.csv
+ *   rigtemplate <dir>        writes rig_front.png/.csv, rig_3q.png/.csv, rig_face.png/.csv, rig_limbs.png/.csv
  */
 internal fun drawRigTemplates(dir: File) {
     drawRigView(0, File(dir, "rig_front.png"))
     drawRigView(45, File(dir, "rig_3q.png"))
     drawFaceTemplate(File(dir, "rig_face.png"))
+    drawLimbTemplate(File(dir, "rig_limbs.png"))
 }
 
 /** Arms this far below horizontal: the armpit stays open, the pose still reads as natural. */
@@ -239,6 +240,81 @@ internal fun drawFaceTemplate(out: File) {
     ImageIO.write(img, "png", out)
     File(out.path.removeSuffix(".png") + ".csv").writeText(
         "# Slots of ${out.name} ($FACE_W x $FACE_H px, Gemini's 16:9 web size): name,x0,y0,x1,y1,scale (scale: times the 1024 views' body scale).\n" + lines.joinToString("\n") + "\n"
+    )
+    println("wrote $out (${lines.size} slots)")
+}
+
+/**
+ * The limb sheet (substitute drawings, ART_PIPELINE.md section 1): what a rigid cut cannot show by turning its parts,
+ * drawn instead of squashed. All of the character's RIGHT side (the near side of the front view); the far side uses
+ * them mirrored, and the three-quarter cut (turned about 20 degrees) the same pieces. Row 1: upper arm pointing at the
+ * viewer (sleeve seen end on), forearm pointing at the viewer (open hand facing the viewer, forearm end behind the
+ * wrist), the relaxed hand from the back. Row 2: thigh pointing at the viewer (sitting, seen from the front: shorts
+ * leg end on, knee in its opening), the shoe with its sole to the viewer (foot kicked back). Same scale as the face
+ * sheet. The .csv adds each piece's joints as fractions of its box: jx,jy where it hangs from its parent bone, cx,cy
+ * where its child bone starts (elbow, knee; the joint itself when the child is hidden by the piece).
+ */
+internal fun drawLimbTemplate(out: File) {
+    val img = BufferedImage(FACE_W, FACE_H, BufferedImage.TYPE_INT_RGB)
+    val g = img.createGraphics()
+    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+    g.color = Color(MAG); g.fillRect(0, 0, FACE_W, FACE_H)
+    val k = FACE_SCALE
+    val grey = Color(165, 165, 165); val dark = Color(120, 120, 120); val light = Color(205, 205, 205)
+    class Limb(val name: String, val w: Double, val h: Double, val j: DoubleArray, val c: DoubleArray, val draw: (Double, Double) -> Unit)
+    // Body units (the views' mannequin: limbs 62 wide, sleeve about 80), times k.
+    val upper = Limb("upper_toward", 84.0, 84.0, doubleArrayOf(.5, .5), doubleArrayOf(.5, .55)) { x, y ->
+        g.color = grey; g.fill(Ellipse2D.Double(x, y, 84 * k, 84 * k))
+        g.color = light; g.fill(Ellipse2D.Double(x + 14 * k, y + 18 * k, 56 * k, 56 * k))
+    }
+    val fore = Limb("fore_toward", 76.0, 104.0, doubleArrayOf(.5, .82), doubleArrayOf(.5, .82)) { x, y ->
+        g.color = dark; g.fill(Ellipse2D.Double(x + 10 * k, y + 56 * k, 56 * k, 48 * k))
+        g.color = grey
+        for ((i, f) in listOf(30.0, 34.0, 28.0).withIndex()) g.fill(RoundRectangle2D.Double(x + (14 + i * 15) * k, y + (34 - f) * k, 13 * k, (f + 10) * k, 10 * k, 10 * k))
+        g.fill(RoundRectangle2D.Double(x + 12 * k, y + 30 * k, 48 * k, 44 * k, 14 * k, 14 * k))
+        g.stroke = BasicStroke((10 * k).toFloat(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND)
+        g.draw(Line2D.Double(x + 60 * k, y + 56 * k, x + 70 * k, y + 38 * k))
+    }
+    val back = Limb("hand_back", 60.0, 94.0, doubleArrayOf(.5, .93), doubleArrayOf(.5, .93)) { x, y ->
+        val px = x + 12 * k; val py = y + 28 * k
+        g.color = grey
+        for ((i, f) in listOf(20.0, 26.0, 22.0).withIndex()) g.fill(RoundRectangle2D.Double(px + (1.5 + i * 13) * k, py - f * k, 11 * k, (f + 10) * k, 9 * k, 9 * k))
+        g.fill(RoundRectangle2D.Double(px, py, 40 * k, 40 * k, 12 * k, 12 * k))
+        g.stroke = BasicStroke((9 * k).toFloat(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND)
+        g.draw(Line2D.Double(px, py + 20 * k, px - 10 * k, py + 8 * k))
+        g.color = light; g.fill(RoundRectangle2D.Double(px + 10 * k, py + 40 * k, 20 * k, 24 * k, 6 * k, 6 * k))
+    }
+    val thigh = Limb("thigh_toward", 80.0, 84.0, doubleArrayOf(.5, .12), doubleArrayOf(.5, .66)) { x, y ->
+        g.color = grey; g.fill(RoundRectangle2D.Double(x, y, 80 * k, 70 * k, 30 * k, 30 * k))
+        g.color = dark; g.fill(Ellipse2D.Double(x + 8 * k, y + 30 * k, 64 * k, 36 * k))
+        g.color = light; g.fill(Ellipse2D.Double(x + 12 * k, y + 28 * k, 56 * k, 56 * k))
+    }
+    val sole = Limb("shoe_sole", 56.0, 96.0, doubleArrayOf(.5, .12), doubleArrayOf(.5, .12)) { x, y ->
+        g.color = light; g.fill(RoundRectangle2D.Double(x + 14 * k, y, 28 * k, 24 * k, 8 * k, 8 * k))
+        g.color = grey; g.fill(RoundRectangle2D.Double(x, y + 14 * k, 56 * k, 82 * k, 50 * k, 50 * k))
+        g.color = dark; g.fill(RoundRectangle2D.Double(x + 8 * k, y + 24 * k, 40 * k, 66 * k, 40 * k, 40 * k))
+    }
+    val rows = listOf(listOf(upper, fore, back), listOf(thigh, sole))
+    val lines = ArrayList<String>()
+    val rowH = listOf(FACE_H * .52, FACE_H * .48)
+    var y = 0.0
+    for ((ri, row) in rows.withIndex()) {
+        val gap = (FACE_W - row.sumOf { it.w * k }) / (row.size + 1)
+        var x = gap
+        val cy = y + rowH[ri] / 2
+        for (s in row) {
+            val sw = s.w * k; val sh = s.h * k; val sy = cy - sh / 2
+            s.draw(x, sy)
+            lines += "${s.name},${x.toInt()},${sy.toInt()},${(x + sw).toInt()},${(sy + sh).toInt()},$k,${s.j[0]},${s.j[1]},${s.c[0]},${s.c[1]}"
+            x += sw + gap
+        }
+        y += rowH[ri]
+    }
+    out.parentFile?.mkdirs()
+    ImageIO.write(img, "png", out)
+    File(out.path.removeSuffix(".png") + ".csv").writeText(
+        "# Slots of ${out.name} ($FACE_W x $FACE_H px): name,x0,y0,x1,y1,scale,jx,jy,cx,cy (joint to the parent bone and start of the child bone, as fractions of the box).\n" +
+            lines.joinToString("\n") + "\n"
     )
     println("wrote $out (${lines.size} slots)")
 }

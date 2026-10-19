@@ -1,11 +1,11 @@
 #!/bin/zsh
 # The minimal character flow (ART_PIPELINE.md section 3), one step at a time. Prints what to attach, the prompt to paste
 # (brief filled in), where to save the image, and the check to run; runs the checks and the cut.
-#   tools/new_character.sh <char> front|3q|face|check-front|check-3q|check-face|cut
+#   tools/new_character.sh <char> front|3q|face|limbs|check-front|check-3q|check-face|check-limbs|cut
 # Needs assets/<char>/brief.txt (one English paragraph, see assets/templates/brief_template.md).
 set -e
 char=${1:?usage: tools/new_character.sh <char> <step>}
-step=${2:?step: front|3q|face|check-front|check-3q|check-face|cut}
+step=${2:?step: front|3q|face|limbs|check-front|check-3q|check-face|check-limbs|cut}
 cd "${0:A:h}/.."
 a=assets/$char; p=assets/templates/prompts/web; d=$a/design
 brief=$a/brief.txt
@@ -29,11 +29,17 @@ case $step in
     echo "## Đính kèm theo thứ tự: (1) $d/view_front.png  (2) assets/templates/rig_face.png"
     echo "## Lưu hình về: $d/face.png, rồi chạy: tools/new_character.sh $char check-face"
     echo; section $p/face.txt 1 ;;
+  limbs)
+    echo "## Bước 3b: tờ tay chân (hình thay thế khi tay, chân chĩa về phía người xem). Cuộc trò chuyện MỚI."
+    echo "## Đính kèm theo thứ tự: (1) $d/view_front.png  (2) assets/templates/rig_limbs.png"
+    echo "## Lưu hình về: $d/limbs.png, rồi chạy: tools/new_character.sh $char check-limbs"
+    echo; section $p/limbs.txt 1 ;;
   check-front) ./gradlew :tools:run -q --args="viewcheck $char front" ;;
   check-3q) ./gradlew :tools:run -q --args="viewcheck $char 3q" ;;
   check-face) ./gradlew :tools:run -q --args="facecheck $char" ;;
+  check-limbs) ./gradlew :tools:run -q --args="limbcheck $char" ;;
   cut)
     echo "## Bước 4: cắt (tools/build/cut/${char}_<view>), rồi joint_sheet.sh"
     ./gradlew :tools:run -q --args="cutview $char front" && ./gradlew :tools:run -q --args="cutview $char 3q" ;;
-  *) echo "step: front|3q|face|check-front|check-3q|check-face|cut"; exit 1 ;;
+  *) echo "step: front|3q|face|limbs|check-front|check-3q|check-face|check-limbs|cut"; exit 1 ;;
 esac
