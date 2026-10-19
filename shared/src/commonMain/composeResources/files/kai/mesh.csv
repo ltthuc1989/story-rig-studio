@@ -1,23 +1,18 @@
 # Skinned meshes (art=mesh), ref.png pixels. Written by :tools (MeshSpec.kt); see there for how each number is derived.
+# rigid cut (minimal flow): no groups, every part is a rigid piece on its bone
 # group,name,cell,parts (;),bones (;)
-group,arm_far,8,arm_upper_far;arm_fore_far,shoulder_far;elbow_far;wrist_far
-group,leg_far,8,shin_far;thigh_far,hip_far;knee_far;ankle_far
-group,leg_near,8,shin_near;thigh_near,hip_near;knee_near;ankle_near
-group,pelvis,8,pelvis,root;hip_near;hip_far
-group,torso,8,torso,torso;root
-group,arm_near,8,arm_upper_near;arm_fore_near,shoulder_near;elbow_near;wrist_near
 # influence,bone,x0,y0,x1,y1,radius,blend,attachTo,band
-influence,torso,515.0,418.2,515.0,587.6,82.0,29.9,,0
-influence,root,492.5,632.9,537.5,632.9,40.5,29.9,,0
-influence,shoulder_near,448.5,442.1,327.5,500.4,0.0,13.0,,0
-influence,elbow_near,327.5,500.4,243.2,545.9,0.0,13.0,,0
-influence,wrist_near,243.2,545.9,211.5,566.0,0.0,13.0,,0
-influence,shoulder_far,586.9,446.6,701.7,503.4,0.0,13.0,,0
-influence,elbow_far,701.7,503.4,780.5,545.3,0.0,13.0,,0
-influence,wrist_far,780.5,545.3,812.5,565.5,0.0,13.0,,0
-influence,hip_near,472.0,683.0,454.3,755.0,0.0,13.0,root,40.3
-influence,knee_near,454.3,755.0,455.5,863.3,0.0,13.0,,0
-influence,ankle_near,455.5,863.3,477.0,900.0,0.0,13.0,,0
-influence,hip_far,562.0,683.0,556.8,750.0,0.0,13.0,root,40.3
-influence,knee_far,556.8,750.0,556.8,860.0,0.0,13.0,,0
-influence,ankle_far,556.8,860.0,583.5,897.0,0.0,13.0,,0
+influence,torso,512.0,397.6,512.0,693.1,61.5,31.8,,0
+influence,root,486.0,638.2,538.0,638.2,46.8,31.8,,0
+influence,shoulder_near,369.9,432.7,278.3,460.7,0.0,13.8,,0
+influence,elbow_near,278.3,460.7,203.9,477.8,0.0,13.8,,0
+influence,wrist_near,203.9,477.8,168.0,487.0,0.0,13.8,,0
+influence,shoulder_far,605.2,427.9,721.3,454.7,0.0,13.8,,0
+influence,elbow_far,721.3,454.7,819.4,478.1,0.0,13.8,,0
+influence,wrist_far,819.4,478.1,855.5,487.0,0.0,13.8,,0
+influence,hip_near,462.0,695.0,453.5,771.0,0.0,13.8,root,42.8
+influence,knee_near,453.5,771.0,409.5,886.6,0.0,13.8,,0
+influence,ankle_near,409.5,886.6,410.5,922.5,0.0,13.8,,0
+influence,hip_far,566.0,695.0,576.5,773.0,0.0,13.8,root,42.8
+influence,knee_far,576.5,773.0,595.8,890.5,0.0,13.8,,0
+influence,ankle_far,595.8,890.5,631.5,928.0,0.0,13.8,,0

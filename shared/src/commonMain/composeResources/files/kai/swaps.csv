@@ -1,0 +1,11 @@
+# part,dir (toward|away|back),swap part,child fore (share of the bone where its child starts),hides (;): substitute drawings, Limbs.kt
+arm_upper_near,toward,upper_toward_near,0.037,
+arm_fore_near,toward,fore_toward_near,0.020,hand_near
+hand_near,back,hand_back_near,0.020,
+thigh_near,toward,thigh_toward_near,0.820,
+shoe_near,away,shoe_sole_near,0.020,
+arm_upper_far,toward,upper_toward_far,0.035,
+arm_fore_far,toward,fore_toward_far,0.020,hand_far
+hand_far,back,hand_back_far,0.020,
+thigh_far,toward,thigh_toward_far,0.788,
+shoe_far,away,shoe_sole_far,0.020,
