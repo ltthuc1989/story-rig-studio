@@ -41,6 +41,7 @@ internal fun cutView(char: String, view: String) {
     } + (if (bad == 0) "=> ĐẠT: mọi khớp trong ${lim.roundToInt()} px của hình nộm" else "=> LỖI: $bad khớp lệch quá ${lim.roundToInt()} px, xem $previewDir/points.png")
     println(lines.joinToString("\n"))
     File(previewDir, "points.txt").writeText(lines.joinToString("\n") + "\n")
-    cutWith(design, outDir, previewDir, S, srcName = "view_$view.png", faceSheet = false)
+    // Rigid pieces (no skinned mesh): cut-out joints with round caps, as the minimal flow decided.
+    cutWith(design, outDir, previewDir, S, srcName = "view_$view.png", faceSheet = false, rigid = true)
     println("cutview $cut -> $outDir")
 }

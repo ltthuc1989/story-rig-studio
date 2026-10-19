@@ -570,7 +570,7 @@ internal fun cutRef(dir: File, outDir: File, previewDir: File) = cutWith(dir, ou
  * [srcName]: the image in [dir] to cut (default: the old flow's ref.png / view_<view>.png; the minimal flow's cutview
  * passes view_<view>.png for every view). [faceSheet]: add the old face sheets (face.png + face_map.csv) in 3q.
  */
-internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec, srcName: String? = null, faceSheet: Boolean = true) {
+internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec, srcName: String? = null, faceSheet: Boolean = true, rigid: Boolean = false) {
     val col = S.colours
     val ref = Img.load(File(dir, srcName ?: if (S.view == "3q") "ref.png" else "view_${S.view}.png"))
     val img = defringe(keyMagenta(ref))
@@ -771,7 +771,7 @@ internal fun cutWith(dir: File, outDir: File, previewDir: File, S: RefSpec, srcN
 
     writeOut(outDir, bones, parts, orderFor(S.view))
     writeCharacter(File(dir.parentFile, "character.csv"), File(outDir, "character.csv"), S.view)
-    writeMesh(outDir, bones, parts, BodyMeasure(torsoHalf, hemY, elbowHalf.average().toFloat()))
+    writeMesh(outDir, bones, parts, BodyMeasure(torsoHalf, hemY, elbowHalf.average().toFloat()), rigid)
     renderPreviews(previewDir, ref, bones, parts, orderFor(S.view))
 }
 

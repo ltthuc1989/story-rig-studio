@@ -36,7 +36,12 @@ class BodyMeasure(
     val limbHalfWidth: Float,
 )
 
-internal fun writeMesh(outDir: File, bones: List<Bone>, parts: Map<String, Part>, m: BodyMeasure) {
+/**
+ * [rigid]: the minimal flow (ART_PIPELINE.md section 1): no skinned groups at all, every part is a rigid piece turning
+ * on its bone with the round caps the cut gave it (the app then draws bitmap parts even with art=mesh). The
+ * influences are still written so a group can be added back by hand.
+ */
+internal fun writeMesh(outDir: File, bones: List<Bone>, parts: Map<String, Part>, m: BodyMeasure, rigid: Boolean = false) {
     val byName = bones.associateBy { it.name }
     fun b(n: String) = byName.getValue(n)
     val w = m.limbHalfWidth
@@ -47,7 +52,7 @@ internal fun writeMesh(outDir: File, bones: List<Bone>, parts: Map<String, Part>
 
     // Hands are not in the arm meshes: they stay rigid parts on the wrist bone, so turning a hand over (a mirror,
     // Clip.ROLL) doesn't pinch the wrist where its weights blend with the forearm's; the hand covers the wrist joint.
-    val groups = listOf(
+    val groups = if (rigid) emptyList() else listOf(
         "arm_far" to (listOf("arm_upper_far", "arm_fore_far") to listOf("shoulder_far", "elbow_far", "wrist_far")),
         "leg_far" to (listOf("shin_far", "thigh_far") to listOf("hip_far", "knee_far", "ankle_far")),
         "leg_near" to (listOf("shin_near", "thigh_near") to listOf("hip_near", "knee_near", "ankle_near")),
@@ -98,6 +103,7 @@ internal fun writeMesh(outDir: File, bones: List<Bone>, parts: Map<String, Part>
     fun f(v: Float) = "%.1f".format(v)
     val sb = StringBuilder()
     sb.append("# Skinned meshes (art=mesh), ref.png pixels. Written by :tools (MeshSpec.kt); see there for how each number is derived.\n")
+    if (rigid) sb.append("# rigid cut (minimal flow): no groups, every part is a rigid piece on its bone\n")
     sb.append("# group,name,cell,parts (;),bones (;)\n")
     for ((name, pb) in groups) sb.append("group,$name,$cell,${pb.first.joinToString(";")},${pb.second.joinToString(";")}\n")
     sb.append("# influence,bone,x0,y0,x1,y1,radius,blend,attachTo,band\n")
