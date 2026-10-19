@@ -1,6 +1,6 @@
 === TIN 1 (cuộc trò chuyện mới; đính kèm theo thứ tự: (1) assets/<char>/design/view_front.png đã đạt, (2) assets/templates/rig_face.png) ===
 Create one 16:9 landscape image: a face and hands parts sheet for 2D cutout animation and lip sync, for the character in Image 1. Keep exactly the same face design, eye and mouth style, skin color, hand style and number of fingers as Image 1.
-Image 2 is a grey layout sheet: each grey shape is one piece to draw, at the same position and about the same size, in three rows read left to right. Do not draw the grey shapes themselves. Every piece is drawn alone on the magenta background, never on a skin-colored disc or patch, and no piece touches another.
+Image 2 is a grey layout sheet: each grey shape is one piece to draw, at the same position and about the same size, in three rows read left to right. Do not draw the grey shapes themselves. Every piece is drawn alone on the magenta background, never on a skin-colored disc or patch, and no piece touches another. The grey hands have three fingers and a thumb; draw the character's hands with the number of fingers they have in Image 1.
 
 Row 1, 7 pieces, the character's eye on the LEFT of Image 1 and its eyebrow, all at the same scale, about twice the size they have in Image 1:
 (1) the eye open, looking at the viewer, with its highlight; (2) the eye closed, one thin curved line; (3) the eye closed happy, an upside-down U; (4) the eye wide open, surprised; (5) the eyebrow neutral; (6) the eyebrow raised; (7) the eyebrow frowning.

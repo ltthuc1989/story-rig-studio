@@ -160,7 +160,7 @@ private class FaceSlot(val name: String, val w: Double, val h: Double, val draw:
 
 /**
  * The face sheet: row 1 the front eye (open, closed, happy, wide) and brows (neutral, raised, frown), row 2 nine mouths
- * (M, AI, E, O, U, FV, smile, sad, laugh), row 3 six hands (relaxed, fist, point, open palm, thumb up, grip).
+ * (M, AI, E, O, U, FV, smile, sad, laugh), row 3 six hands (relaxed, fist, point, open palm, thumb up, grip), three fingers and a thumb.
  * Sizes are body units times FACE_SCALE (eye 36 x 26, mouth about 45 wide, hand 70 tall with a 24 px wrist stub).
  */
 internal fun drawFaceTemplate(out: File) {
@@ -193,16 +193,17 @@ internal fun drawFaceTemplate(out: File) {
             else -> gg.fill(RoundRectangle2D.Double(x, y, w * k, h * k, 10 * k, 10 * k))
         }
     }
-    // Hands: palm block with fingers (a list of finger heights, 0 = folded) and a thumb; a wrist stub below.
+    // Hands: cartoon hands, three fingers and a thumb (the classic cut-out convention Kai's design follows): a palm
+    // block with fingers (a list of finger heights, 0 = folded) and a thumb; a wrist stub below.
     fun hand(name: String, fingers: List<Double>, thumb: Double?, fist: Boolean = false) = FaceSlot(name, 60 * k, 94 * k) { gg, x, y ->
         val px = x + 8 * k; val py = y + 28 * k
         gg.color = grey
         if (!fist) for ((i, f) in fingers.withIndex()) if (f > 0) {
-            gg.fill(RoundRectangle2D.Double(px + (2 + i * 10.5) * k, py - f * k, 8.5 * k, (f + 10) * k, 8 * k, 8 * k))
+            gg.fill(RoundRectangle2D.Double(px + (1.5 + i * 13) * k, py - f * k, 11 * k, (f + 10) * k, 9 * k, 9 * k))
         }
         gg.fill(RoundRectangle2D.Double(px, py, 40 * k, 40 * k, 12 * k, 12 * k))
         if (thumb != null) { stroke(9 * k); gg.draw(Line2D.Double(px + 40 * k, py + 20 * k, px + (40 + 10) * k, py + (20 - thumb) * k)) }
-        if (fist) { gg.color = dark; stroke(1.5 * k); for (i in 1..3) gg.draw(Line2D.Double(px + (i * 10) * k, py + 4 * k, px + (i * 10) * k, py + 20 * k)) }
+        if (fist) { gg.color = dark; stroke(1.5 * k); for (i in 1..2) gg.draw(Line2D.Double(px + (i * 13.5) * k, py + 4 * k, px + (i * 13.5) * k, py + 20 * k)) }
         gg.color = light
         gg.fill(RoundRectangle2D.Double(px + 10 * k, py + 40 * k, 20 * k, 24 * k, 6 * k, 6 * k))
     }
@@ -213,8 +214,8 @@ internal fun drawFaceTemplate(out: File) {
             mouth("mouth_u", 22.0, 22.0, 1), mouth("mouth_fv", 44.0, 16.0, 4), mouth("mouth_smile", 44.0, 14.0, 2), mouth("mouth_sad", 36.0, 12.0, 3), mouth("mouth_laugh", 52.0, 40.0, 1),
         ),
         listOf(
-            hand("hand_relaxed", listOf(22.0, 26.0, 24.0, 20.0), 12.0), hand("hand_fist", listOf(), 8.0, fist = true), hand("hand_point", listOf(0.0, 30.0, 0.0, 0.0), 6.0),
-            hand("hand_open", listOf(26.0, 30.0, 28.0, 22.0), 16.0), hand("hand_thumb_up", listOf(), 30.0, fist = true), hand("hand_grip", listOf(10.0, 12.0, 12.0, 10.0), 14.0),
+            hand("hand_relaxed", listOf(22.0, 26.0, 20.0), 12.0), hand("hand_fist", listOf(), 8.0, fist = true), hand("hand_point", listOf(30.0, 0.0, 0.0), 6.0),
+            hand("hand_open", listOf(26.0, 30.0, 24.0), 16.0), hand("hand_thumb_up", listOf(), 30.0, fist = true), hand("hand_grip", listOf(10.0, 12.0, 10.0), 14.0),
         ),
     )
     val lines = ArrayList<String>()
