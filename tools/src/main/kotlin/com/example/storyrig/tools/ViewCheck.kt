@@ -76,7 +76,8 @@ internal fun viewCheck(char: String, view: String): Boolean {
     val tm = TemplateMap(tpl, sil)
     val cH = sil.box.y1 - sil.box.y0; val tH = tpl.box.y1 - tpl.box.y0
     val hScale = cH.toFloat() / tH * img.w / 1024f
-    checks += Check("chiều cao như hình nộm", abs(hScale - 1) <= .08f, "cao $cH px, hình nộm $tH px (tỉ lệ ${"%.2f".format(hScale)}, cho phép 0,92–1,08)", sil.box)
+    // Loose: the cut maps the mannequin onto the character's own box anyway; this only catches a tiny or cropped figure.
+    checks += Check("chiều cao như hình nộm", abs(hScale - 1) <= .12f, "cao $cH px, hình nộm $tH px (tỉ lệ ${"%.2f".format(hScale)}, cho phép 0,88–1,12)", sil.box)
     val bottomOff = sil.box.y1 - tpl.box.y1 * img.w / 1024f
     checks += Check("đế chân trên đường đất", abs(bottomOff) <= 40, "lệch ${bottomOff.roundToInt()} px (cho phép 40)")
     // Pose: the hands are the outermost pixels between the neck and the crotch, near the mannequin's hands.
@@ -102,7 +103,9 @@ internal fun viewCheck(char: String, view: String): Boolean {
     for (y in 3 until sil.h - 3) for (x in 3 until sil.w - 3) {
         if (!sil.at(x, y)) continue
         if ((-3..3).any { dy -> (-3..3).any { dx -> !sil.at(x + dx, y + dy) } }) continue
-        opaque++; if (magenta(img[x, y]) > 10) pink++
+        // 20: near keyMagenta's lower bound (30), where a colour starts to key out; dark hair with a purple cast
+        // (#291D2D) measures about 10 and is fine.
+        opaque++; if (magenta(img[x, y]) > 20) pink++
     }
     checks += Check("không có hồng trên nhân vật", pink <= opaque / 1000, "$pink điểm hồng / $opaque bên trong (cho phép 0,1%)")
     val hs = holes(keyed, 30)

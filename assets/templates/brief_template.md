@@ -9,7 +9,7 @@
 - Dưới: quần ngắn / quần dài / váy, màu, chi tiết.
 - Tất, giày.
 - Phụ kiện (balo, mũ, kính...).
-- Bàn tay: số ngón (thường 3 ngón và ngón cái).
+- Bàn tay: không ép số ngón (Gemini vẽ tự nhiên; ép 4 ngón từng ra tay vụng). Chỉ ghi nếu nhân vật có tay đặc biệt (găng, vuốt).
 
 ## Kiểm thiết kế dễ rig (mỗi dòng phải là "có", hoặc ghi cách xử lý)
 - [ ] Tay áo ngắn, kết thúc trên khuỷu (khuỷu gập không kéo tay áo).
@@ -22,5 +22,5 @@
 - [ ] Mũ, kính (nếu có): ghi "là mảnh riêng trên đầu".
 
 ## Đoạn tiếng Anh (chép vào assets/<char>/brief.txt)
-Một đoạn, tả theo thứ tự: tuổi và dáng; da, tóc, mắt; áo; dưới; tất và giày; phụ kiện; số ngón tay.
-Ví dụ: `Kai, a 7-year-old boy with light tan skin, short messy dark hair with a cowlick and a side-swept fringe, big brown eyes; a red T-shirt with short sleeves rolled into a darker red cuff and a small white star on the chest; a small mustard-yellow backpack whose two straps show over the shoulders; blue denim shorts with turned-up cuffs ending above the knee; white socks with one red stripe; orange and white velcro sneakers; hands with three fingers and a thumb.`
+Một đoạn, tả theo thứ tự: tuổi và dáng; da, tóc, mắt; áo; dưới; tất và giày; phụ kiện.
+Ví dụ: `Kai, a 7-year-old boy with light tan skin, short messy dark hair with a cowlick and a side-swept fringe, big brown eyes; a red T-shirt with short sleeves rolled into a darker red cuff and a small white star on the chest; a small mustard-yellow backpack whose two straps show over the shoulders; blue denim shorts with turned-up cuffs ending above the knee; white socks with one red stripe; orange and white velcro sneakers`

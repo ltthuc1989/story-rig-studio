@@ -13,7 +13,6 @@ import java.io.File
 import javax.imageio.ImageIO
 import kotlin.math.abs
 import kotlin.math.cos
-import kotlin.math.hypot
 import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.math.tan
@@ -82,18 +81,8 @@ internal fun drawRigView(yaw: Int, out: File, armDeg: Double = RIG_ARM_DEG, legD
         val ex = side * (82 + 245 * cos(ar)); val ey = 420 + 245 * sin(ar)
         val hx = side * (82 + 286 * cos(ar)); val hy = 420 + 286 * sin(ar)
         limb(g, col, X(side * 82.0), 420.0, X(ex), ey, 31.0)
-        // Hand: a palm with three fingers along the arm and a thumb pointing up (cartoon hands, four digits), so the
-        // picture copied from the mannequin has the right number of fingers; the csv keeps the palm centre.
-        val hcx = X(hx); val dl = hypot(hcx - X(side * 82.0), hy - 420.0)
-        val dx = (hcx - X(side * 82.0)) / dl; val dy = (hy - 420.0) / dl
-        g.color = col; g.fill(Ellipse2D.Double(hcx - 30, hy - 30, 60.0, 60.0))
-        for (deg in listOf(-28.0, 0.0, 28.0)) {
-            val a = Math.toRadians(deg); val fx = dx * cos(a) - dy * sin(a); val fy = dx * sin(a) + dy * cos(a)
-            val len = if (deg == 0.0) 56.0 else 50.0
-            limb(g, col, hcx + fx * 14, hy + fy * 14, hcx + fx * len, hy + fy * len, 10.0)
-        }
-        val tx = side * dy; val ty = -side * dx
-        limb(g, col, hcx - dx * 10, hy - dy * 10, hcx - dx * 10 + tx * 42, hy - dy * 10 + ty * 42, 10.0)
+        // Hand: a plain circle (fingers drawn on the mannequin came back as a deformed hand: Gemini copies the shape).
+        g.color = col; g.fill(Ellipse2D.Double(X(hx) - 35, hy - 35, 70.0, 70.0))
         val n = name(side)
         // Where the arm's axis leaves the torso side (screen half width tw/2), and where its lower edge does: the
         // arm runs cos(ar)*|c| screen px sideways and sin(ar) down per unit of its length.
@@ -124,9 +113,10 @@ internal fun drawRigView(yaw: Int, out: File, armDeg: Double = RIG_ARM_DEG, legD
     for (side in listOf(-1, 1)) {
         val d = depth(side * 42.0, ez)
         if (d < 15) continue
-        val ew = 22 * (d / ez).coerceIn(.35, 1.0)
+        // Big cartoon eyes (about a fifth of the head's width): the eye size is copied from the mannequin too.
+        val ew = 48 * (d / ez).coerceIn(.35, 1.0)
         g.color = Color(140, 140, 140)
-        g.fill(Ellipse2D.Double(X(side * 42.0, ez) - ew / 2, 215.0, ew, 30.0))
+        g.fill(Ellipse2D.Double(X(side * 44.0, ez) - ew / 2, 205.0, ew, 56.0))
     }
     if (!symmetric) { g.color = body; g.fill(Ellipse2D.Double(X(0.0, 132.0) - 14, 250.0, 28.0, 26.0)) }
     arm(nearSide, near)

@@ -4,8 +4,11 @@
 === Góc nhìn: tay thấp hơn hoặc cao hơn mannequin
 Edit the image. Keep the character exactly the same. Raise/lower both arms so they are straight and held out to the sides about 15 degrees below horizontal, exactly like the grey mannequin, with a wide empty gap of background under each arm between the arm and the body. Nothing else changes.
 
-=== Góc nhìn: bàn tay 5 ngón
-Edit the image. Keep the character exactly the same, but redraw both hands as simple cartoon hands with exactly FOUR digits: three fingers and a thumb, like Mickey Mouse or The Simpsons. Not five fingers. Nothing else changes.
+=== Góc nhìn: bàn tay vụng, méo, ngón dị dạng
+Edit the image. Keep the character exactly the same, but redraw both hands as simple, natural, relaxed cartoon hands, fingers slightly apart, in the same flat style. Nothing else changes.
+
+=== Góc nhìn: mắt nhỏ, nét mặt nhỏ
+Edit the image. Keep the character exactly the same, but make the eyes bigger: big oval eyes, each about a fifth of the head's width, with one small highlight. Nothing else changes.
 
 === Góc nhìn: tay chạm thân, không có khe dưới nách
 Edit the image. Keep the character exactly the same. The arms must not touch the body: leave a wide empty gap of magenta background under each arm, from the armpit to the hand, so the armpit and the side of the top are fully visible. Nothing else changes.
