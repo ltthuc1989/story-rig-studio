@@ -357,6 +357,8 @@ class KaiRig(
             zeroDeg = { when (it) { "shoulder_near" -> hangNear; "shoulder_far" -> hangFar; else -> 0f } },
             yawDeg = if (adaptView) a.yawDeg else null,
             limitDeg = ::jointLimitDeg, boneName = { a.boneNames[it] },
+            // Rigid limbs turn only in a cut seen mostly from the side; nearer the front they shorten in place.
+            turnPitch = meshes.isNotEmpty() || kotlin.math.abs(kotlin.math.sin(a.yawDeg * kotlin.math.PI.toFloat() / 180f)) >= .7f,
         )
         val inHead = BooleanArray(sk.size) { b -> var x = b; while (x >= 0 && x != head) x = sk.parent[x]; x == head }
         val hi = rig.items.indices.filter { val it = rig.items[it]; it is BitmapPart && inHead[it.bone] }

@@ -157,6 +157,13 @@ class ClipPlayer(
     /** Largest |rotation| (degrees, clip terms) a bone may take; a clip past it is clamped there. */
     limitDeg: (String) -> Float = { Float.MAX_VALUE },
     boneName: (Int) -> String = { "" },
+    /**
+     * Turn a pitched bone in the picture as well as shorten it ([Skeleton.fore]). False only shortens it along its
+     * own axis, as seen from the front: a rigid part turned across the picture and squashed along its length shows its
+     * cut ends as a torn flap (a knee lifted towards the viewer in a three-quarter cut turned 19 degrees), while
+     * shortened in place the thigh shrinks under the shorts, as in the front cut. Skinned limbs bend, so they turn.
+     */
+    private val turnPitch: Boolean = true,
 ) {
     private val limit = FloatArray(sk.size) { limitDeg(boneName(it)) }
     /** Per clip, per channel: index into [acc] (a [Skeleton.local] slot, or the pitch slot), -1 when the rig lacks that bone. */
@@ -231,7 +238,7 @@ class ClipPlayer(
                 r += shown[b] - (if (p >= 0) shown[p] else 0f)
             } else {
                 val sp = sin(pt); val cp = cos(pt)
-                shown[b] = -atan2(sp * sinYaw, cp)
+                shown[b] = if (turnPitch) -atan2(sp * sinYaw, cp) else 0f
                 r += shown[b] - (if (p >= 0) shown[p] else 0f)
                 if (pt != 0f) sk.fore[b] *= maxOf(sqrt(cp * cp + sp * sp * sinYaw * sinYaw), MIN_FORE)
             }
