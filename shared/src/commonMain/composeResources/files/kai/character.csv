@@ -1,5 +1,4 @@
-# key,value: data for the app about this character (copied by cutauto/cutref next to bones.csv)
-# heightScale: real height relative to Kai (a 7-year-old) = 1.0; ref.png always fills ~90% of the frame
+# key,value: Kai drawn as vector (shapes.csv, hoses.csv), same skeleton as the 3q cut
 heightScale,1.0
-# view: which way this cut faces: 3q (three-quarter, facing right), front or back
 view,3q
+yaw,19
