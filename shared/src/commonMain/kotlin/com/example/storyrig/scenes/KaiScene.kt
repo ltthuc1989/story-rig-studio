@@ -102,6 +102,15 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
     private val adaptViews = cfg.flagOf("views", true)
     /** `--es dance pump`: everyone dances that clip only (wave, pump, march, idle; stress for tools/joint_sheet.sh) instead of changing every 8 beats. */
     private val dance = DanceClips.ALL.indexOfFirst { it.name == cfg.valueOf("dance") }
+    /**
+     * `--es move walk`: each actor walks across its share of the stage and back, like Ben in the lake scene: the walk
+     * clip in place, the root carried forward [WALK_STEP] per beat (the clip's stride) so the planted foot, held by
+     * FootLock, stays put while the body passes over it; at the end of its track it turns round (the rig mirrored).
+     */
+    private val walking = cfg.valueOf("move") == "walk"
+    private val walkClip = DanceClips.ALL.indexOfFirst { it.name == "walk" }
+    private val walkX = FloatArray(cfg.count)
+    private val walkDir = FloatArray(cfg.count) { 1f }
     private val turning = cfg.turn.isNotEmpty()
     private val feetNear: Array<FootLock>
     private val feetFar: Array<FootLock>
@@ -208,6 +217,16 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
         dtSec = ((now - nowMs) / 1000f).coerceIn(0f, .05f)
         nowMs = now
         val beat = nowMs / BEAT_MS
+        if (walking) for (i in 0 until n) {
+            walkX[i] += walkDir[i] * WALK_STEP * kaiScale[i] * dtSec * 1000f / BEAT_MS
+            val range = Stage.SAFE_W * .36f / n
+            if (abs(walkX[i]) > range) {
+                walkX[i] = walkX[i].coerceIn(-range, range)
+                walkDir[i] = -walkDir[i]
+                // The rig jumps to its mirror image: its feet are not where they were pinned.
+                for (r in actorFirst[i] until actorFirst[i + 1]) { feetNear[r].reset(); feetFar[r].reset() }
+            }
+        }
         for (i in 0 until n) {
             // A small offset per actor so they are not robot-synchronised.
             val b = beat - i * .04f
@@ -279,9 +298,9 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
         if (useClips) {
             // Everyone changes dance every 8 beats, on the beat, with a half-beat crossfade.
             val bar = (beat / SWITCH_BEATS).toInt().coerceAtLeast(0)
-            val clip = if (dance >= 0) dance else (i + bar) % DanceClips.DANCES.size
+            val clip = if (walking) walkClip else if (dance >= 0) dance else (i + bar) % DanceClips.DANCES.size
             k.player.play(clip, bar * SWITCH_BEATS, fadeBeats = .5f)
-            k.reset(homeX[i], y, kaiScale[i], mirrored[r])
+            k.reset(homeX[i] + walkX[i], y, kaiScale[i], mirrored[r] != (walkDir[i] < 0f))
             k.yaw?.apply(bodyYaw[i], headYaw[i])
             feetNear[r].captureGround(); feetFar[r].captureGround()
             k.player.apply(beat)
@@ -357,7 +376,7 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
         for (i in 0 until n) {
             val sx = squashX[i]
             canvas.save()
-            canvas.translate(homeX[i], GROUND_Y)
+            canvas.translate(homeX[i] + walkX[i], GROUND_Y)
             // The shadow narrows less than the body and stays on the ground during the hop.
             canvas.save()
             canvas.scale(kaiScale[i] * 1.4f * (.5f + .5f * sx), kaiScale[i] * 1.4f)
@@ -367,7 +386,7 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
                 canvas.translate(0f, -hop[i])
                 canvas.scale(sx, squashY[i])
             }
-            canvas.translate(-homeX[i], -GROUND_Y)
+            canvas.translate(-homeX[i] - walkX[i], -GROUND_Y)
             val body = kais[bodyRig[i]]
             val head = kais[headRig[i]]
             if (head === body || body.headFrom < 0 || head.headFrom < 0) {
@@ -396,6 +415,8 @@ class KaiScene(private val cfg: SceneConfig, private val perf: PerfStats, privat
         private const val ARM_SPAN = 640f
 
         private const val BEAT_MS = 500f
+        /** How far a walking actor goes per beat (one step of DanceClips.WALK), ref px: about its stride. */
+        private const val WALK_STEP = 130f
         private const val SWITCH_BEATS = 8f
         private const val GROUND_Y = 960f
         /** Soles sit this far (character px) above the shadow's centre line, so the shadow shows under them. */
