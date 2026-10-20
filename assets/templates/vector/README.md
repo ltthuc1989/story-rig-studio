@@ -1,6 +1,6 @@
 # Khung nhân vật vector (vẽ cho xương, như Ben)
 
-Mỗi nhân vật là một thư mục `shared/src/commonMain/composeResources/files/<char>/` gồm 4 file dữ liệu. Code vẽ dùng chung (KaiArt.kt: `KaiAssets`, `KaiRig`). Mẫu: `kai_vec`.
+Mỗi nhân vật là một thư mục `shared/src/commonMain/composeResources/files/<char>/` gồm 4 file dữ liệu. Code vẽ dùng chung (KaiArt.kt: `KaiAssets`, `KaiRig`). Mẫu: `kai`.
 
 | File | Nội dung |
 |---|---|
