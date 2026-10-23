@@ -31,6 +31,20 @@ def star(cx, cy, R, r):
         pts.append(f'{cx + rr * math.cos(a):.1f} {cy + rr * math.sin(a):.1f}')
     return 'M ' + ' L '.join(pts) + ' Z'
 
+
+def path(cmds, T):
+    """SVG path of [('M', x, y), ('L', x, y), ('Q', cx, cy, x, y), ('C', ...), ('Z',)] in local units, through T(x, y)."""
+    out = []
+    for c in cmds:
+        out.append(c[0])
+        for i in range(1, len(c), 2):
+            x, y = T(c[i], c[i + 1]); out.append(f'{x:.1f} {y:.1f}')
+    return ' '.join(out)
+def frame(ox, oy, deg, mirror_y=1):
+    """Local -> ref: rotate by deg, flip y by mirror_y, then move to (ox, oy)."""
+    a = math.radians(deg); c, s = math.cos(a), math.sin(a)
+    return lambda x, y: (ox + x * c - y * mirror_y * s, oy + x * s + y * mirror_y * c)
+
 # ---------------------------------------------------------------- back layers
 add('backpack', 'torso', BAG, 'M 366 398 Q 376 372 432 370 L 444 372 L 434 612 Q 398 620 370 602 Q 356 500 366 398 Z')
 add('backpack', 'torso', BAG_SH, 'M 366 420 Q 360 500 372 600 Q 382 607 396 608 L 398 420 Q 382 414 366 420 Z')
@@ -38,30 +52,48 @@ add('backpack', 'torso', STRAP_SH, 'M 372 470 L 432 466 L 431 482 L 371 486 Z')
 
 # far arm (tubes) and hand
 marker('arm_upper_far', 'shoulder_far')
-def hand(part, bone, cx, cy, fingers, thumb, col, shade, crease_from, crease_to):
-    add(part, bone, col, ell(cx, cy, 25, 22))
-    for (x, y) in fingers:
-        add(part, bone, col, f'M {cx:.0f} {cy:.0f} L {x} {y}', 13)
-    add(part, bone, col, f'M {thumb[0]} {thumb[1]} L {thumb[2]} {thumb[3]}', 13)
-    add(part, bone, shade, f'M {crease_from[0]} {crease_from[1]} Q {crease_from[2]} {crease_from[3]} {crease_to[0]} {crease_to[1]}', 3.5)
-hand('hand_far', 'wrist_far', 846, 488, [(900, 468), (909, 488), (903, 509), (889, 526)], (842, 476, 864, 444),
-     SKIN_FAR, SKIN_SH, (830, 492, 846, 504), (864, 496))
+def hand(part, bone, wrist, elbow, thumb_side, col, shade):
+    """A cartoon hand drawn along its forearm (x from the wrist towards the fingertips), relaxed: round palm grown out
+    of the wrist, four plump round-tipped fingers lying close together, the thumb apart on [thumb_side] (+1/-1 of
+    local y). Same drawing for every hand of every character; only size and colour change."""
+    deg = math.degrees(math.atan2(wrist[1] - elbow[1], wrist[0] - elbow[0]))
+    T = frame(wrist[0], wrist[1], deg, thumb_side)
+    # palm and wrist: one rounded shape (the forearm tube ends under it)
+    add(part, bone, col, path([('M', -6, -17), ('C', 10, -22, 30, -24, 42, -18), ('C', 50, -12, 50, 12, 42, 18),
+                               ('C', 30, 24, 10, 22, -6, 17), ('Z',)], T))
+    # fingers: index next to the thumb (+y) to the little finger, close together, gently fanned
+    for y, length, ang in ((12, 40, 4), (4, 45, 1), (-4, 42, -2), (-12, 34, -6)):
+        a = math.radians(ang)
+        add(part, bone, col, path([('M', 36, y), ('L', 36 + length * math.cos(a), y + length * math.sin(a))], T), 12.5)
+    # thumb: apart, pointing forward along the index finger
+    add(part, bone, col, path([('M', 14, 14), ('Q', 26, 30, 44, 28)], T), 14)
+    # a line between the fingers and a palm crease, in the shade colour
+    add(part, bone, shade, path([('M', 40, 0), ('L', 70, 1)], T), 2.5)
+    add(part, bone, shade, path([('M', 14, 6), ('Q', 24, 2, 30, -8)], T), 3)
+hand('hand_far', 'wrist_far', (819.4, 478.1), (721.3, 454.7), -1, SKIN_FAR, SKIN_SH)
 
 # legs (tubes) and shoes
 marker('thigh_far', 'hip_far')
-def shoe(part, bone, ax, ay, dirx):
-    """Shoe at the ankle (ax, ay), toe towards dirx (+1 right, -1 left)."""
-    def X(dx): return ax + dirx * dx
-    add(part, bone, SHOE, f'M {X(-24)} {ay - 6} Q {X(8)} {ay - 14} {X(30)} {ay} Q {X(70)} {ay + 10} {X(92)} {ay + 38} '
-                          f'Q {X(102)} {ay + 58} {X(86)} {ay + 62} L {X(-28)} {ay + 62} Q {X(-42)} {ay + 30} {X(-24)} {ay - 6} Z')
-    add(part, bone, SHOE_SH, f'M {X(-24)} {ay - 6} Q {X(-42)} {ay + 30} {X(-28)} {ay + 62} L {X(-12)} {ay + 62} Q {X(-22)} {ay + 30} {X(-8)} {ay - 8} Z')
-    add(part, bone, SOLE, f'M {X(-32)} {ay + 54} L {X(90)} {ay + 54} Q {X(104)} {ay + 64} {X(88)} {ay + 74} L {X(-26)} {ay + 74} Q {X(-36)} {ay + 66} {X(-32)} {ay + 54} Z')
-    add(part, bone, SOLE, f'M {X(62)} {ay + 28} Q {X(92)} {ay + 34} {X(100)} {ay + 56} L {X(64)} {ay + 56} Q {X(58)} {ay + 42} {X(62)} {ay + 28} Z')
-    add(part, bone, SHOE_STRAP, f'M {X(4)} {ay + 12} L {X(52)} {ay + 22}', 11)
-    add(part, bone, SHOE_STRAP, f'M {X(0)} {ay + 32} L {X(56)} {ay + 40}', 11)
-shoe('shoe_far', 'ankle_far', 596, 892, +1)
+def shoe(part, bone, ax, ay, tilt=16):
+    """A high-top sneaker seen from the side, toe towards the way the character faces (screen right in the 3q
+    view), tilted [tilt] degrees toe down as in the design: orange upper hugging the ankle with a padded collar, a
+    tongue bump, two light velcro straps across the vamp, a thick white sole and a round white toe cap. Local x from
+    the ankle towards the toe, y down; same drawing for both feet."""
+    T = frame(ax, ay, tilt)
+    add(part, bone, SHOE, path([('M', -34, -4), ('C', -30, -16, -12, -16, -2, -4), ('C', 8, 6, 20, -14, 36, -6),
+                                ('C', 60, 6, 86, 24, 100, 42), ('L', 100, 54), ('L', -38, 54),
+                                ('C', -42, 30, -40, 10, -34, -4), ('Z',)], T))
+    add(part, bone, SHOE_SH, path([('M', -34, -4), ('C', -40, 10, -42, 30, -38, 54), ('L', -22, 54),
+                                   ('C', -26, 34, -24, 12, -18, -8), ('Z',)], T))
+    add(part, bone, SHOE_STRAP, path([('M', 6, 16), ('L', 52, 22)], T), 11)
+    add(part, bone, SHOE_STRAP, path([('M', 10, 34), ('L', 62, 40)], T), 11)
+    add(part, bone, SOLE, path([('M', 64, 22), ('C', 90, 26, 108, 42, 106, 58), ('L', 66, 58),
+                                ('C', 58, 46, 58, 32, 64, 22), ('Z',)], T))
+    add(part, bone, SOLE, path([('M', -42, 48), ('L', 104, 50), ('C', 112, 54, 112, 66, 102, 68),
+                                ('L', -36, 66), ('C', -46, 64, -46, 52, -42, 48), ('Z',)], T))
+shoe('shoe_far', 'ankle_far', 596, 892)
 marker('thigh_near', 'hip_near')
-shoe('shoe_near', 'ankle_near', 410, 888, -1)
+shoe('shoe_near', 'ankle_near', 410, 888)
 
 # shorts top
 add('pelvis', 'root', JEAN, 'M 408 616 L 616 616 L 618 694 Q 570 704 540 702 L 512 690 L 484 702 Q 448 704 406 694 Z')
@@ -143,8 +175,7 @@ marker('arm_upper_near', 'shoulder_near')
 # Near shoulder over the near sleeve's start, with the strap over it.
 add('shoulder_near', 'torso', RED, ell(372, 432, 34, 34))
 add('shoulder_near', 'torso', STRAP, 'M 448 392 Q 440 420 436 440', 20)
-hand('hand_near', 'wrist_near', 180, 486, [(128, 468), (121, 488), (127, 508), (141, 524)], (186, 472, 160, 440),
-     SKIN, SKIN_SH, (196, 494, 182, 506), (162, 498))
+hand('hand_near', 'wrist_near', (203.9, 477.8), (278.3, 460.7), 1, SKIN, SKIN_SH)
 
 open(OUT + '/shapes.csv', 'w').write(
     '# part,bone,drawn,colour,alpha,stroke (0 = fill),d (SVG path, ref px of the 3q skeleton): Kai drawn for the rig, '
